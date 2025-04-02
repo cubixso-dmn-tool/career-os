@@ -107,283 +107,63 @@ export interface IStorage {
   createUserEvent(userEvent: InsertUserEvent): Promise<UserEvent>;
 }
 
-export class MemStorage implements IStorage {
-  private users = new Map<number, User>();
-  private quizResults = new Map<number, QuizResult>();
-  private courses = new Map<number, Course>();
-  private enrollments = new Map<number, Enrollment>();
-  private projects = new Map<number, Project>();
-  private userProjects = new Map<number, UserProject>();
-  private softSkills = new Map<number, SoftSkill>();
-  private userSoftSkills = new Map<number, UserSoftSkill>();
-  private resumes = new Map<number, Resume>();
-  private posts = new Map<number, Post>();
-  private comments = new Map<number, Comment>();
-  private achievements = new Map<number, Achievement>();
-  private userAchievements = new Map<number, UserAchievement>();
-  private events = new Map<number, Event>();
-  private userEvents = new Map<number, UserEvent>();
+import { eq, desc, and, or, sql, like } from "drizzle-orm";
+import { db } from "./db";
 
-  private currentUserId = 1;
-  private currentQuizResultId = 1;
-  private currentCourseId = 1;
-  private currentEnrollmentId = 1;
-  private currentProjectId = 1;
-  private currentUserProjectId = 1;
-  private currentSoftSkillId = 1;
-  private currentUserSoftSkillId = 1;
-  private currentResumeId = 1;
-  private currentPostId = 1;
-  private currentCommentId = 1;
-  private currentAchievementId = 1;
-  private currentUserAchievementId = 1;
-  private currentEventId = 1;
-  private currentUserEventId = 1;
-
+export class DatabaseStorage implements IStorage {
   constructor() {
-    // Initialize with some sample data
-    this.initData();
-  }
-
-  private initData() {
-    // Sample user
-    const user: User = {
-      id: this.currentUserId++,
-      username: "ananya",
-      password: "password123",
-      email: "ananya.s@example.com",
-      name: "Ananya Singh",
-      bio: "Aspiring data scientist passionate about AI and machine learning",
-      avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6",
-      createdAt: new Date()
-    };
-    this.users.set(user.id, user);
-
-    // Sample courses
-    const courses: Course[] = [
-      {
-        id: this.currentCourseId++,
-        title: "Python for Data Science",
-        description: "Learn Python fundamentals for data analysis and visualization",
-        thumbnail: "https://images.unsplash.com/photo-1633356122544-f134324a6cee",
-        price: 0,
-        isFree: true,
-        rating: 48,
-        enrolledCount: 10000,
-        category: "Data Science",
-        tags: ["Python", "Data Analysis", "Visualization"],
-        isFeatured: true
-      },
-      {
-        id: this.currentCourseId++,
-        title: "Machine Learning Basics",
-        description: "Introduction to machine learning algorithms and applications",
-        thumbnail: "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f",
-        price: 499,
-        isFree: false,
-        rating: 46,
-        enrolledCount: 5000,
-        category: "Machine Learning",
-        tags: ["Machine Learning", "Algorithms", "Data Science"],
-        isFeatured: true
-      },
-      {
-        id: this.currentCourseId++,
-        title: "Statistics for Data Science",
-        description: "Master statistical concepts for data analysis and inference",
-        thumbnail: "https://images.unsplash.com/photo-1543286386-713bdd548da4",
-        price: 899,
-        isFree: false,
-        rating: 45,
-        enrolledCount: 3000,
-        category: "Statistics",
-        tags: ["Statistics", "Data Analysis", "Probability"],
-        isFeatured: false
-      }
-    ];
-
-    courses.forEach(course => {
-      this.courses.set(course.id, course);
-    });
-
-    // Sample projects
-    const projects: Project[] = [
-      {
-        id: this.currentProjectId++,
-        title: "Predictive Analytics Dashboard",
-        description: "Build a dashboard to visualize and predict trends using Python, Pandas and Matplotlib.",
-        difficulty: "Beginner",
-        duration: "2 weeks",
-        skills: ["Python", "Data Analysis", "Visualization"],
-        category: "Data Science"
-      }
-    ];
-
-    projects.forEach(project => {
-      this.projects.set(project.id, project);
-    });
-
-    // Sample achievements
-    const achievements: Achievement[] = [
-      {
-        id: this.currentAchievementId++,
-        title: "Fast Learner",
-        description: "Completed 5 courses in 30 days",
-        icon: "star",
-        category: "Learning"
-      },
-      {
-        id: this.currentAchievementId++,
-        title: "Quiz Master",
-        description: "Scored 90%+ on 3 assessments",
-        icon: "award",
-        category: "Assessment"
-      },
-      {
-        id: this.currentAchievementId++,
-        title: "Project Pioneer",
-        description: "Complete your first project",
-        icon: "lock",
-        category: "Project"
-      }
-    ];
-
-    achievements.forEach(achievement => {
-      this.achievements.set(achievement.id, achievement);
-    });
-
-    // Sample user achievements
-    const userAchievements: UserAchievement[] = [
-      {
-        id: this.currentUserAchievementId++,
-        userId: user.id,
-        achievementId: 1,
-        earnedAt: new Date()
-      },
-      {
-        id: this.currentUserAchievementId++,
-        userId: user.id,
-        achievementId: 2,
-        earnedAt: new Date()
-      }
-    ];
-
-    userAchievements.forEach(userAchievement => {
-      this.userAchievements.set(userAchievement.id, userAchievement);
-    });
-
-    // Sample events
-    const events: Event[] = [
-      {
-        id: this.currentEventId++,
-        title: "Career Opportunities in Data Science",
-        description: "Learn about various career paths within the data science field from industry experts.",
-        type: "Webinar",
-        date: new Date(Date.now() + 86400000), // Tomorrow
-        duration: 60,
-        isRegistrationRequired: true
-      },
-      {
-        id: this.currentEventId++,
-        title: "Python for Data Analysis Bootcamp",
-        description: "Hands-on workshop to master Python libraries for data analysis and visualization.",
-        type: "Workshop",
-        date: new Date(Date.now() + 432000000), // 5 days from now
-        duration: 180,
-        isRegistrationRequired: true
-      },
-      {
-        id: this.currentEventId++,
-        title: "Data Science Challenge",
-        description: "Compete with other students to solve real-world data problems and win exciting prizes.",
-        type: "Hackathon",
-        date: new Date(Date.now() + 604800000), // 7 days from now
-        duration: 480,
-        isRegistrationRequired: true
-      }
-    ];
-
-    events.forEach(event => {
-      this.events.set(event.id, event);
-    });
-
-    // Sample quiz result
-    const quizResult: QuizResult = {
-      id: this.currentQuizResultId++,
-      userId: user.id,
-      quizType: "Career Assessment",
-      result: { aptitude: 85, interests: { data: 90, programming: 80, analytics: 85 } },
-      recommendedCareer: "Data Science",
-      recommendedNiches: ["Machine Learning", "Python", "Data Analysis", "Statistics"],
-      completedAt: new Date()
-    };
-    this.quizResults.set(quizResult.id, quizResult);
-
-    // Sample posts
-    const posts: Post[] = [
-      {
-        id: this.currentPostId++,
-        userId: user.id,
-        content: "Just completed the Machine Learning basics course! The capstone project was challenging but worth it. Happy to share my experience with anyone interested.",
-        likes: 24,
-        replies: 15,
-        createdAt: new Date(Date.now() - 18000000) // 5 hours ago
-      }
-    ];
-
-    posts.forEach(post => {
-      this.posts.set(post.id, post);
-    });
+    // No initialization needed for database storage
   }
 
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.email === email,
-    );
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id, createdAt: new Date() };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   async updateUser(id: number, updates: Partial<User>): Promise<User> {
-    const user = await this.getUser(id);
-    if (!user) throw new Error("User not found");
+    const [updatedUser] = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
     
-    const updatedUser = { ...user, ...updates };
-    this.users.set(id, updatedUser);
+    if (!updatedUser) throw new Error("User not found");
     return updatedUser;
   }
 
   // Quiz result operations
   async getQuizResult(id: number): Promise<QuizResult | undefined> {
-    return this.quizResults.get(id);
+    const [quizResult] = await db.select().from(quizResults).where(eq(quizResults.id, id));
+    return quizResult || undefined;
   }
 
   async getQuizResultsByUser(userId: number): Promise<QuizResult[]> {
-    return Array.from(this.quizResults.values()).filter(
-      (quizResult) => quizResult.userId === userId,
-    );
+    return await db.select().from(quizResults).where(eq(quizResults.userId, userId));
   }
 
   async createQuizResult(insertQuizResult: InsertQuizResult): Promise<QuizResult> {
-    const id = this.currentQuizResultId++;
-    const quizResult: QuizResult = { ...insertQuizResult, id, completedAt: new Date() };
-    this.quizResults.set(id, quizResult);
+    const quizResultData = {
+      ...insertQuizResult, 
+      completedAt: new Date()
+    };
+    
+    const [quizResult] = await db.insert(quizResults).values(quizResultData).returning();
     return quizResult;
   }
 
@@ -601,58 +381,62 @@ export class MemStorage implements IStorage {
 
   // Post operations
   async getPost(id: number): Promise<Post | undefined> {
-    return this.posts.get(id);
+    const [post] = await db.select().from(posts).where(eq(posts.id, id));
+    return post || undefined;
   }
 
   async getAllPosts(): Promise<Post[]> {
-    return Array.from(this.posts.values()).sort((a, b) => 
-      b.createdAt.getTime() - a.createdAt.getTime()
-    );
+    return await db.select().from(posts).orderBy(desc(posts.createdAt));
   }
 
   async getRecentPosts(limit: number): Promise<Post[]> {
-    return Array.from(this.posts.values())
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, limit);
+    return await db.select().from(posts).orderBy(desc(posts.createdAt)).limit(limit);
   }
 
   async createPost(insertPost: InsertPost): Promise<Post> {
-    const id = this.currentPostId++;
-    const post: Post = { 
-      ...insertPost, 
-      id, 
-      likes: 0, 
-      replies: 0, 
-      createdAt: new Date() 
+    const postData = {
+      ...insertPost,
+      likes: 0,
+      replies: 0,
+      createdAt: new Date()
     };
-    this.posts.set(id, post);
+    
+    const [post] = await db.insert(posts).values(postData).returning();
     return post;
   }
 
   async updatePost(id: number, updates: Partial<Post>): Promise<Post> {
-    const post = await this.getPost(id);
-    if (!post) throw new Error("Post not found");
+    const [updatedPost] = await db
+      .update(posts)
+      .set(updates)
+      .where(eq(posts.id, id))
+      .returning();
     
-    const updatedPost = { ...post, ...updates };
-    this.posts.set(id, updatedPost);
+    if (!updatedPost) throw new Error("Post not found");
     return updatedPost;
   }
 
   // Comment operations
   async getComment(id: number): Promise<Comment | undefined> {
-    return this.comments.get(id);
+    const [comment] = await db.select().from(comments).where(eq(comments.id, id));
+    return comment || undefined;
   }
 
   async getCommentsByPost(postId: number): Promise<Comment[]> {
-    return Array.from(this.comments.values())
-      .filter(comment => comment.postId === postId)
-      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    return await db
+      .select()
+      .from(comments)
+      .where(eq(comments.postId, postId))
+      .orderBy(comments.createdAt);
   }
 
   async createComment(insertComment: InsertComment): Promise<Comment> {
-    const id = this.currentCommentId++;
-    const comment: Comment = { ...insertComment, id, createdAt: new Date() };
-    this.comments.set(id, comment);
+    const commentData = {
+      ...insertComment,
+      createdAt: new Date()
+    };
+    
+    const [comment] = await db.insert(comments).values(commentData).returning();
     
     // Update post's reply count
     const post = await this.getPost(insertComment.postId);
@@ -699,26 +483,25 @@ export class MemStorage implements IStorage {
 
   // Event operations
   async getEvent(id: number): Promise<Event | undefined> {
-    return this.events.get(id);
+    const [event] = await db.select().from(events).where(eq(events.id, id));
+    return event || undefined;
   }
 
   async getAllEvents(): Promise<Event[]> {
-    return Array.from(this.events.values()).sort((a, b) => 
-      a.date.getTime() - b.date.getTime()
-    );
+    return await db.select().from(events).orderBy(events.date);
   }
 
   async getUpcomingEvents(): Promise<Event[]> {
     const now = new Date();
-    return Array.from(this.events.values())
-      .filter(event => event.date > now)
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
+    return await db
+      .select()
+      .from(events)
+      .where(sql`${events.date} > ${now}`)
+      .orderBy(events.date);
   }
 
   async createEvent(insertEvent: InsertEvent): Promise<Event> {
-    const id = this.currentEventId++;
-    const event: Event = { ...insertEvent, id };
-    this.events.set(id, event);
+    const [event] = await db.insert(events).values(insertEvent).returning();
     return event;
   }
 
@@ -741,4 +524,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
