@@ -14,6 +14,7 @@ import CareerQuizCard from "@/components/dashboard/CareerQuizCard";
 import ProjectShowcaseCard from "@/components/dashboard/ProjectShowcaseCard";
 import CommunitySection from "@/components/dashboard/CommunitySection";
 import UpcomingEvents from "@/components/dashboard/UpcomingEvents";
+import { DailyByte } from "@/components/courses/DailyByte";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
@@ -104,7 +105,9 @@ export default function Dashboard() {
     recommendedCourses,
     recommendedProject,
     upcomingEvents,
-    communityPosts
+    communityPosts,
+    dailyByte,
+    dailyByteStreak
   } = dashboardData || {};
 
   return (
@@ -150,6 +153,17 @@ export default function Dashboard() {
           
           {/* Recommended Courses */}
           <RecommendedCourses courses={recommendedCourses || []} />
+          
+          {/* Daily Byte Section */}
+          {dailyByte && (
+            <div className="mb-6">
+              <DailyByte 
+                userId={USER_ID} 
+                dailyByte={dailyByte} 
+                streak={dailyByteStreak || 0} 
+              />
+            </div>
+          )}
           
           {/* Career Quiz + Project Showcase */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">

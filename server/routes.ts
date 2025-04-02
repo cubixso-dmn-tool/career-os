@@ -12,7 +12,9 @@ import {
   insertPostSchema,
   insertCommentSchema,
   insertUserAchievementSchema,
-  insertUserEventSchema
+  insertUserEventSchema,
+  insertDailyByteSchema,
+  insertUserDailyByteSchema
 } from "@shared/schema";
 import { 
   generateCareerRecommendations,
@@ -585,6 +587,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DAILY BYTES
+  app.get("/api/daily-bytes", async (req, res) => {
+    try {
+      const dailyBytes = await storage.getAllDailyBytes();
+      res.json(dailyBytes);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get daily bytes" });
+    }
+  });
+
+  app.get("/api/daily-bytes/today", async (req, res) => {
+    try {
+      const dailyByte = await storage.getTodaysDailyByte();
+      if (!dailyByte) {
+        return res.status(404).json({ message: "No daily byte available for today" });
+      }
+      res.json(dailyByte);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get today's daily byte" });
+    }
+  });
+
+  app.get("/api/daily-bytes/:id", async (req, res) => {
+    try {
+      const dailyByteId = parseInt(req.params.id);
+      const dailyByte = await storage.getDailyByte(dailyByteId);
+      
+      if (!dailyByte) {
+        return res.status(404).json({ message: "Daily byte not found" });
+      }
+      
+      res.json(dailyByte);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get daily byte" });
+    }
+  });
+
+  app.post("/api/daily-bytes", async (req, res) => {
+    try {
+      const dailyByteData = insertDailyByteSchema.parse(req.body);
+      const dailyByte = await storage.createDailyByte(dailyByteData);
+      res.status(201).json(dailyByte);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return handleZodError(error, res);
+      }
+      res.status(500).json({ message: "Failed to create daily byte" });
+    }
+  });
+
+  app.post("/api/user-daily-bytes", async (req, res) => {
+    try {
+      const userDailyByteData = insertUserDailyByteSchema.parse(req.body);
+      
+      // Check if the user has already completed this daily byte
+      const existingUserDailyByte = await storage.getUserDailyByteByDailyByteAndUser(
+        userDailyByteData.dailyByteId,
+        userDailyByteData.userId
+      );
+      
+      if (existingUserDailyByte) {
+        return res.status(400).json({ 
+          message: "User has already completed this daily byte",
+          userDailyByte: existingUserDailyByte
+        });
+      }
+      
+      const userDailyByte = await storage.createUserDailyByte(userDailyByteData);
+      res.status(201).json(userDailyByte);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return handleZodError(error, res);
+      }
+      res.status(500).json({ message: "Failed to complete daily byte" });
+    }
+  });
+
+  app.get("/api/users/:userId/daily-bytes", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const userDailyBytes = await storage.getUserDailyBytesByUser(userId);
+      res.json(userDailyBytes);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user daily bytes" });
+    }
+  });
+
+  app.patch("/api/user-daily-bytes/:id", async (req, res) => {
+    try {
+      const userDailyByteId = parseInt(req.params.id);
+      const updatedUserDailyByte = await storage.updateUserDailyByte(userDailyByteId, req.body);
+      res.json(updatedUserDailyByte);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user daily byte" });
+    }
+  });
+
   // DASHBOARD DATA
   app.get("/api/users/:userId/dashboard", async (req, res) => {
     try {
@@ -604,7 +703,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         recommendedCourses,
         recommendedProjects,
         upcomingEvents,
-        recentPosts
+        recentPosts,
+        todaysDailyByte,
+        userDailyBytes
       ] = await Promise.all([
         storage.getQuizResultsByUser(userId),
         storage.getEnrollmentsByUser(userId),
@@ -613,7 +714,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         storage.getRecommendedCourses(userId),
         storage.getRecommendedProjects(userId),
         storage.getUpcomingEvents(),
-        storage.getRecentPosts(5)
+        storage.getRecentPosts(5),
+        storage.getTodaysDailyByte(),
+        storage.getUserDailyBytesByUser(userId)
       ]);
       
       // Calculate overall progress
@@ -652,6 +755,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate overall progress percentage
       const progressPercentage = Math.round((completedMilestones / totalMilestones) * 100);
       
+      // Check if the user has completed today's daily byte
+      let dailyByteCompleted = false;
+      if (todaysDailyByte) {
+        dailyByteCompleted = userDailyBytes.some(
+          udb => udb.dailyByteId === todaysDailyByte.id
+        );
+      }
+
       res.json({
         user,
         progress: {
@@ -676,7 +787,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         recommendedCourses,
         recommendedProject: recommendedProjects.length > 0 ? recommendedProjects[0] : null,
         upcomingEvents,
-        communityPosts: recentPosts
+        communityPosts: recentPosts,
+        dailyByte: todaysDailyByte ? {
+          ...todaysDailyByte,
+          completed: dailyByteCompleted
+        } : null,
+        dailyByteStreak: userDailyBytes.length
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to get dashboard data" });

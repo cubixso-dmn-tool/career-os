@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -141,6 +141,27 @@ export const userEvents = pgTable("user_events", {
   registeredAt: timestamp("registered_at").defaultNow().notNull()
 });
 
+export const dailyBytes = pgTable("daily_bytes", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  type: text("type").notNull(), // 'tip', 'quiz', 'insight'
+  category: text("category").notNull(),
+  forDate: date("for_date").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  active: boolean("active").default(true).notNull()
+});
+
+export const userDailyBytes = pgTable("user_daily_bytes", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  dailyByteId: integer("daily_byte_id").notNull().references(() => dailyBytes.id),
+  completed: boolean("completed").default(false).notNull(),
+  responded: boolean("responded").default(false).notNull(),
+  response: jsonb("response"),
+  completedAt: timestamp("completed_at")
+});
+
 // Insert schemas
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
@@ -158,6 +179,8 @@ export const insertAchievementSchema = createInsertSchema(achievements).omit({ i
 export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({ id: true, earnedAt: true });
 export const insertEventSchema = createInsertSchema(events).omit({ id: true });
 export const insertUserEventSchema = createInsertSchema(userEvents).omit({ id: true, registeredAt: true });
+export const insertDailyByteSchema = createInsertSchema(dailyBytes).omit({ id: true, createdAt: true });
+export const insertUserDailyByteSchema = createInsertSchema(userDailyBytes).omit({ id: true, completedAt: true });
 
 // Types
 
@@ -205,3 +228,9 @@ export type Event = typeof events.$inferSelect;
 
 export type InsertUserEvent = z.infer<typeof insertUserEventSchema>;
 export type UserEvent = typeof userEvents.$inferSelect;
+
+export type InsertDailyByte = z.infer<typeof insertDailyByteSchema>;
+export type DailyByte = typeof dailyBytes.$inferSelect;
+
+export type InsertUserDailyByte = z.infer<typeof insertUserDailyByteSchema>;
+export type UserDailyByte = typeof userDailyBytes.$inferSelect;

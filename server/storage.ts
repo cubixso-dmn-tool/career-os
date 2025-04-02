@@ -13,7 +13,9 @@ import {
   achievements, Achievement, InsertAchievement,
   userAchievements, UserAchievement, InsertUserAchievement,
   events, Event, InsertEvent,
-  userEvents, UserEvent, InsertUserEvent
+  userEvents, UserEvent, InsertUserEvent,
+  dailyBytes, DailyByte, InsertDailyByte,
+  userDailyBytes, UserDailyByte, InsertUserDailyByte
 } from "@shared/schema";
 
 export interface IStorage {
@@ -105,6 +107,19 @@ export interface IStorage {
   getUserEvent(id: number): Promise<UserEvent | undefined>;
   getUserEventsByUser(userId: number): Promise<UserEvent[]>;
   createUserEvent(userEvent: InsertUserEvent): Promise<UserEvent>;
+  
+  // DailyByte operations
+  getDailyByte(id: number): Promise<DailyByte | undefined>;
+  getAllDailyBytes(): Promise<DailyByte[]>;
+  getTodaysDailyByte(): Promise<DailyByte | undefined>;
+  createDailyByte(dailyByte: InsertDailyByte): Promise<DailyByte>;
+  
+  // UserDailyByte operations
+  getUserDailyByte(id: number): Promise<UserDailyByte | undefined>; 
+  getUserDailyBytesByUser(userId: number): Promise<UserDailyByte[]>;
+  getUserDailyByteByDailyByteAndUser(dailyByteId: number, userId: number): Promise<UserDailyByte | undefined>;
+  createUserDailyByte(userDailyByte: InsertUserDailyByte): Promise<UserDailyByte>;
+  updateUserDailyByte(id: number, updates: Partial<UserDailyByte>): Promise<UserDailyByte>;
 }
 
 import { eq, desc, and, or, sql, like } from "drizzle-orm";
@@ -574,6 +589,98 @@ export class DatabaseStorage implements IStorage {
     
     const [userEvent] = await db.insert(userEvents).values(userEventData).returning();
     return userEvent;
+  }
+
+  // DailyByte operations
+  async getDailyByte(id: number): Promise<DailyByte | undefined> {
+    const [dailyByte] = await db.select().from(dailyBytes).where(eq(dailyBytes.id, id));
+    return dailyByte || undefined;
+  }
+
+  async getAllDailyBytes(): Promise<DailyByte[]> {
+    return await db.select().from(dailyBytes).orderBy(desc(dailyBytes.createdAt));
+  }
+
+  async getTodaysDailyByte(): Promise<DailyByte | undefined> {
+    // Get today's date at beginning of day (midnight)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // For the end of the day (23:59:59.999)
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    // Find the daily byte for today
+    const [dailyByte] = await db
+      .select()
+      .from(dailyBytes)
+      .where(
+        and(
+          sql`${dailyBytes.createdAt} >= ${today}`,
+          sql`${dailyBytes.createdAt} <= ${endOfDay}`
+        )
+      );
+    
+    return dailyByte || undefined;
+  }
+
+  async createDailyByte(insertDailyByte: InsertDailyByte): Promise<DailyByte> {
+    const dailyByteData = {
+      ...insertDailyByte,
+      createdAt: new Date()
+    };
+    
+    const [dailyByte] = await db.insert(dailyBytes).values(dailyByteData).returning();
+    return dailyByte;
+  }
+
+  // UserDailyByte operations
+  async getUserDailyByte(id: number): Promise<UserDailyByte | undefined> {
+    const [userDailyByte] = await db.select().from(userDailyBytes).where(eq(userDailyBytes.id, id));
+    return userDailyByte || undefined;
+  }
+
+  async getUserDailyBytesByUser(userId: number): Promise<UserDailyByte[]> {
+    return await db
+      .select()
+      .from(userDailyBytes)
+      .where(eq(userDailyBytes.userId, userId))
+      .orderBy(desc(userDailyBytes.completedAt));
+  }
+
+  async getUserDailyByteByDailyByteAndUser(dailyByteId: number, userId: number): Promise<UserDailyByte | undefined> {
+    const [userDailyByte] = await db
+      .select()
+      .from(userDailyBytes)
+      .where(
+        and(
+          eq(userDailyBytes.dailyByteId, dailyByteId),
+          eq(userDailyBytes.userId, userId)
+        )
+      );
+    
+    return userDailyByte || undefined;
+  }
+
+  async createUserDailyByte(insertUserDailyByte: InsertUserDailyByte): Promise<UserDailyByte> {
+    const userDailyByteData = {
+      ...insertUserDailyByte,
+      completedAt: new Date()
+    };
+    
+    const [userDailyByte] = await db.insert(userDailyBytes).values(userDailyByteData).returning();
+    return userDailyByte;
+  }
+
+  async updateUserDailyByte(id: number, updates: Partial<UserDailyByte>): Promise<UserDailyByte> {
+    const [updatedUserDailyByte] = await db
+      .update(userDailyBytes)
+      .set(updates)
+      .where(eq(userDailyBytes.id, id))
+      .returning();
+    
+    if (!updatedUserDailyByte) throw new Error("User daily byte not found");
+    return updatedUserDailyByte;
   }
 }
 
