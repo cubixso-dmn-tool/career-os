@@ -371,7 +371,7 @@ export default function SoftSkills({}: SoftSkillsProps) {
                         <SelectValue placeholder="All Skill Types" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Skill Types</SelectItem>
+                        <SelectItem value="all">All Skill Types</SelectItem>
                         <SelectItem value="communication">Communication</SelectItem>
                         <SelectItem value="interview">Interview Prep</SelectItem>
                         <SelectItem value="leadership">Leadership</SelectItem>

@@ -131,7 +131,7 @@ export default function Courses({}: CoursesProps) {
                     <SelectValue placeholder="Price" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Prices</SelectItem>
+                    <SelectItem value="all">All Prices</SelectItem>
                     <SelectItem value="free">Free</SelectItem>
                     <SelectItem value="paid">Paid</SelectItem>
                   </SelectContent>
