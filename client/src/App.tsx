@@ -11,20 +11,58 @@ import Community from "@/pages/Community";
 import ResumeBuilder from "@/pages/ResumeBuilder";
 import SoftSkills from "@/pages/SoftSkills";
 import Achievements from "@/pages/Achievements";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
 import { useState } from "react";
 import { SidebarProvider } from "@/hooks/use-sidebar";
+import { AuthProvider } from "@/hooks/use-auth-context";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/career-guide" component={CareerGuide} />
-      <Route path="/courses" component={Courses} />
-      <Route path="/projects" component={Projects} />
-      <Route path="/community" component={Community} />
-      <Route path="/resume-builder" component={ResumeBuilder} />
-      <Route path="/soft-skills" component={SoftSkills} />
-      <Route path="/achievements" component={Achievements} />
+      <Route path="/">
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/career-guide">
+        <ProtectedRoute>
+          <CareerGuide />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/courses">
+        <ProtectedRoute>
+          <Courses />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/projects">
+        <ProtectedRoute>
+          <Projects />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/community">
+        <ProtectedRoute>
+          <Community />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/resume-builder">
+        <ProtectedRoute>
+          <ResumeBuilder />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/soft-skills">
+        <ProtectedRoute>
+          <SoftSkills />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/achievements">
+        <ProtectedRoute>
+          <Achievements />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -33,10 +71,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <SidebarProvider>
-        <Router />
-        <Toaster />
-      </SidebarProvider>
+      <AuthProvider>
+        <SidebarProvider>
+          <Router />
+          <Toaster />
+        </SidebarProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

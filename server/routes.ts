@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { ZodError } from "zod";
+import passport from "passport";
 import { 
   insertUserSchema, 
   insertQuizResultSchema, 
@@ -796,6 +797,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to get dashboard data" });
+    }
+  });
+
+  // AUTHENTICATION ROUTES
+  // Register (same as creating a user, already implemented above)
+  
+  // Login
+  app.post("/api/auth/login", (req, res, next) => {
+    passport.authenticate("local", (err: Error | null, user: any, info: { message?: string }) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.status(401).json({ message: info.message || "Authentication failed" });
+      }
+      
+      req.logIn(user, (err) => {
+        if (err) {
+          return next(err);
+        }
+        
+        // Don't send password to client
+        const { password, ...userWithoutPassword } = user;
+        return res.json({ 
+          message: "Login successful", 
+          user: userWithoutPassword 
+        });
+      });
+    })(req, res, next);
+  });
+  
+  // Logout
+  app.post("/api/auth/logout", (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Error during logout" });
+      }
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+  
+  // Check if user is authenticated
+  app.get("/api/auth/status", (req, res) => {
+    if (req.isAuthenticated()) {
+      // Don't send password to client
+      const { password, ...userWithoutPassword } = req.user as any;
+      res.json({ 
+        isAuthenticated: true,
+        user: userWithoutPassword
+      });
+    } else {
+      res.json({ 
+        isAuthenticated: false 
+      });
     }
   });
 

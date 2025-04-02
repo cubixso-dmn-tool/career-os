@@ -10,6 +10,7 @@ import {
   Trophy
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import LogoutButton from "@/components/auth/LogoutButton";
 
 interface User {
   name: string;
@@ -69,15 +70,21 @@ export default function Sidebar({ user }: SidebarProps) {
       </nav>
       
       <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center space-x-3">
-          <img 
-            src={user.avatar} 
-            alt="Profile picture" 
-            className="h-8 w-8 rounded-full object-cover"
-          />
-          <div>
-            <p className="text-sm font-medium text-gray-700">{user.name}</p>
-            <p className="text-xs text-gray-500">{user.email}</p>
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center space-x-3">
+            <img 
+              src={user.avatar} 
+              alt="Profile picture" 
+              className="h-8 w-8 rounded-full object-cover"
+            />
+            <div>
+              <p className="text-sm font-medium text-gray-700">{user.name}</p>
+              <p className="text-xs text-gray-500">{user.email}</p>
+            </div>
+          </div>
+          
+          <div className="pt-2">
+            <LogoutButton className="w-full" />
           </div>
         </div>
       </div>

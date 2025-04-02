@@ -9,26 +9,23 @@ import PathFinder from "@/components/career/PathFinder";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Compass, MessageCircle, Sparkles, Rocket } from "lucide-react";
-
-// Mock user ID until authentication is implemented
-const USER_ID = 1;
+import { useAuthContext } from "@/hooks/use-auth-context";
 
 interface CareerGuideProps {}
 
 export default function CareerGuide({}: CareerGuideProps) {
   const { isSidebarOpen, closeSidebar } = useSidebar();
+  const { user, isAuthenticated, loading: authLoading } = useAuthContext();
   const [quizCompleted, setQuizCompleted] = useState<boolean>(false);
 
-  // Fetch user data
-  const { data: userData, isLoading: loadingUser } = useQuery({
-    queryKey: [`/api/users/${USER_ID}`],
-    queryFn: undefined, // Use default queryFn from queryClient
-  });
+  // Fetch user data if needed
+  const userID = user?.id || 0;
 
   // Fetch quiz results
   const { data: quizResults, isLoading: loadingQuiz } = useQuery({
-    queryKey: [`/api/users/${USER_ID}/quiz-results`],
+    queryKey: [`/api/users/${userID}/quiz-results`],
     queryFn: undefined, // Use default queryFn from queryClient
+    enabled: isAuthenticated && !!userID,
   });
 
   // Close sidebar when navigating to this page
@@ -38,12 +35,12 @@ export default function CareerGuide({}: CareerGuideProps) {
 
   // Check if user has completed the quiz
   useEffect(() => {
-    if (quizResults && quizResults.length > 0) {
+    if (quizResults && Array.isArray(quizResults) && quizResults.length > 0) {
       setQuizCompleted(true);
     }
   }, [quizResults]);
 
-  const isLoading = loadingUser || loadingQuiz;
+  const isLoading = authLoading || loadingQuiz;
 
   if (isLoading) {
     return (
@@ -56,20 +53,29 @@ export default function CareerGuide({}: CareerGuideProps) {
     );
   }
 
+  // Use the authenticated user data or fallback to default if somehow not available
+  const defaultUser = {
+    name: 'Guest User',
+    email: 'guest@example.com',
+    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6'
+  };
+  
+  const userData = user || defaultUser;
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Mobile Header */}
-      <MobileHeader user={userData || { name: 'Ananya Singh', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6' }} />
+      <MobileHeader user={{ name: userData.name, avatar: userData.avatar }} />
 
       {/* Sidebar */}
-      <Sidebar user={userData || { name: 'Ananya Singh', email: 'ananya.s@example.com', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6' }} />
+      <Sidebar user={userData} />
 
       {/* Mobile Sidebar */}
       {isSidebarOpen && (
         <MobileSidebar 
           isOpen={isSidebarOpen} 
           onClose={closeSidebar} 
-          user={userData || { name: 'Ananya Singh', email: 'ananya.s@example.com', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6' }}
+          user={userData}
         />
       )}
 
