@@ -6,11 +6,12 @@ import MobileHeader from "@/components/ui/mobile-header";
 import MobileNavigation from "@/components/layout/MobileNavigation";
 import MobileSidebar from "@/components/layout/MobileSidebar";
 import CareerQuiz from "@/components/career/CareerQuiz";
+import PathFinder from "@/components/career/PathFinder";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Compass, CheckCircle, ArrowRight, BarChart, Brain, Cpu, LineChart } from "lucide-react";
+import { Loader2, Compass, CheckCircle, ArrowRight, BarChart, Brain, Cpu, LineChart, MessageCircle } from "lucide-react";
 
 // Mock user ID until authentication is implemented
 const USER_ID = 1;
@@ -19,7 +20,7 @@ interface CareerGuideProps {}
 
 export default function CareerGuide({}: CareerGuideProps) {
   const { isSidebarOpen, closeSidebar } = useSidebar();
-  const [activeTab, setActiveTab] = useState<string>("assessment");
+  const [activeTab, setActiveTab] = useState<string>("pathfinder");
   const [quizCompleted, setQuizCompleted] = useState<boolean>(false);
   const queryClient = useQueryClient();
 
@@ -44,7 +45,6 @@ export default function CareerGuide({}: CareerGuideProps) {
   useEffect(() => {
     if (quizResults && quizResults.length > 0) {
       setQuizCompleted(true);
-      setActiveTab("results");
     }
   }, [quizResults]);
 
@@ -103,10 +103,29 @@ export default function CareerGuide({}: CareerGuideProps) {
             </CardHeader>
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="pathfinder" className="flex items-center gap-1">
+                    <MessageCircle className="h-4 w-4" />
+                    PathFinder
+                  </TabsTrigger>
                   <TabsTrigger value="assessment">Assessment</TabsTrigger>
                   <TabsTrigger value="results" disabled={!quizCompleted}>Results</TabsTrigger>
                 </TabsList>
+                
+                <TabsContent value="pathfinder" className="space-y-4">
+                  <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg p-4 mb-4">
+                    <h3 className="font-semibold flex items-center">
+                      <MessageCircle className="h-5 w-5 mr-2 text-primary" />
+                      PathFinder: AI Career Chat
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Have a quick chat with our AI to discover the perfect career path based on your interests.
+                    </p>
+                  </div>
+                  <div className="border rounded-lg overflow-hidden" style={{ height: '65vh' }}>
+                    <PathFinder />
+                  </div>
+                </TabsContent>
                 
                 <TabsContent value="assessment" className="space-y-4">
                   {quizCompleted ? (
