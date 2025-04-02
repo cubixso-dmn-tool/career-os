@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./simple-storage";
+import { storage } from "./storage";
 import { ZodError } from "zod";
 import { 
   insertUserSchema, 
