@@ -45,15 +45,21 @@ export default function Courses({}: CoursesProps) {
     closeSidebar();
   }, [closeSidebar]);
 
-  // Filter courses based on search term and tags
+  // Filter courses based on search term, tags, category, and price
   const filteredCourses = courses.filter((course: any) => {
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          course.description.toLowerCase().includes(searchTerm.toLowerCase());
                          
     const matchesTags = selectedTags.length === 0 || 
                        (course.tags && selectedTags.some(tag => course.tags.includes(tag)));
+    
+    const matchesCategory = !selectedCategory || course.category === selectedCategory;
+    
+    const matchesPrice = !priceFilter || priceFilter === "all" || 
+                        (priceFilter === "free" && course.isFree) ||
+                        (priceFilter === "paid" && !course.isFree);
                        
-    return matchesSearch && matchesTags;
+    return matchesSearch && matchesTags && matchesCategory && matchesPrice;
   });
 
   // Get all available categories from courses

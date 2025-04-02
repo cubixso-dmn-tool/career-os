@@ -288,11 +288,16 @@ export default function SoftSkills({}: SoftSkillsProps) {
     closeSidebar();
   }, [closeSidebar]);
 
-  // Filter soft skills based on search term
-  const filteredSoftSkills = softSkills.filter((skill: any) => 
-    skill.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    skill.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter soft skills based on search term and type
+  const filteredSoftSkills = softSkills.filter((skill: any) => {
+    const matchesSearch = skill.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         skill.description.toLowerCase().includes(searchTerm.toLowerCase());
+                         
+    const matchesType = !selectedType || selectedType === "all" || 
+                       skill.type === selectedType;
+                       
+    return matchesSearch && matchesType;
+  });
 
   // Get selected soft skill
   const selectedSkill = selectedSkillId 

@@ -47,11 +47,18 @@ export default function Projects({}: ProjectsProps) {
     closeSidebar();
   }, [closeSidebar]);
 
-  // Filter projects based on search term
-  const filteredProjects = projects.filter((project: any) => 
-    project.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    project.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter projects based on search term, category and difficulty
+  const filteredProjects = projects.filter((project: any) => {
+    const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         project.description.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = !selectedCategory || project.category === selectedCategory;
+    
+    const matchesDifficulty = !difficultyFilter || difficultyFilter === "all" || 
+                             project.difficulty === difficultyFilter;
+                             
+    return matchesSearch && matchesCategory && matchesDifficulty;
+  });
 
   // Get all available categories from projects
   const categories = [...new Set(projects.map((project: any) => project.category))];
