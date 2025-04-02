@@ -23,10 +23,49 @@ const USER_ID = 1;
 export default function Dashboard() {
   const { isSidebarOpen, closeSidebar } = useSidebar();
 
+  // Add debugging
+  useEffect(() => {
+    const testFetch = async () => {
+      try {
+        console.log("Attempting to fetch dashboard data...");
+        const response = await fetch(`/api/users/${USER_ID}/dashboard`);
+        console.log("Dashboard fetch response status:", response.status);
+        if (!response.ok) {
+          console.error("Dashboard fetch error:", await response.text());
+        } else {
+          console.log("Dashboard data received successfully");
+        }
+      } catch (error) {
+        console.error("Dashboard fetch exception:", error);
+      }
+    };
+    
+    testFetch();
+  }, []);
+
   // Fetch dashboard data
   const { data: dashboardData, isLoading, error } = useQuery({
     queryKey: [`/api/users/${USER_ID}/dashboard`],
-    queryFn: undefined, // Use default queryFn from queryClient
+    queryFn: async ({ queryKey }) => {
+      try {
+        console.log("TanStack Query attempting to fetch:", queryKey[0]);
+        const response = await fetch(queryKey[0] as string, {
+          credentials: "include",
+        });
+        console.log("TanStack Query response status:", response.status);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("TanStack Query error:", errorText);
+          throw new Error(`${response.status}: ${errorText || response.statusText}`);
+        }
+        const data = await response.json();
+        console.log("TanStack Query data received successfully", data);
+        return data;
+      } catch (error) {
+        console.error("TanStack Query exception:", error);
+        throw error;
+      }
+    },
   });
 
   // Close sidebar when navigating to this page
