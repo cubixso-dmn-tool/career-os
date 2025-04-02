@@ -103,13 +103,12 @@ export default function CareerGuide({}: CareerGuideProps) {
             </CardHeader>
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="pathfinder" className="flex items-center gap-1">
                     <MessageCircle className="h-4 w-4" />
-                    PathFinder
+                    PathFinder Chat
                   </TabsTrigger>
-                  <TabsTrigger value="assessment">Assessment</TabsTrigger>
-                  <TabsTrigger value="results" disabled={!quizCompleted}>Results</TabsTrigger>
+                  <TabsTrigger value="results" disabled={!quizCompleted}>Your Roadmap</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="pathfinder" className="space-y-4">
@@ -125,27 +124,6 @@ export default function CareerGuide({}: CareerGuideProps) {
                   <div className="border rounded-lg overflow-hidden" style={{ height: '65vh' }}>
                     <PathFinder />
                   </div>
-                </TabsContent>
-                
-                <TabsContent value="assessment" className="space-y-4">
-                  {quizCompleted ? (
-                    <div className="text-center py-6">
-                      <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold mb-2">Assessment Completed!</h3>
-                      <p className="text-gray-600 mb-4">You've already completed the career assessment.</p>
-                      <div className="flex justify-center space-x-4">
-                        <Button 
-                          variant="outline" 
-                          onClick={() => setActiveTab("results")}
-                        >
-                          View Results
-                        </Button>
-                        <Button>Retake Assessment</Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <CareerQuiz userId={USER_ID} onComplete={handleQuizComplete} />
-                  )}
                 </TabsContent>
                 
                 <TabsContent value="results">
@@ -268,91 +246,247 @@ export default function CareerGuide({}: CareerGuideProps) {
                         </Card>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Recommended Niche: {latestQuizResult.recommendedNiches[0]}</CardTitle>
-                            <CardDescription>
-                              A detailed look at why {latestQuizResult.recommendedNiches[0]} might be right for you
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <div>
-                              <h4 className="font-medium mb-1">What is {latestQuizResult.recommendedNiches[0]}?</h4>
-                              <p className="text-sm text-gray-600">
-                                {latestQuizResult.recommendedNiches[0]} focuses on creating systems that can learn from and make decisions based on data. It's a subset of artificial intelligence that uses statistical techniques to give computers the ability to "learn" from data.
-                              </p>
-                            </div>
-                            
-                            <div>
-                              <h4 className="font-medium mb-1">Key Skills Required:</h4>
-                              <div className="grid grid-cols-2 gap-2">
-                                <Badge variant="outline" className="justify-start">Python</Badge>
-                                <Badge variant="outline" className="justify-start">TensorFlow/PyTorch</Badge>
-                                <Badge variant="outline" className="justify-start">Statistics</Badge>
-                                <Badge variant="outline" className="justify-start">Data Preprocessing</Badge>
-                              </div>
-                            </div>
-                            
-                            <div>
-                              <h4 className="font-medium mb-1">Companies Hiring:</h4>
-                              <p className="text-sm text-gray-600">
-                                Google, Amazon, Microsoft, IBM, Infosys, TCS, Wipro, Freshworks
-                              </p>
-                            </div>
-                            
-                            <Button className="w-full">
-                              Explore Courses in {latestQuizResult.recommendedNiches[0]}
-                            </Button>
-                          </CardContent>
-                        </Card>
-                        
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Career Path Roadmap</CardTitle>
-                            <CardDescription>
-                              A step-by-step guide to becoming a {latestQuizResult.recommendedCareer} professional
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="relative pl-8 space-y-6 before:absolute before:left-4 before:top-3 before:bottom-3 before:w-0.5 before:bg-gray-200">
-                              <div className="relative">
-                                <div className="absolute -left-8 top-1 flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-sm">1</div>
-                                <h4 className="font-medium">Learn the Fundamentals</h4>
-                                <p className="text-sm text-gray-600 mt-1">Start with Python programming, statistics, and data analysis basics.</p>
+                      <Card className="w-full">
+                        <CardHeader>
+                          <CardTitle>Your Personalized Career Roadmap</CardTitle>
+                          <CardDescription>
+                            Detailed guide to becoming a {latestQuizResult.recommendedCareer} with focus on {latestQuizResult.recommendedNiches[0]}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                          <div className="bg-primary/10 p-4">
+                            <h3 className="text-lg font-bold flex items-center mb-2">
+                              <Briefcase className="w-5 h-5 mr-2 text-primary" />
+                              {latestQuizResult.recommendedCareer} Roadmap
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                              A comprehensive guide to help you build a successful career in this high-demand field.
+                            </p>
+                          </div>
+                          
+                          <div className="h-[500px] overflow-y-auto">
+                            <div className="p-4 space-y-6">
+                              {/* Industry Overview */}
+                              <div>
+                                <h4 className="text-lg font-semibold mb-2">Industry Overview</h4>
+                                <p className="text-sm mb-3">
+                                  {latestQuizResult.recommendedNiches[0] === "Data Science" ? 
+                                    "Data Science combines statistics, programming, and domain expertise to extract meaningful insights from data. With India's digital transformation and growing tech sector, Data Scientists are in high demand across industries." : 
+                                    "This growing field offers excellent opportunities for technical professionals with analytical mindsets. In India, the demand for these skills continues to rise as companies invest more in technology solutions."
+                                  }
+                                </p>
+                                <div className="space-y-2">
+                                  <div className="bg-muted p-2 rounded-md text-sm">
+                                    "Many professionals in this field report high job satisfaction and above-average compensation compared to other roles in the tech industry."
+                                  </div>
+                                  <div className="bg-muted p-2 rounded-md text-sm">
+                                    "Starting salaries in India for entry-level positions range from ₹5-8 LPA, with experienced professionals earning ₹20+ LPA."
+                                  </div>
+                                </div>
                               </div>
                               
-                              <div className="relative">
-                                <div className="absolute -left-8 top-1 flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-sm">2</div>
-                                <h4 className="font-medium">Build Core Skills</h4>
-                                <p className="text-sm text-gray-600 mt-1">Master data manipulation, visualization, and machine learning algorithms.</p>
+                              <Separator />
+                              
+                              {/* Day in the Life */}
+                              <div>
+                                <h4 className="text-lg font-semibold mb-2">Day in the Life</h4>
+                                <ul className="space-y-2">
+                                  <li className="text-sm flex items-start">
+                                    <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
+                                    <span>Analyze data and identify patterns to solve business problems</span>
+                                  </li>
+                                  <li className="text-sm flex items-start">
+                                    <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
+                                    <span>Collaborate with cross-functional teams to implement solutions</span>
+                                  </li>
+                                  <li className="text-sm flex items-start">
+                                    <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
+                                    <span>Build and optimize algorithms to enhance system performance</span>
+                                  </li>
+                                  <li className="text-sm flex items-start">
+                                    <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
+                                    <span>Present findings and recommendations to stakeholders</span>
+                                  </li>
+                                  <li className="text-sm flex items-start">
+                                    <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
+                                    <span>Stay updated with the latest industry trends and techniques</span>
+                                  </li>
+                                </ul>
                               </div>
                               
-                              <div className="relative">
-                                <div className="absolute -left-8 top-1 flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-sm">3</div>
-                                <h4 className="font-medium">Work on Projects</h4>
-                                <p className="text-sm text-gray-600 mt-1">Apply your skills to real-world projects and build a portfolio.</p>
+                              <Separator />
+                              
+                              {/* Skills Needed */}
+                              <div>
+                                <h4 className="text-lg font-semibold mb-2">Skills Needed</h4>
+                                
+                                <h5 className="font-medium text-sm mb-2">Technical Skills</h5>
+                                <div className="flex flex-wrap gap-1.5 mb-4">
+                                  <Badge variant="outline" className="bg-blue-50">Python</Badge>
+                                  <Badge variant="outline" className="bg-blue-50">SQL</Badge>
+                                  <Badge variant="outline" className="bg-blue-50">Statistics</Badge>
+                                  <Badge variant="outline" className="bg-blue-50">Machine Learning</Badge>
+                                  <Badge variant="outline" className="bg-blue-50">Data Visualization</Badge>
+                                  <Badge variant="outline" className="bg-blue-50">Cloud Platforms</Badge>
+                                </div>
+                                
+                                <h5 className="font-medium text-sm mb-2">Soft Skills</h5>
+                                <div className="flex flex-wrap gap-1.5">
+                                  <Badge variant="outline" className="bg-green-50">Problem-solving</Badge>
+                                  <Badge variant="outline" className="bg-green-50">Communication</Badge>
+                                  <Badge variant="outline" className="bg-green-50">Critical Thinking</Badge>
+                                  <Badge variant="outline" className="bg-green-50">Teamwork</Badge>
+                                  <Badge variant="outline" className="bg-green-50">Business Acumen</Badge>
+                                </div>
                               </div>
                               
-                              <div className="relative">
-                                <div className="absolute -left-8 top-1 flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-sm">4</div>
-                                <h4 className="font-medium">Gain Experience</h4>
-                                <p className="text-sm text-gray-600 mt-1">Internships, freelancing, or entry-level positions to build experience.</p>
+                              <Separator />
+                              
+                              {/* Courses */}
+                              <div>
+                                <h4 className="text-lg font-semibold mb-2">Recommended Courses</h4>
+                                <div className="space-y-3">
+                                  <div className="bg-muted p-3 rounded-md">
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <h5 className="font-medium text-sm">Foundations of Data Science</h5>
+                                        <a href="/courses" className="text-xs text-primary underline">View details</a>
+                                      </div>
+                                      <Badge variant="outline" className="text-xs">Beginner</Badge>
+                                    </div>
+                                  </div>
+                                  <div className="bg-muted p-3 rounded-md">
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <h5 className="font-medium text-sm">Advanced Machine Learning</h5>
+                                        <a href="/courses" className="text-xs text-primary underline">View details</a>
+                                      </div>
+                                      <Badge variant="outline" className="text-xs">Intermediate</Badge>
+                                    </div>
+                                  </div>
+                                  <div className="bg-muted p-3 rounded-md">
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <h5 className="font-medium text-sm">Deep Learning & Neural Networks</h5>
+                                        <a href="/courses" className="text-xs text-primary underline">View details</a>
+                                      </div>
+                                      <Badge variant="outline" className="text-xs">Advanced</Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <Separator />
+                              
+                              {/* Projects */}
+                              <div>
+                                <h4 className="text-lg font-semibold mb-2">Projects to Build</h4>
+                                <div className="space-y-3">
+                                  <div className="bg-muted p-3 rounded-md">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <h5 className="font-medium text-sm">Exploratory Data Analysis Project</h5>
+                                      <Badge variant="outline" className="text-xs">Beginner</Badge>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1">
+                                      <Badge variant="outline" className="text-xs bg-white">Python</Badge>
+                                      <Badge variant="outline" className="text-xs bg-white">Pandas</Badge>
+                                      <Badge variant="outline" className="text-xs bg-white">Visualization</Badge>
+                                    </div>
+                                  </div>
+                                  <div className="bg-muted p-3 rounded-md">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <h5 className="font-medium text-sm">Predictive Analysis Dashboard</h5>
+                                      <Badge variant="outline" className="text-xs">Intermediate</Badge>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1">
+                                      <Badge variant="outline" className="text-xs bg-white">Machine Learning</Badge>
+                                      <Badge variant="outline" className="text-xs bg-white">Dashboard</Badge>
+                                      <Badge variant="outline" className="text-xs bg-white">Real-time Data</Badge>
+                                    </div>
+                                  </div>
+                                  <div className="bg-muted p-3 rounded-md">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <h5 className="font-medium text-sm">Industry-Specific ML Application</h5>
+                                      <Badge variant="outline" className="text-xs">Advanced</Badge>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1">
+                                      <Badge variant="outline" className="text-xs bg-white">Deep Learning</Badge>
+                                      <Badge variant="outline" className="text-xs bg-white">Production Deployment</Badge>
+                                      <Badge variant="outline" className="text-xs bg-white">API Integration</Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <Separator />
+                              
+                              {/* Network & Hire */}
+                              <div>
+                                <h4 className="text-lg font-semibold mb-2">Network & Hire</h4>
+                                
+                                <h5 className="font-medium text-sm mb-2">Communities to Join</h5>
+                                <ul className="space-y-1 mb-4">
+                                  <li className="text-sm flex items-start">
+                                    <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
+                                    <span>Analytics Vidhya</span>
+                                  </li>
+                                  <li className="text-sm flex items-start">
+                                    <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
+                                    <span>Kaggle Community</span>
+                                  </li>
+                                  <li className="text-sm flex items-start">
+                                    <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
+                                    <span>LinkedIn Groups for Data Professionals</span>
+                                  </li>
+                                  <li className="text-sm flex items-start">
+                                    <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
+                                    <span>GitHub Open Source Projects</span>
+                                  </li>
+                                </ul>
+                                
+                                <h5 className="font-medium text-sm mb-2">Career Success Tips</h5>
+                                <ul className="space-y-1">
+                                  <li className="text-sm flex items-start">
+                                    <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
+                                    <span>Build a strong GitHub portfolio showcasing your projects</span>
+                                  </li>
+                                  <li className="text-sm flex items-start">
+                                    <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
+                                    <span>Participate in hackathons and competitions</span>
+                                  </li>
+                                  <li className="text-sm flex items-start">
+                                    <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
+                                    <span>Build a professional online presence through blogs or tutorials</span>
+                                  </li>
+                                  <li className="text-sm flex items-start">
+                                    <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
+                                    <span>Network with professionals through meetups and conferences</span>
+                                  </li>
+                                </ul>
                               </div>
                             </div>
-                            
-                            <Button variant="outline" className="w-full mt-6">
-                              Download Complete Roadmap PDF
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      </div>
+                          </div>
+                          
+                          <div className="p-4 border-t">
+                            <div className="flex gap-2">
+                              <Button className="flex-1 gap-1">
+                                <Book className="w-4 h-4" />
+                                Browse Courses
+                              </Button>
+                              <Button variant="outline" className="flex-1 gap-1">
+                                <FileText className="w-4 h-4" />
+                                Download PDF
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
                   ) : (
                     <div className="text-center py-12">
-                      <p className="text-gray-600">No assessment results found. Please complete the assessment.</p>
-                      <Button className="mt-4" onClick={() => setActiveTab("assessment")}>
-                        Take Assessment
+                      <p className="text-gray-600">No career roadmap found yet. Please use PathFinder to discover your ideal career path.</p>
+                      <Button className="mt-4" onClick={() => setActiveTab("pathfinder")}>
+                        Try PathFinder
                       </Button>
                     </div>
                   )}
