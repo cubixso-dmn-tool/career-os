@@ -801,7 +801,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AUTHENTICATION ROUTES
-  // Register (same as creating a user, already implemented above)
+  // Register endpoint
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      
+      // Check if username or email already exists
+      const existingUserByUsername = await storage.getUserByUsername(userData.username);
+      if (existingUserByUsername) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      const existingUserByEmail = await storage.getUserByEmail(userData.email);
+      if (existingUserByEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+
+      // Create the user
+      const user = await storage.createUser(userData);
+      
+      // Automatically log in the user after registration
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Error during login after registration" });
+        }
+        
+        // Don't send password to client
+        const { password, ...userWithoutPassword } = user;
+        return res.json({ 
+          message: "Registration successful", 
+          user: userWithoutPassword 
+        });
+      });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return handleZodError(error, res);
+      }
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Failed to register user" });
+    }
+  });
   
   // Login
   app.post("/api/auth/login", (req, res, next) => {
