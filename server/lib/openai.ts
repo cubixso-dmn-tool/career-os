@@ -4,6 +4,63 @@ import OpenAI from "openai";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "" });
 
 /**
+ * Handles PathFinder chatbot conversations
+ * @param userMessage The user's current message
+ * @param conversationHistory Previous messages in the conversation
+ * @param careerPath Optional career path if already determined
+ * @returns AI response message
+ */
+export async function chatWithPathFinder(
+  userMessage: string,
+  conversationHistory: Array<{ role: 'user' | 'assistant', content: string }> = [],
+  careerPath?: string
+) {
+  try {
+    // If OpenAI API key is not available, return a friendly message
+    if (!process.env.OPENAI_API_KEY) {
+      console.warn("OPENAI_API_KEY not found. Cannot process chatbot request.");
+      return "I'm having trouble connecting to my knowledge base. Please try again later.";
+    }
+
+    // Build system prompt based on whether career path is determined
+    let systemPrompt = `You are PathFinder, an AI career guide for Indian Gen Z students. 
+    You provide friendly, encouraging guidance to help students discover and explore career paths.
+    Your responses should be concise, informal yet professional, and tailored for Indian students.
+    Focus on actionable advice relevant to the Indian education system and job market.`;
+
+    // Add career-specific context if a path is already chosen
+    if (careerPath) {
+      systemPrompt += `\n\nThe student has shown interest in ${careerPath}. 
+      Provide specific information about education paths, skills needed, job opportunities in India, 
+      and resources to learn more. Be encouraging but realistic about the career prospects.`;
+    }
+
+    // Start with system message
+    const messages = [{ role: "system", content: systemPrompt }];
+
+    // Add conversation history
+    if (conversationHistory.length > 0) {
+      messages.push(...conversationHistory);
+    }
+
+    // Add current user message
+    messages.push({ role: "user", content: userMessage });
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: messages as any,
+      temperature: 0.7,
+      max_tokens: 500,
+    });
+
+    return response.choices[0].message.content || "I'm not sure how to respond to that. Could you try asking something else?";
+  } catch (error) {
+    console.error("Error in PathFinder chat:", error);
+    return "Sorry, I encountered an error. Please try again.";
+  }
+}
+
+/**
  * Generates career recommendations based on quiz answers
  * @param answers Array of user answers from career quiz
  * @returns Object containing career recommendations

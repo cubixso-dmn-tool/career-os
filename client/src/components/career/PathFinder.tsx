@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
-import { ChevronRight, MessageCircle, Check, Briefcase, Cpu, Code, Palette, LineChart, Book, Users, FileText, Brain } from "lucide-react";
+import { ChevronRight, MessageCircle, Check, Briefcase, Cpu, Code, Palette, LineChart, Book, Users, FileText, Brain, Send } from "lucide-react";
 import { ReactNode } from "react";
 
 // Interest options for the quiz
@@ -338,13 +338,19 @@ const careerRoadmaps: Record<string, RoadmapData> = {
 
 // Message interface for chat messages
 interface Message {
-  type: 'bot' | 'user' | 'options' | 'interests' | 'questions' | 'roadmap';
+  type: 'bot' | 'user' | 'options' | 'interests' | 'questions' | 'roadmap' | 'continue-chat';
   content: string | any;
+}
+
+// Interface for API conversation history
+interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
 }
 
 export default function PathFinder() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [currentStage, setCurrentStage] = useState<'intro' | 'interests' | 'questions' | 'processing' | 'roadmap'>('intro');
+  const [currentStage, setCurrentStage] = useState<'intro' | 'interests' | 'questions' | 'processing' | 'roadmap' | 'chat'>('intro');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [userResponses, setUserResponses] = useState({
     grade: '',
@@ -353,6 +359,9 @@ export default function PathFinder() {
     idea: ''
   });
   const [careerPath, setCareerPath] = useState<string | null>(null);
+  const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [userInput, setUserInput] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom of chat when messages change
@@ -687,7 +696,7 @@ export default function PathFinder() {
                       <h4 className="text-lg font-semibold mb-2">Industry Overview</h4>
                       <p className="text-sm mb-3">{roadmap.overview.intro}</p>
                       <div className="space-y-2">
-                        {roadmap.overview.successStories.map((story, i) => (
+                        {roadmap.overview.successStories.map((story: string, i: number) => (
                           <div key={i} className="bg-muted p-2 rounded-md text-sm">
                             {story}
                           </div>
@@ -701,7 +710,7 @@ export default function PathFinder() {
                     <div>
                       <h4 className="text-lg font-semibold mb-2">Day in the Life</h4>
                       <ul className="space-y-2">
-                        {roadmap.dayInLife.map((item, i) => (
+                        {roadmap.dayInLife.map((item: string, i: number) => (
                           <li key={i} className="text-sm flex items-start">
                             <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
                             <span>{item}</span>
@@ -718,7 +727,7 @@ export default function PathFinder() {
                       
                       <h5 className="font-medium text-sm mb-2">Technical Skills</h5>
                       <div className="flex flex-wrap gap-1.5 mb-4">
-                        {roadmap.skills.technical.map((skill, i) => (
+                        {roadmap.skills.technical.map((skill: string, i: number) => (
                           <Badge key={i} variant="outline" className="bg-blue-50">
                             {skill}
                           </Badge>
@@ -727,7 +736,7 @@ export default function PathFinder() {
                       
                       <h5 className="font-medium text-sm mb-2">Soft Skills</h5>
                       <div className="flex flex-wrap gap-1.5">
-                        {roadmap.skills.soft.map((skill, i) => (
+                        {roadmap.skills.soft.map((skill: string, i: number) => (
                           <Badge key={i} variant="outline" className="bg-green-50">
                             {skill}
                           </Badge>
@@ -741,7 +750,7 @@ export default function PathFinder() {
                     <div>
                       <h4 className="text-lg font-semibold mb-2">Recommended Courses</h4>
                       <div className="space-y-3">
-                        {roadmap.courses.map((course, i) => (
+                        {roadmap.courses.map((course: { name: string, level: string, link: string }, i: number) => (
                           <div key={i} className="bg-muted p-3 rounded-md">
                             <div className="flex justify-between items-start">
                               <div>
@@ -761,14 +770,14 @@ export default function PathFinder() {
                     <div>
                       <h4 className="text-lg font-semibold mb-2">Projects to Build</h4>
                       <div className="space-y-3">
-                        {roadmap.projects.map((project, i) => (
+                        {roadmap.projects.map((project: { name: string, level: string, skills: string[] }, i: number) => (
                           <div key={i} className="bg-muted p-3 rounded-md">
                             <div className="flex justify-between items-start mb-2">
                               <h5 className="font-medium text-sm">{project.name}</h5>
                               <Badge variant="outline" className="text-xs">{project.level}</Badge>
                             </div>
                             <div className="flex flex-wrap gap-1">
-                              {project.skills.map((skill, j) => (
+                              {project.skills.map((skill: string, j: number) => (
                                 <Badge key={j} variant="outline" className="text-xs bg-white">
                                   {skill}
                                 </Badge>
@@ -787,7 +796,7 @@ export default function PathFinder() {
                       
                       <h5 className="font-medium text-sm mb-2">Communities to Join</h5>
                       <ul className="space-y-1 mb-4">
-                        {roadmap.networking.communities.map((community, i) => (
+                        {roadmap.networking.communities.map((community: string, i: number) => (
                           <li key={i} className="text-sm flex items-start">
                             <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
                             <span>{community}</span>
@@ -797,7 +806,7 @@ export default function PathFinder() {
                       
                       <h5 className="font-medium text-sm mb-2">Tips for Success</h5>
                       <ul className="space-y-1">
-                        {roadmap.networking.tips.map((tip, i) => (
+                        {roadmap.networking.tips.map((tip: string, i: number) => (
                           <li key={i} className="text-sm flex items-start">
                             <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5" />
                             <span>{tip}</span>
@@ -837,14 +846,170 @@ export default function PathFinder() {
     }
   };
 
+  // Handle input change
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUserInput(e.target.value);
+  };
+
+  // Handle sending a message in continued conversation
+  const handleSendMessage = async () => {
+    if (!userInput.trim()) return;
+    
+    // Add user message to chat
+    const newUserMessage: Message = { type: 'user', content: userInput };
+    setMessages([...messages, newUserMessage]);
+    
+    // Add to conversation history
+    const newConversationHistory: ConversationMessage[] = [
+      ...conversationHistory,
+      { role: 'user', content: userInput }
+    ];
+    setConversationHistory(newConversationHistory);
+    
+    // Clear input and set loading
+    setUserInput('');
+    setIsLoading(true);
+    
+    try {
+      // Send message to API
+      const response = await fetch('/api/pathfinder/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userInput,
+          conversationHistory: newConversationHistory,
+          careerPath,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to get a response from the PathFinder AI');
+      }
+      
+      const data = await response.json();
+      
+      // Add AI response to chat
+      const aiMessage: Message = { type: 'bot', content: data.response };
+      setMessages(prev => [...prev, aiMessage]);
+      
+      // Add to conversation history
+      setConversationHistory([
+        ...newConversationHistory,
+        { role: 'assistant', content: data.response }
+      ]);
+      
+      // If this is the first message after roadmap, show the continue-chat UI
+      if (currentStage === 'roadmap') {
+        setCurrentStage('chat');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Add error message
+      const errorMessage: Message = { type: 'bot', content: "Sorry, I had trouble processing your message. Please try again." };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle pressing Enter to send a message
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  // Add a button to continue the conversation after viewing the roadmap
+  const showContinueChatUI = () => {
+    const continueChatMessage: Message = {
+      type: 'continue-chat',
+      content: "Have questions about this career path? You can ask me anything!"
+    };
+    setMessages([...messages, continueChatMessage]);
+    setCurrentStage('chat');
+  };
+
+  // Render continue-chat message
+  const renderContinueChatMessage = (index: number) => {
+    return (
+      <div key={index} className="mb-4 mt-6">
+        <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+          <p className="text-sm text-gray-700 mb-3">
+            Have questions about this career path? I can help you explore more details!
+          </p>
+          <Button 
+            onClick={showContinueChatUI} 
+            variant="default" 
+            className="w-full"
+          >
+            Ask me anything
+            <MessageCircle className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  // Add case for rendering continue-chat UI
+  const originalRenderMessage = renderMessage;
+  const renderMessageWithContinueChat = (message: Message, index: number) => {
+    if (message.type === 'continue-chat') {
+      return renderContinueChatMessage(index);
+    }
+    return originalRenderMessage(message, index);
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4">
         <div className="max-w-3xl mx-auto">
-          {messages.map((message, index) => renderMessage(message, index))}
+          {messages.map((message: Message, index: number) => renderMessageWithContinueChat(message, index))}
+          {isLoading && (
+            <div className="flex items-center gap-2 text-gray-500 text-sm">
+              <div className="animate-spin">
+                <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent" />
+              </div>
+              PathFinder is thinking...
+            </div>
+          )}
           <div ref={chatEndRef} />
         </div>
       </div>
+      
+      {/* Input for continued conversation */}
+      {(currentStage === 'roadmap' || currentStage === 'chat') && (
+        <div className="p-4 border-t">
+          <div className="flex gap-2 max-w-3xl mx-auto">
+            <Input
+              value={userInput}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask about career prospects, skills, or education paths..."
+              className="flex-1"
+              disabled={isLoading}
+            />
+            <Button 
+              onClick={handleSendMessage} 
+              disabled={!userInput.trim() || isLoading}
+              size="icon"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {/* When in roadmap view and not yet in chat, show a hint */}
+          {currentStage === 'roadmap' && !messages.some(m => m.type === 'continue-chat') && (
+            <div className="max-w-3xl mx-auto">
+              <p className="text-xs text-gray-500 mt-2">
+                You can ask questions about this career path to learn more details.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

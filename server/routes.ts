@@ -14,7 +14,10 @@ import {
   insertUserAchievementSchema,
   insertUserEventSchema
 } from "@shared/schema";
-import { generateCareerRecommendations } from "./lib/openai";
+import { 
+  generateCareerRecommendations,
+  chatWithPathFinder
+} from "./lib/openai";
 
 function handleZodError(error: ZodError, res: Response) {
   return res.status(400).json({
@@ -78,6 +81,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedUser);
     } catch (error) {
       res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  // PATHFINDER CHAT
+  app.post("/api/pathfinder/chat", async (req, res) => {
+    try {
+      const { message, conversationHistory, careerPath } = req.body;
+      
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ message: "Invalid chat message" });
+      }
+      
+      // Validate conversation history if provided
+      if (conversationHistory && !Array.isArray(conversationHistory)) {
+        return res.status(400).json({ message: "Invalid conversation history format" });
+      }
+      
+      // Process the chat message
+      const response = await chatWithPathFinder(message, conversationHistory, careerPath);
+      res.json({ response });
+    } catch (error) {
+      console.error("PathFinder chat error:", error);
+      res.status(500).json({ message: "Failed to process chat message" });
     }
   });
 
