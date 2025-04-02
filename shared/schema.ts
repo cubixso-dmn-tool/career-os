@@ -1,0 +1,207 @@
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  bio: text("bio"),
+  avatar: text("avatar"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const quizResults = pgTable("quiz_results", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  quizType: text("quiz_type").notNull(),
+  result: jsonb("result").notNull(),
+  recommendedCareer: text("recommended_career").notNull(),
+  recommendedNiches: text("recommended_niches").array().notNull(),
+  completedAt: timestamp("completed_at").defaultNow().notNull()
+});
+
+export const courses = pgTable("courses", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  thumbnail: text("thumbnail").notNull(),
+  price: integer("price").default(0).notNull(),
+  isFree: boolean("is_free").default(true).notNull(),
+  rating: integer("rating").default(0),
+  enrolledCount: integer("enrolled_count").default(0),
+  category: text("category").notNull(),
+  tags: text("tags").array(),
+  isFeatured: boolean("is_featured").default(false)
+});
+
+export const enrollments = pgTable("enrollments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  progress: integer("progress").default(0).notNull(),
+  isCompleted: boolean("is_completed").default(false).notNull(),
+  enrolledAt: timestamp("enrolled_at").defaultNow().notNull()
+});
+
+export const projects = pgTable("projects", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  difficulty: text("difficulty").notNull(),
+  duration: text("duration").notNull(),
+  skills: text("skills").array(),
+  category: text("category").notNull()
+});
+
+export const userProjects = pgTable("user_projects", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  projectId: integer("project_id").notNull().references(() => projects.id),
+  progress: integer("progress").default(0).notNull(),
+  isCompleted: boolean("is_completed").default(false).notNull(),
+  startedAt: timestamp("started_at").defaultNow().notNull()
+});
+
+export const softSkills = pgTable("soft_skills", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  type: text("type").notNull(),
+  content: text("content").notNull()
+});
+
+export const userSoftSkills = pgTable("user_soft_skills", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  softSkillId: integer("soft_skill_id").notNull().references(() => softSkills.id),
+  progress: integer("progress").default(0).notNull(),
+  isCompleted: boolean("is_completed").default(false).notNull()
+});
+
+export const resumes = pgTable("resumes", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  education: jsonb("education").array().notNull(),
+  experience: jsonb("experience").array().notNull(),
+  skills: text("skills").array().notNull(),
+  projects: jsonb("projects").array(),
+  templateId: text("template_id").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const posts = pgTable("posts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  likes: integer("likes").default(0).notNull(),
+  replies: integer("replies").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const comments = pgTable("comments", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull().references(() => posts.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const achievements = pgTable("achievements", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon").notNull(),
+  category: text("category").notNull()
+});
+
+export const userAchievements = pgTable("user_achievements", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  achievementId: integer("achievement_id").notNull().references(() => achievements.id),
+  earnedAt: timestamp("earned_at").defaultNow().notNull()
+});
+
+export const events = pgTable("events", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  type: text("type").notNull(),
+  date: timestamp("date").notNull(),
+  duration: integer("duration").notNull(),
+  isRegistrationRequired: boolean("is_registration_required").default(true).notNull()
+});
+
+export const userEvents = pgTable("user_events", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  eventId: integer("event_id").notNull().references(() => events.id),
+  registeredAt: timestamp("registered_at").defaultNow().notNull()
+});
+
+// Insert schemas
+
+export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
+export const insertQuizResultSchema = createInsertSchema(quizResults).omit({ id: true, completedAt: true });
+export const insertCourseSchema = createInsertSchema(courses).omit({ id: true });
+export const insertEnrollmentSchema = createInsertSchema(enrollments).omit({ id: true, enrolledAt: true });
+export const insertProjectSchema = createInsertSchema(projects).omit({ id: true });
+export const insertUserProjectSchema = createInsertSchema(userProjects).omit({ id: true, startedAt: true });
+export const insertSoftSkillSchema = createInsertSchema(softSkills).omit({ id: true });
+export const insertUserSoftSkillSchema = createInsertSchema(userSoftSkills).omit({ id: true });
+export const insertResumeSchema = createInsertSchema(resumes).omit({ id: true, updatedAt: true });
+export const insertPostSchema = createInsertSchema(posts).omit({ id: true, likes: true, replies: true, createdAt: true });
+export const insertCommentSchema = createInsertSchema(comments).omit({ id: true, createdAt: true });
+export const insertAchievementSchema = createInsertSchema(achievements).omit({ id: true });
+export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({ id: true, earnedAt: true });
+export const insertEventSchema = createInsertSchema(events).omit({ id: true });
+export const insertUserEventSchema = createInsertSchema(userEvents).omit({ id: true, registeredAt: true });
+
+// Types
+
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
+
+export type InsertQuizResult = z.infer<typeof insertQuizResultSchema>;
+export type QuizResult = typeof quizResults.$inferSelect;
+
+export type InsertCourse = z.infer<typeof insertCourseSchema>;
+export type Course = typeof courses.$inferSelect;
+
+export type InsertEnrollment = z.infer<typeof insertEnrollmentSchema>;
+export type Enrollment = typeof enrollments.$inferSelect;
+
+export type InsertProject = z.infer<typeof insertProjectSchema>;
+export type Project = typeof projects.$inferSelect;
+
+export type InsertUserProject = z.infer<typeof insertUserProjectSchema>;
+export type UserProject = typeof userProjects.$inferSelect;
+
+export type InsertSoftSkill = z.infer<typeof insertSoftSkillSchema>;
+export type SoftSkill = typeof softSkills.$inferSelect;
+
+export type InsertUserSoftSkill = z.infer<typeof insertUserSoftSkillSchema>;
+export type UserSoftSkill = typeof userSoftSkills.$inferSelect;
+
+export type InsertResume = z.infer<typeof insertResumeSchema>;
+export type Resume = typeof resumes.$inferSelect;
+
+export type InsertPost = z.infer<typeof insertPostSchema>;
+export type Post = typeof posts.$inferSelect;
+
+export type InsertComment = z.infer<typeof insertCommentSchema>;
+export type Comment = typeof comments.$inferSelect;
+
+export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
+export type Achievement = typeof achievements.$inferSelect;
+
+export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
+export type UserAchievement = typeof userAchievements.$inferSelect;
+
+export type InsertEvent = z.infer<typeof insertEventSchema>;
+export type Event = typeof events.$inferSelect;
+
+export type InsertUserEvent = z.infer<typeof insertUserEventSchema>;
+export type UserEvent = typeof userEvents.$inferSelect;
