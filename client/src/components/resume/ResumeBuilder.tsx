@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -123,13 +123,13 @@ export default function ResumeBuilder({ userId, existingResume }: ResumeBuilderP
   });
 
   const { fields: educationFields, append: appendEducation, remove: removeEducation } = 
-    form.useFieldArray({ name: "education" });
+    useFieldArray({ control: form.control, name: "education" });
     
   const { fields: experienceFields, append: appendExperience, remove: removeExperience } = 
-    form.useFieldArray({ name: "experience" });
+    useFieldArray({ control: form.control, name: "experience" });
     
   const { fields: projectFields, append: appendProject, remove: removeProject } = 
-    form.useFieldArray({ name: "projects" });
+    useFieldArray({ control: form.control, name: "projects" });
 
   const saveMutation = useMutation({
     mutationFn: async (data: ResumeFormValues) => {
