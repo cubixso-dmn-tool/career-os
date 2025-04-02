@@ -107,8 +107,24 @@ export interface IStorage {
   createUserEvent(userEvent: InsertUserEvent): Promise<UserEvent>;
 }
 
+import {
+  users, quizResults, courses, enrollments, projects, userProjects,
+  softSkills, userSoftSkills, resumes, posts, comments, achievements,
+  userAchievements, events, userEvents,
+  type User, type QuizResult, type Course, type Enrollment, type Project,
+  type UserProject, type SoftSkill, type UserSoftSkill, type Resume,
+  type Post, type Comment, type Achievement, type UserAchievement,
+  type Event, type UserEvent,
+  type InsertUser, type InsertQuizResult, type InsertCourse, type InsertEnrollment,
+  type InsertProject, type InsertUserProject, type InsertSoftSkill, type InsertUserSoftSkill,
+  type InsertResume, type InsertPost, type InsertComment, type InsertAchievement,
+  type InsertUserAchievement, type InsertEvent, type InsertUserEvent
+} from "@shared/schema";
 import { eq, desc, and, or, sql, like } from "drizzle-orm";
 import { db } from "./db";
+
+// JSON type definition
+type Json = Record<string, any>;
 
 export class DatabaseStorage implements IStorage {
   constructor() {
@@ -178,35 +194,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFilteredCourses(category?: string, tags?: string[], isFree?: boolean): Promise<Course[]> {
-    let query = db.select().from(courses);
+    // Build a dynamic query based on provided filters
+    let allCourses = await db.select().from(courses);
     
-    const conditions = [];
-    
-    if (category) {
-      conditions.push(eq(courses.category, category));
-    }
-    
-    // Note: For tags, we need a more complex query since tags is an array
-    // In a real implementation, you might want to use a different approach for filtering arrays
-    
-    if (isFree !== undefined) {
-      conditions.push(eq(courses.isFree, isFree));
-    }
-    
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-    
-    const results = await query;
-    
-    // Filter by tags in memory if needed (since array filtering in SQL is more complex)
-    if (tags && tags.length > 0) {
-      return results.filter(course => 
-        tags.some(tag => course.tags?.includes(tag))
-      );
-    }
-    
-    return results;
+    // Filter in memory to avoid complex query building
+    return allCourses.filter(course => {
+      // Check category filter
+      if (category && course.category !== category) {
+        return false;
+      }
+      
+      // Check isFree filter
+      if (isFree !== undefined && course.isFree !== isFree) {
+        return false;
+      }
+      
+      // Check tags filter
+      if (tags && tags.length > 0) {
+        if (!course.tags || !tags.some(tag => course.tags?.includes(tag))) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
   }
 
   async getRecommendedCourses(userId: number): Promise<Course[]> {
@@ -268,23 +279,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFilteredProjects(category?: string, difficulty?: string): Promise<Project[]> {
-    let query = db.select().from(projects);
+    // Get all projects and filter in memory
+    const allProjects = await db.select().from(projects);
     
-    const conditions = [];
-    
-    if (category) {
-      conditions.push(eq(projects.category, category));
-    }
-    
-    if (difficulty) {
-      conditions.push(eq(projects.difficulty, difficulty));
-    }
-    
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-    
-    return await query;
+    // Apply filters in memory
+    return allProjects.filter(project => {
+      // Check category filter
+      if (category && project.category !== category) {
+        return false;
+      }
+      
+      // Check difficulty filter
+      if (difficulty && project.difficulty !== difficulty) {
+        return false;
+      }
+      
+      return true;
+    });
   }
 
   async getRecommendedProjects(userId: number): Promise<Project[]> {
