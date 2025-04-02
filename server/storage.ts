@@ -169,94 +169,122 @@ export class DatabaseStorage implements IStorage {
 
   // Course operations
   async getCourse(id: number): Promise<Course | undefined> {
-    return this.courses.get(id);
+    const [course] = await db.select().from(courses).where(eq(courses.id, id));
+    return course || undefined;
   }
 
   async getAllCourses(): Promise<Course[]> {
-    return Array.from(this.courses.values());
+    return await db.select().from(courses);
   }
 
   async getFilteredCourses(category?: string, tags?: string[], isFree?: boolean): Promise<Course[]> {
-    let filtered = Array.from(this.courses.values());
+    let query = db.select().from(courses);
+    
+    const conditions = [];
     
     if (category) {
-      filtered = filtered.filter(course => course.category === category);
+      conditions.push(eq(courses.category, category));
     }
     
+    // Note: For tags, we need a more complex query since tags is an array
+    // In a real implementation, you might want to use a different approach for filtering arrays
+    
+    if (isFree !== undefined) {
+      conditions.push(eq(courses.isFree, isFree));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    const results = await query;
+    
+    // Filter by tags in memory if needed (since array filtering in SQL is more complex)
     if (tags && tags.length > 0) {
-      filtered = filtered.filter(course => 
+      return results.filter(course => 
         tags.some(tag => course.tags?.includes(tag))
       );
     }
     
-    if (isFree !== undefined) {
-      filtered = filtered.filter(course => course.isFree === isFree);
-    }
-    
-    return filtered;
+    return results;
   }
 
   async getRecommendedCourses(userId: number): Promise<Course[]> {
     // In a real implementation, this would use the user's quiz results and other data
     // to recommend courses. For simplicity, we're just returning featured courses.
-    return Array.from(this.courses.values()).filter(course => course.isFeatured);
+    return await db
+      .select()
+      .from(courses)
+      .where(eq(courses.isFeatured, true));
   }
 
   async createCourse(insertCourse: InsertCourse): Promise<Course> {
-    const id = this.currentCourseId++;
-    const course: Course = { ...insertCourse, id };
-    this.courses.set(id, course);
+    const [course] = await db.insert(courses).values(insertCourse).returning();
     return course;
   }
 
   // Enrollment operations
   async getEnrollment(id: number): Promise<Enrollment | undefined> {
-    return this.enrollments.get(id);
+    const [enrollment] = await db.select().from(enrollments).where(eq(enrollments.id, id));
+    return enrollment || undefined;
   }
 
   async getEnrollmentsByUser(userId: number): Promise<Enrollment[]> {
-    return Array.from(this.enrollments.values()).filter(
-      (enrollment) => enrollment.userId === userId,
-    );
+    return await db
+      .select()
+      .from(enrollments)
+      .where(eq(enrollments.userId, userId));
   }
 
   async createEnrollment(insertEnrollment: InsertEnrollment): Promise<Enrollment> {
-    const id = this.currentEnrollmentId++;
-    const enrollment: Enrollment = { ...insertEnrollment, id, enrolledAt: new Date() };
-    this.enrollments.set(id, enrollment);
+    const enrollmentData = {
+      ...insertEnrollment,
+      enrolledAt: new Date()
+    };
+    
+    const [enrollment] = await db.insert(enrollments).values(enrollmentData).returning();
     return enrollment;
   }
 
   async updateEnrollment(id: number, updates: Partial<Enrollment>): Promise<Enrollment> {
-    const enrollment = await this.getEnrollment(id);
-    if (!enrollment) throw new Error("Enrollment not found");
+    const [updatedEnrollment] = await db
+      .update(enrollments)
+      .set(updates)
+      .where(eq(enrollments.id, id))
+      .returning();
     
-    const updatedEnrollment = { ...enrollment, ...updates };
-    this.enrollments.set(id, updatedEnrollment);
+    if (!updatedEnrollment) throw new Error("Enrollment not found");
     return updatedEnrollment;
   }
 
   // Project operations
   async getProject(id: number): Promise<Project | undefined> {
-    return this.projects.get(id);
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    return project || undefined;
   }
 
   async getAllProjects(): Promise<Project[]> {
-    return Array.from(this.projects.values());
+    return await db.select().from(projects);
   }
 
   async getFilteredProjects(category?: string, difficulty?: string): Promise<Project[]> {
-    let filtered = Array.from(this.projects.values());
+    let query = db.select().from(projects);
+    
+    const conditions = [];
     
     if (category) {
-      filtered = filtered.filter(project => project.category === category);
+      conditions.push(eq(projects.category, category));
     }
     
     if (difficulty) {
-      filtered = filtered.filter(project => project.difficulty === difficulty);
+      conditions.push(eq(projects.difficulty, difficulty));
     }
     
-    return filtered;
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query;
   }
 
   async getRecommendedProjects(userId: number): Promise<Project[]> {
@@ -266,116 +294,137 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProject(insertProject: InsertProject): Promise<Project> {
-    const id = this.currentProjectId++;
-    const project: Project = { ...insertProject, id };
-    this.projects.set(id, project);
+    const [project] = await db.insert(projects).values(insertProject).returning();
     return project;
   }
 
   // UserProject operations
   async getUserProject(id: number): Promise<UserProject | undefined> {
-    return this.userProjects.get(id);
+    const [userProject] = await db.select().from(userProjects).where(eq(userProjects.id, id));
+    return userProject || undefined;
   }
 
   async getUserProjectsByUser(userId: number): Promise<UserProject[]> {
-    return Array.from(this.userProjects.values()).filter(
-      (userProject) => userProject.userId === userId,
-    );
+    return await db
+      .select()
+      .from(userProjects)
+      .where(eq(userProjects.userId, userId));
   }
 
   async createUserProject(insertUserProject: InsertUserProject): Promise<UserProject> {
-    const id = this.currentUserProjectId++;
-    const userProject: UserProject = { ...insertUserProject, id, startedAt: new Date() };
-    this.userProjects.set(id, userProject);
+    const userProjectData = {
+      ...insertUserProject,
+      startedAt: new Date()
+    };
+    
+    const [userProject] = await db.insert(userProjects).values(userProjectData).returning();
     return userProject;
   }
 
   async updateUserProject(id: number, updates: Partial<UserProject>): Promise<UserProject> {
-    const userProject = await this.getUserProject(id);
-    if (!userProject) throw new Error("User project not found");
+    const [updatedUserProject] = await db
+      .update(userProjects)
+      .set(updates)
+      .where(eq(userProjects.id, id))
+      .returning();
     
-    const updatedUserProject = { ...userProject, ...updates };
-    this.userProjects.set(id, updatedUserProject);
+    if (!updatedUserProject) throw new Error("User project not found");
     return updatedUserProject;
   }
 
   // SoftSkill operations
   async getSoftSkill(id: number): Promise<SoftSkill | undefined> {
-    return this.softSkills.get(id);
+    const [softSkill] = await db.select().from(softSkills).where(eq(softSkills.id, id));
+    return softSkill || undefined;
   }
 
   async getAllSoftSkills(): Promise<SoftSkill[]> {
-    return Array.from(this.softSkills.values());
+    return await db.select().from(softSkills);
   }
 
   async getFilteredSoftSkills(type?: string): Promise<SoftSkill[]> {
-    let filtered = Array.from(this.softSkills.values());
-    
     if (type) {
-      filtered = filtered.filter(softSkill => softSkill.type === type);
+      return await db
+        .select()
+        .from(softSkills)
+        .where(eq(softSkills.type, type));
     }
     
-    return filtered;
+    return this.getAllSoftSkills();
   }
 
   async createSoftSkill(insertSoftSkill: InsertSoftSkill): Promise<SoftSkill> {
-    const id = this.currentSoftSkillId++;
-    const softSkill: SoftSkill = { ...insertSoftSkill, id };
-    this.softSkills.set(id, softSkill);
+    const [softSkill] = await db.insert(softSkills).values(insertSoftSkill).returning();
     return softSkill;
   }
 
   // UserSoftSkill operations
   async getUserSoftSkill(id: number): Promise<UserSoftSkill | undefined> {
-    return this.userSoftSkills.get(id);
+    const [userSoftSkill] = await db.select().from(userSoftSkills).where(eq(userSoftSkills.id, id));
+    return userSoftSkill || undefined;
   }
 
   async getUserSoftSkillsByUser(userId: number): Promise<UserSoftSkill[]> {
-    return Array.from(this.userSoftSkills.values()).filter(
-      (userSoftSkill) => userSoftSkill.userId === userId,
-    );
+    return await db
+      .select()
+      .from(userSoftSkills)
+      .where(eq(userSoftSkills.userId, userId));
   }
 
   async createUserSoftSkill(insertUserSoftSkill: InsertUserSoftSkill): Promise<UserSoftSkill> {
-    const id = this.currentUserSoftSkillId++;
-    const userSoftSkill: UserSoftSkill = { ...insertUserSoftSkill, id };
-    this.userSoftSkills.set(id, userSoftSkill);
+    const [userSoftSkill] = await db.insert(userSoftSkills).values(insertUserSoftSkill).returning();
     return userSoftSkill;
   }
 
   async updateUserSoftSkill(id: number, updates: Partial<UserSoftSkill>): Promise<UserSoftSkill> {
-    const userSoftSkill = await this.getUserSoftSkill(id);
-    if (!userSoftSkill) throw new Error("User soft skill not found");
+    const [updatedUserSoftSkill] = await db
+      .update(userSoftSkills)
+      .set(updates)
+      .where(eq(userSoftSkills.id, id))
+      .returning();
     
-    const updatedUserSoftSkill = { ...userSoftSkill, ...updates };
-    this.userSoftSkills.set(id, updatedUserSoftSkill);
+    if (!updatedUserSoftSkill) throw new Error("User soft skill not found");
     return updatedUserSoftSkill;
   }
 
   // Resume operations
   async getResume(id: number): Promise<Resume | undefined> {
-    return this.resumes.get(id);
+    const [resume] = await db.select().from(resumes).where(eq(resumes.id, id));
+    return resume || undefined;
   }
 
   async getResumeByUser(userId: number): Promise<Resume | undefined> {
-    return Array.from(this.resumes.values()).find(
-      (resume) => resume.userId === userId,
-    );
+    const [resume] = await db
+      .select()
+      .from(resumes)
+      .where(eq(resumes.userId, userId));
+    
+    return resume || undefined;
   }
 
   async createResume(insertResume: InsertResume): Promise<Resume> {
-    const id = this.currentResumeId++;
-    const resume: Resume = { ...insertResume, id, updatedAt: new Date() };
-    this.resumes.set(id, resume);
+    const resumeData = {
+      ...insertResume,
+      updatedAt: new Date()
+    };
+    
+    const [resume] = await db.insert(resumes).values(resumeData).returning();
     return resume;
   }
 
   async updateResume(id: number, updates: Partial<Resume>): Promise<Resume> {
-    const resume = await this.getResume(id);
-    if (!resume) throw new Error("Resume not found");
+    const updatedData = {
+      ...updates,
+      updatedAt: new Date()
+    };
     
-    const updatedResume = { ...resume, ...updates, updatedAt: new Date() };
-    this.resumes.set(id, updatedResume);
+    const [updatedResume] = await db
+      .update(resumes)
+      .set(updatedData)
+      .where(eq(resumes.id, id))
+      .returning();
+    
+    if (!updatedResume) throw new Error("Resume not found");
     return updatedResume;
   }
 
@@ -449,35 +498,39 @@ export class DatabaseStorage implements IStorage {
 
   // Achievement operations
   async getAchievement(id: number): Promise<Achievement | undefined> {
-    return this.achievements.get(id);
+    const [achievement] = await db.select().from(achievements).where(eq(achievements.id, id));
+    return achievement || undefined;
   }
 
   async getAllAchievements(): Promise<Achievement[]> {
-    return Array.from(this.achievements.values());
+    return await db.select().from(achievements);
   }
 
   async createAchievement(insertAchievement: InsertAchievement): Promise<Achievement> {
-    const id = this.currentAchievementId++;
-    const achievement: Achievement = { ...insertAchievement, id };
-    this.achievements.set(id, achievement);
+    const [achievement] = await db.insert(achievements).values(insertAchievement).returning();
     return achievement;
   }
 
   // UserAchievement operations
   async getUserAchievement(id: number): Promise<UserAchievement | undefined> {
-    return this.userAchievements.get(id);
+    const [userAchievement] = await db.select().from(userAchievements).where(eq(userAchievements.id, id));
+    return userAchievement || undefined;
   }
 
   async getUserAchievementsByUser(userId: number): Promise<UserAchievement[]> {
-    return Array.from(this.userAchievements.values()).filter(
-      (userAchievement) => userAchievement.userId === userId,
-    );
+    return await db
+      .select()
+      .from(userAchievements)
+      .where(eq(userAchievements.userId, userId));
   }
 
   async createUserAchievement(insertUserAchievement: InsertUserAchievement): Promise<UserAchievement> {
-    const id = this.currentUserAchievementId++;
-    const userAchievement: UserAchievement = { ...insertUserAchievement, id, earnedAt: new Date() };
-    this.userAchievements.set(id, userAchievement);
+    const userAchievementData = {
+      ...insertUserAchievement,
+      earnedAt: new Date()
+    };
+    
+    const [userAchievement] = await db.insert(userAchievements).values(userAchievementData).returning();
     return userAchievement;
   }
 
@@ -507,19 +560,24 @@ export class DatabaseStorage implements IStorage {
 
   // UserEvent operations
   async getUserEvent(id: number): Promise<UserEvent | undefined> {
-    return this.userEvents.get(id);
+    const [userEvent] = await db.select().from(userEvents).where(eq(userEvents.id, id));
+    return userEvent || undefined;
   }
 
   async getUserEventsByUser(userId: number): Promise<UserEvent[]> {
-    return Array.from(this.userEvents.values()).filter(
-      (userEvent) => userEvent.userId === userId,
-    );
+    return await db
+      .select()
+      .from(userEvents)
+      .where(eq(userEvents.userId, userId));
   }
 
   async createUserEvent(insertUserEvent: InsertUserEvent): Promise<UserEvent> {
-    const id = this.currentUserEventId++;
-    const userEvent: UserEvent = { ...insertUserEvent, id, registeredAt: new Date() };
-    this.userEvents.set(id, userEvent);
+    const userEventData = {
+      ...insertUserEvent,
+      registeredAt: new Date()
+    };
+    
+    const [userEvent] = await db.insert(userEvents).values(userEventData).returning();
     return userEvent;
   }
 }
