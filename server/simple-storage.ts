@@ -1,21 +1,20 @@
 import {
-  users, User, InsertUser,
-  quizResults, QuizResult, InsertQuizResult,
-  courses, Course, InsertCourse,
-  enrollments, Enrollment, InsertEnrollment,
-  projects, Project, InsertProject,
-  userProjects, UserProject, InsertUserProject,
-  softSkills, SoftSkill, InsertSoftSkill,
-  userSoftSkills, UserSoftSkill, InsertUserSoftSkill,
-  resumes, Resume, InsertResume,
-  posts, Post, InsertPost,
-  comments, Comment, InsertComment,
-  achievements, Achievement, InsertAchievement,
-  userAchievements, UserAchievement, InsertUserAchievement,
-  events, Event, InsertEvent,
-  userEvents, UserEvent, InsertUserEvent
+  users, quizResults, courses, enrollments, projects, userProjects,
+  softSkills, userSoftSkills, resumes, posts, comments, achievements,
+  userAchievements, events, userEvents,
+  type User, type QuizResult, type Course, type Enrollment, type Project,
+  type UserProject, type SoftSkill, type UserSoftSkill, type Resume,
+  type Post, type Comment, type Achievement, type UserAchievement,
+  type Event, type UserEvent,
+  type InsertUser, type InsertQuizResult, type InsertCourse, type InsertEnrollment,
+  type InsertProject, type InsertUserProject, type InsertSoftSkill, type InsertUserSoftSkill,
+  type InsertResume, type InsertPost, type InsertComment, type InsertAchievement,
+  type InsertUserAchievement, type InsertEvent, type InsertUserEvent
 } from "@shared/schema";
+import { eq, desc, and, or, sql, like } from "drizzle-orm";
+import { db } from "./db";
 
+// Database storage interface
 export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
@@ -107,17 +106,8 @@ export interface IStorage {
   createUserEvent(userEvent: InsertUserEvent): Promise<UserEvent>;
 }
 
-import { eq, desc, and, or, sql, like } from "drizzle-orm";
-import { db } from "./db";
-
-// JSON type definition
-type Json = Record<string, any>;
-
+// PostgreSQL implementation of the storage interface
 export class DatabaseStorage implements IStorage {
-  constructor() {
-    // No initialization needed for database storage
-  }
-
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -181,7 +171,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFilteredCourses(category?: string, tags?: string[], isFree?: boolean): Promise<Course[]> {
-    // Simplified approach - get all courses first
+    // Get all courses first
     const allCourses = await this.getAllCourses();
     
     // Manual filtering in memory
@@ -205,8 +195,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRecommendedCourses(userId: number): Promise<Course[]> {
-    // In a real implementation, this would use the user's quiz results and other data
-    // to recommend courses. For simplicity, we're just returning featured courses.
     return await db
       .select()
       .from(courses)
@@ -225,10 +213,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getEnrollmentsByUser(userId: number): Promise<Enrollment[]> {
-    return await db
-      .select()
-      .from(enrollments)
-      .where(eq(enrollments.userId, userId));
+    return await db.select().from(enrollments).where(eq(enrollments.userId, userId));
   }
 
   async createEnrollment(insertEnrollment: InsertEnrollment): Promise<Enrollment> {
@@ -263,27 +248,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFilteredProjects(category?: string, difficulty?: string): Promise<Project[]> {
-    // Get all projects and filter in memory
-    const allProjects = await db.select().from(projects);
+    // Get all projects
+    const allProjects = await this.getAllProjects();
     
     // Apply filters in memory
-    return allProjects.filter(project => {
-      // Check category filter
-      if (category && project.category !== category) {
-        return false;
-      }
-      
-      // Check difficulty filter
-      if (difficulty && project.difficulty !== difficulty) {
-        return false;
-      }
-      
-      return true;
-    });
+    let filteredProjects = allProjects;
+    
+    if (category) {
+      filteredProjects = filteredProjects.filter(project => project.category === category);
+    }
+    
+    if (difficulty) {
+      filteredProjects = filteredProjects.filter(project => project.difficulty === difficulty);
+    }
+    
+    return filteredProjects;
   }
 
   async getRecommendedProjects(userId: number): Promise<Project[]> {
-    // In a real implementation, this would be based on the user's profile and progress
     // For now, just return all projects
     return this.getAllProjects();
   }
@@ -300,10 +282,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserProjectsByUser(userId: number): Promise<UserProject[]> {
-    return await db
-      .select()
-      .from(userProjects)
-      .where(eq(userProjects.userId, userId));
+    return await db.select().from(userProjects).where(eq(userProjects.userId, userId));
   }
 
   async createUserProject(insertUserProject: InsertUserProject): Promise<UserProject> {
@@ -339,10 +318,7 @@ export class DatabaseStorage implements IStorage {
 
   async getFilteredSoftSkills(type?: string): Promise<SoftSkill[]> {
     if (type) {
-      return await db
-        .select()
-        .from(softSkills)
-        .where(eq(softSkills.type, type));
+      return await db.select().from(softSkills).where(eq(softSkills.type, type));
     }
     
     return this.getAllSoftSkills();
@@ -360,10 +336,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserSoftSkillsByUser(userId: number): Promise<UserSoftSkill[]> {
-    return await db
-      .select()
-      .from(userSoftSkills)
-      .where(eq(userSoftSkills.userId, userId));
+    return await db.select().from(userSoftSkills).where(eq(userSoftSkills.userId, userId));
   }
 
   async createUserSoftSkill(insertUserSoftSkill: InsertUserSoftSkill): Promise<UserSoftSkill> {
@@ -389,11 +362,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getResumeByUser(userId: number): Promise<Resume | undefined> {
-    const [resume] = await db
-      .select()
-      .from(resumes)
-      .where(eq(resumes.userId, userId));
-    
+    const [resume] = await db.select().from(resumes).where(eq(resumes.userId, userId));
     return resume || undefined;
   }
 
