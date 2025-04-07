@@ -97,22 +97,24 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ sampleData, onSelec
             <TabsContent value="preview" className="mt-0">
               <Card className="border-2 border-primary/10 overflow-hidden">
                 <CardContent className="p-0">
-                  <div className="max-h-[500px] overflow-auto p-2 scale-[0.7] origin-top-left">
-                    {selectedTemplate === 'professional' && (
-                      <ProfessionalTemplate data={sampleData} />
-                    )}
-                    {selectedTemplate === 'creative' && (
-                      <CreativeTemplate data={sampleData} />
-                    )}
-                    {selectedTemplate === 'technical' && (
-                      <TechnicalTemplate data={sampleData} />
-                    )}
-                    {selectedTemplate === 'academic' && (
-                      <AcademicTemplate data={sampleData} />
-                    )}
-                    {selectedTemplate === 'startup' && (
-                      <StartupTemplate data={sampleData} />
-                    )}
+                  <div className="max-h-[500px] overflow-auto p-0">
+                    <div className="transform scale-[0.5] origin-top-left" style={{ width: '200%', height: '1200px' }}>
+                      {selectedTemplate === 'professional' && (
+                        <ProfessionalTemplate data={sampleData} />
+                      )}
+                      {selectedTemplate === 'creative' && (
+                        <CreativeTemplate data={sampleData} />
+                      )}
+                      {selectedTemplate === 'technical' && (
+                        <TechnicalTemplate data={sampleData} />
+                      )}
+                      {selectedTemplate === 'academic' && (
+                        <AcademicTemplate data={sampleData} />
+                      )}
+                      {selectedTemplate === 'startup' && (
+                        <StartupTemplate data={sampleData} />
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>

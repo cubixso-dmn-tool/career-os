@@ -446,8 +446,12 @@ const ResumeBuilder: React.FC = () => {
               </div>
             </div>
             
-            <Card className="border-2 border-primary/10 p-4">
-              <SelectedTemplate data={resumeData} editable={true} onEdit={() => {}} />
+            <Card className="border-2 border-primary/10 p-0 overflow-hidden">
+              <div className="overflow-auto max-h-[650px]">
+                <div className="transform scale-[0.8] origin-top-left" style={{ width: '125%', minHeight: '1000px' }}>
+                  <SelectedTemplate data={resumeData} editable={true} onEdit={() => {}} />
+                </div>
+              </div>
             </Card>
           </div>
         );
