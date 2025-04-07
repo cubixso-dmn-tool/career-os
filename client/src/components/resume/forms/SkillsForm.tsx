@@ -1,6 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue 
+} from '@/components/ui/select';
+import { 
+  Card, 
+  CardContent, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { ArrowLeft, ArrowRight, Plus, X, Edit2, Save, Trash2 } from 'lucide-react';
 import { ResumeData } from '../ResumeTemplates';
 
 interface SkillsFormProps {
@@ -9,30 +25,344 @@ interface SkillsFormProps {
   onBack: () => void;
 }
 
+type Skill = ResumeData['skills'][0];
+
+// Define skill categories for easier selection
+const skillCategories = [
+  'Frontend',
+  'Backend',
+  'Database',
+  'DevOps',
+  'Mobile',
+  'Languages',
+  'Frameworks',
+  'Tools',
+  'Soft Skills',
+  'Design',
+  'Cloud',
+  'AI/ML',
+  'Other'
+];
+
+// Define proficiency levels
+const proficiencyLevels = [
+  'Beginner',
+  'Intermediate',
+  'Advanced',
+  'Expert'
+];
+
 const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }) => {
-  // For now, we'll just use a placeholder form and pass through the initial data
+  const [skills, setSkills] = useState<Skill[]>(initialData);
+  const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
+  const [newSkill, setNewSkill] = useState<Skill>({
+    id: '',
+    name: '',
+    level: undefined,
+    category: undefined
+  });
+  const [isAdding, setIsAdding] = useState(false);
+
+  // Generate a unique ID for new skills
+  const generateId = () => `sk${Date.now()}`;
+
+  const handleAddSkill = () => {
+    const skillToAdd = {
+      ...newSkill,
+      id: generateId()
+    };
+    
+    setSkills([...skills, skillToAdd]);
+    setNewSkill({
+      id: '',
+      name: '',
+      level: undefined,
+      category: undefined
+    });
+    setIsAdding(false);
+  };
+
+  const handleUpdateSkill = () => {
+    if (!editingSkill) return;
+    
+    setSkills(skills.map(skill => 
+      skill.id === editingSkill.id ? editingSkill : skill
+    ));
+    
+    setEditingSkill(null);
+  };
+
+  const handleDeleteSkill = (id: string) => {
+    setSkills(skills.filter(skill => skill.id !== id));
+    
+    if (editingSkill && editingSkill.id === id) {
+      setEditingSkill(null);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(initialData);
+    onSubmit(skills);
   };
+
+  // Group skills by category for better organization
+  const skillsByCategory = skills.reduce((acc, skill) => {
+    const category = skill.category || 'Other';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(skill);
+    return acc;
+  }, {} as Record<string, Skill[]>);
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">Skills</h2>
-      <p className="text-gray-600 mb-8">
-        This would be a form to add and edit skills.
-        For now, we'll just display a placeholder and use the sample data.
+      <h2 className="text-2xl font-bold mb-2">Skills & Expertise</h2>
+      <p className="text-gray-600 mb-6">
+        Highlight your technical and professional skills. Group them by category and indicate your proficiency level.
       </p>
       
-      <div className="bg-gray-50 p-4 rounded-md mb-8">
-        <h3 className="font-medium text-lg mb-2">Sample Skills Data:</h3>
-        <pre className="text-xs overflow-auto p-2 bg-gray-100 rounded">
-          {JSON.stringify(initialData, null, 2)}
-        </pre>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Left Column - Current Skills */}
+        <div className="md:col-span-2">
+          <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Your Skills</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAdding(true)}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Skill
+              </Button>
+            </div>
+            
+            {Object.keys(skillsByCategory).length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>You haven't added any skills yet.</p>
+                <p>Click "Add Skill" to get started.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {Object.entries(skillsByCategory).map(([category, categorySkills]) => (
+                  <div key={category}>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">{category}</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {categorySkills.map(skill => (
+                        <Badge 
+                          key={skill.id} 
+                          variant="outline"
+                          className={`px-3 py-1.5 flex items-center gap-1 ${
+                            skill.level === 'Expert' 
+                              ? 'bg-primary/10 border-primary/20' 
+                              : skill.level === 'Advanced'
+                                ? 'bg-blue-50 border-blue-200'
+                                : skill.level === 'Intermediate'
+                                  ? 'bg-gray-50 border-gray-200'
+                                  : 'bg-gray-50 border-gray-200'
+                          }`}
+                        >
+                          {skill.name}
+                          {skill.level && (
+                            <span className="ml-1 text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                              {skill.level}
+                            </span>
+                          )}
+                          <button 
+                            className="ml-1 text-gray-400 hover:text-gray-800"
+                            onClick={() => setEditingSkill(skill)}
+                          >
+                            <Edit2 className="h-3 w-3" />
+                          </button>
+                          <button 
+                            className="text-gray-400 hover:text-red-500"
+                            onClick={() => handleDeleteSkill(skill.id)}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Right Column - Add/Edit Form */}
+        <div>
+          {isAdding ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Add New Skill</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Skill Name</label>
+                  <Input
+                    placeholder="e.g. JavaScript, Project Management"
+                    value={newSkill.name}
+                    onChange={(e) => setNewSkill({...newSkill, name: e.target.value})}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Category</label>
+                  <Select
+                    value={newSkill.category}
+                    onValueChange={(value) => setNewSkill({...newSkill, category: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {skillCategories.map(category => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Proficiency Level</label>
+                  <Select
+                    value={newSkill.level}
+                    onValueChange={(value) => setNewSkill({...newSkill, level: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {proficiencyLevels.map(level => (
+                        <SelectItem key={level} value={level}>
+                          {level}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setIsAdding(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={handleAddSkill}
+                  disabled={!newSkill.name}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Skill
+                </Button>
+              </CardFooter>
+            </Card>
+          ) : editingSkill ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Edit Skill</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Skill Name</label>
+                  <Input
+                    placeholder="e.g. JavaScript, Project Management"
+                    value={editingSkill.name}
+                    onChange={(e) => setEditingSkill({...editingSkill, name: e.target.value})}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Category</label>
+                  <Select
+                    value={editingSkill.category}
+                    onValueChange={(value) => setEditingSkill({...editingSkill, category: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {skillCategories.map(category => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Proficiency Level</label>
+                  <Select
+                    value={editingSkill.level}
+                    onValueChange={(value) => setEditingSkill({...editingSkill, level: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {proficiencyLevels.map(level => (
+                        <SelectItem key={level} value={level}>
+                          {level}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setEditingSkill(null)}
+                >
+                  Cancel
+                </Button>
+                <div className="space-x-2">
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={() => handleDeleteSkill(editingSkill.id)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
+                  </Button>
+                  <Button 
+                    size="sm"
+                    onClick={handleUpdateSkill}
+                    disabled={!editingSkill.name}
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    Save
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
+          ) : (
+            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-medium mb-4">Skills Tips</h3>
+              <ul className="space-y-2 text-sm text-gray-700 list-disc pl-4">
+                <li>Group similar skills by category for better organization</li>
+                <li>Include both technical and soft skills</li>
+                <li>Be honest about your proficiency levels</li>
+                <li>Prioritize skills that are relevant to your target role</li>
+                <li>Include technologies and tools you're familiar with</li>
+                <li>For technical roles, specify skills by specific technologies (e.g., "React.js" instead of just "JavaScript")</li>
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
       
       <form onSubmit={handleSubmit}>
-        <div className="flex justify-between pt-4">
+        <div className="flex justify-between pt-8">
           <Button
             type="button"
             variant="outline"
