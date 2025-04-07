@@ -1,848 +1,500 @@
-import { useState } from "react";
-import { z } from "zod";
-import { useForm, useFieldArray } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { PlusCircle, MinusCircle, FileText, ArrowRight } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  FileText, 
+  Download, 
+  Share2, 
+  Edit3, 
+  Eye, 
+  ArrowLeft,
+  ArrowRight,
+  Save,
+  PlusCircle
+} from 'lucide-react';
 
-// Define schemas for different sections
-const personalInfoSchema = z.object({
-  fullName: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email"),
-  phone: z.string().min(10, "Phone number must be at least 10 digits"),
-  location: z.string().min(2, "Location must be at least 2 characters"),
-  linkedIn: z.string().optional(),
-  portfolio: z.string().optional(),
-});
+import TemplateSelector from './TemplateSelector';
+import { 
+  resumeTemplates, 
+  ResumeData,
+  ProfessionalTemplate, 
+  CreativeTemplate, 
+  TechnicalTemplate, 
+  AcademicTemplate, 
+  StartupTemplate 
+} from './ResumeTemplates';
+import PersonalInfoForm from './forms/PersonalInfoForm';
+import ExperienceForm from './forms/ExperienceForm';
+import EducationForm from './forms/EducationForm';
+import SkillsForm from './forms/SkillsForm';
+import ProjectsForm from './forms/ProjectsForm';
 
-const educationItemSchema = z.object({
-  institution: z.string().min(2, "Institution name is required"),
-  degree: z.string().min(2, "Degree is required"),
-  fieldOfStudy: z.string().min(2, "Field of study is required"),
-  startDate: z.string().min(2, "Start date is required"),
-  endDate: z.string().min(2, "End date is required"),
-  grade: z.string().optional(),
-});
+// Sample data for demonstration
+const sampleResumeData: ResumeData = {
+  personalInfo: {
+    name: 'Priya Sharma',
+    title: 'Full Stack Developer',
+    email: 'priya.sharma@example.com',
+    phone: '+91 98765 43210',
+    location: 'Bangalore, Karnataka',
+    website: 'github.com/priyasharma',
+    summary: 'Full Stack Developer with 3+ years of experience in MERN stack, building responsive web applications and RESTful APIs. Passionate about clean code and user-centric design.',
+    profileImage: 'https://ui-avatars.com/api/?name=Priya+Sharma&background=3949AB&color=fff'
+  },
+  experience: [
+    {
+      id: 'exp1',
+      title: 'Full Stack Developer',
+      company: 'TechSolutions India',
+      location: 'Bangalore, India',
+      startDate: 'Jun 2022',
+      endDate: 'Present',
+      current: true,
+      description: 'Leading development of customer-facing web applications using React, Node.js, and MongoDB.',
+      highlights: [
+        'Improved application performance by 40% through code optimization and implementing efficient data fetching strategies',
+        'Developed and maintained RESTful APIs serving over 10,000 daily users',
+        'Implemented CI/CD pipeline reducing deployment time by 60%',
+        'Mentored 4 junior developers on best practices and coding standards'
+      ]
+    },
+    {
+      id: 'exp2',
+      title: 'Frontend Developer',
+      company: 'Innovative Web Services',
+      location: 'Hyderabad, India',
+      startDate: 'Jan 2020',
+      endDate: 'May 2022',
+      current: false,
+      description: 'Designed and implemented responsive user interfaces for various client projects.',
+      highlights: [
+        'Built interactive dashboards using React and Redux that improved user engagement by 35%',
+        'Collaborated with UX designers to implement pixel-perfect interfaces across 15+ projects',
+        'Reduced load time by 50% through lazy loading and code splitting techniques',
+        'Integrated third-party APIs for payment processing and data visualization'
+      ]
+    }
+  ],
+  education: [
+    {
+      id: 'edu1',
+      institution: 'Indian Institute of Technology, Delhi',
+      degree: 'B.Tech',
+      field: 'Computer Science',
+      location: 'New Delhi, India',
+      startDate: 'Aug 2016',
+      endDate: 'May 2020',
+      current: false,
+      gpa: '8.5/10',
+      achievements: [
+        'Graduated with First Class Honors',
+        'Lead developer for university student portal',
+        'Published research paper on efficient algorithms in distributed systems'
+      ]
+    }
+  ],
+  skills: [
+    { id: 'sk1', name: 'JavaScript', level: 'Expert', category: 'Frontend' },
+    { id: 'sk2', name: 'React.js', level: 'Expert', category: 'Frontend' },
+    { id: 'sk3', name: 'Node.js', level: 'Advanced', category: 'Backend' },
+    { id: 'sk4', name: 'Express.js', level: 'Advanced', category: 'Backend' },
+    { id: 'sk5', name: 'MongoDB', level: 'Intermediate', category: 'Database' },
+    { id: 'sk6', name: 'TypeScript', level: 'Intermediate', category: 'Languages' },
+    { id: 'sk7', name: 'GraphQL', level: 'Intermediate', category: 'API' },
+    { id: 'sk8', name: 'Docker', level: 'Beginner', category: 'DevOps' },
+    { id: 'sk9', name: 'AWS', level: 'Beginner', category: 'Cloud' },
+    { id: 'sk10', name: 'Agile Methodologies', level: 'Advanced', category: 'Soft Skills' },
+    { id: 'sk11', name: 'CI/CD', level: 'Intermediate', category: 'DevOps' },
+    { id: 'sk12', name: 'Git', level: 'Advanced', category: 'Tools' }
+  ],
+  projects: [
+    {
+      id: 'prj1',
+      name: 'E-commerce Platform',
+      description: 'A full-stack e-commerce application with product catalog, shopping cart, and payment processing.',
+      url: 'github.com/priyasharma/ecommerce-platform',
+      technologies: ['React', 'Node.js', 'Express', 'MongoDB', 'Redux', 'Stripe API'],
+      highlights: [
+        'Implemented JWT authentication and role-based access control',
+        'Built a responsive UI that works across desktop and mobile devices',
+        'Integrated payment gateway with secure checkout process',
+        'Implemented real-time order tracking using WebSockets'
+      ],
+      startDate: 'Jan 2022',
+      endDate: 'Apr 2022'
+    },
+    {
+      id: 'prj2',
+      name: 'Task Management Dashboard',
+      description: 'A collaborative task management tool with real-time updates and analytics dashboard.',
+      url: 'github.com/priyasharma/task-manager',
+      technologies: ['React', 'TypeScript', 'Firebase', 'Material UI', 'Chart.js'],
+      highlights: [
+        'Built a real-time collaboration system with Firebase',
+        'Implemented drag-and-drop task management interface',
+        'Created interactive charts and reports for project progress',
+        'Designed and implemented notification system for task assignments and deadlines'
+      ],
+      startDate: 'Aug 2021',
+      endDate: 'Nov 2021'
+    }
+  ],
+  certifications: [
+    {
+      id: 'cert1',
+      name: 'AWS Certified Developer - Associate',
+      issuer: 'Amazon Web Services',
+      date: 'Oct 2022',
+      url: 'aws.amazon.com/certification/certified-developer-associate/',
+      description: 'Demonstrated knowledge of core AWS services, uses, and best practices for developing, deploying, and debugging cloud-based applications.'
+    },
+    {
+      id: 'cert2',
+      name: 'MongoDB Certified Developer',
+      issuer: 'MongoDB, Inc.',
+      date: 'May 2021',
+      url: 'university.mongodb.com/certification',
+      description: 'Verified expertise in MongoDB application development with knowledge of schema design, querying, indexing, and application architecture.'
+    }
+  ],
+  languages: [
+    { id: 'lang1', language: 'English', proficiency: 'Fluent' },
+    { id: 'lang2', language: 'Hindi', proficiency: 'Native' },
+    { id: 'lang3', language: 'Tamil', proficiency: 'Conversational' }
+  ],
+  achievements: [
+    {
+      id: 'ach1',
+      title: 'Hackathon Winner',
+      date: 'March 2023',
+      description: 'First place at CodeFest 2023 for developing an AI-powered accessibility tool for visually impaired users.'
+    },
+    {
+      id: 'ach2',
+      title: 'Open Source Contributor',
+      date: '2021 - Present',
+      description: 'Active contributor to React and Node.js open source projects with over 50 accepted pull requests.'
+    }
+  ]
+};
 
-const experienceItemSchema = z.object({
-  company: z.string().min(2, "Company name is required"),
-  position: z.string().min(2, "Position is required"),
-  location: z.string().optional(),
-  startDate: z.string().min(2, "Start date is required"),
-  endDate: z.string().min(2, "End date is required"),
-  description: z.string().min(10, "Please provide at least 10 characters of description"),
-});
-
-const projectItemSchema = z.object({
-  title: z.string().min(2, "Project title is required"),
-  description: z.string().min(10, "Please provide at least 10 characters of description"),
-  technologies: z.string().min(2, "Technologies used are required"),
-  link: z.string().optional(),
-});
-
-const skillsSchema = z.object({
-  skills: z.string().min(5, "Please add some skills"),
-});
-
-// Combined schema
-const resumeSchema = z.object({
-  personal: personalInfoSchema,
-  education: z.array(educationItemSchema).min(1, "Add at least one education entry"),
-  experience: z.array(experienceItemSchema).min(1, "Add at least one experience entry"),
-  projects: z.array(projectItemSchema).optional(),
-  skills: skillsSchema,
-  templateId: z.string().default("modern"),
-});
-
-type ResumeFormValues = z.infer<typeof resumeSchema>;
-
-interface ResumeBuilderProps {
-  userId: number;
-  existingResume?: any;
+enum BuilderStep {
+  SELECT_TEMPLATE = 'select_template',
+  PERSONAL_INFO = 'personal_info',
+  EXPERIENCE = 'experience',
+  EDUCATION = 'education',
+  SKILLS = 'skills',
+  PROJECTS = 'projects',
+  ADDITIONAL_INFO = 'additional_info',
+  PREVIEW = 'preview'
 }
 
-export default function ResumeBuilder({ userId, existingResume }: ResumeBuilderProps) {
-  const [activeTab, setActiveTab] = useState("personal");
-  const queryClient = useQueryClient();
+// Map template IDs to their respective components
+const templateComponentMap: Record<string, React.FC<any>> = {
+  professional: ProfessionalTemplate,
+  creative: CreativeTemplate,
+  technical: TechnicalTemplate,
+  academic: AcademicTemplate,
+  startup: StartupTemplate
+};
 
-  // Default values - using existing resume data if available
-  const defaultValues: ResumeFormValues = existingResume || {
-    personal: {
-      fullName: "",
-      email: "",
-      phone: "",
-      location: "",
-      linkedIn: "",
-      portfolio: "",
-    },
-    education: [
-      {
-        institution: "",
-        degree: "",
-        fieldOfStudy: "",
-        startDate: "",
-        endDate: "",
-        grade: "",
-      },
-    ],
-    experience: [
-      {
-        company: "",
-        position: "",
-        location: "",
-        startDate: "",
-        endDate: "",
-        description: "",
-      },
-    ],
-    projects: [
-      {
-        title: "",
-        description: "",
-        technologies: "",
-        link: "",
-      },
-    ],
-    skills: {
-      skills: "",
-    },
-    templateId: "modern",
+const ResumeBuilder: React.FC = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  const [step, setStep] = useState<BuilderStep>(BuilderStep.SELECT_TEMPLATE);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('professional');
+  const [resumeData, setResumeData] = useState<ResumeData>(sampleResumeData);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  
+  // If we have a real user, update the personal info with their data
+  useEffect(() => {
+    if (user) {
+      setResumeData(prevData => ({
+        ...prevData,
+        personalInfo: {
+          ...prevData.personalInfo,
+          name: user.name || prevData.personalInfo.name,
+          email: user.email || prevData.personalInfo.email,
+          // Only set profile image if user has one
+          ...(user.avatar ? { profileImage: user.avatar } : {})
+        }
+      }));
+    }
+  }, [user]);
+  
+  const handleSelectTemplate = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    setStep(BuilderStep.PERSONAL_INFO);
   };
-
-  const form = useForm<ResumeFormValues>({
-    resolver: zodResolver(resumeSchema),
-    defaultValues,
-  });
-
-  const { fields: educationFields, append: appendEducation, remove: removeEducation } = 
-    useFieldArray({ control: form.control, name: "education" });
+  
+  const handleUpdatePersonalInfo = (personalInfo: ResumeData['personalInfo']) => {
+    setResumeData(prevData => ({
+      ...prevData,
+      personalInfo
+    }));
+    setStep(BuilderStep.EXPERIENCE);
+  };
+  
+  const handleUpdateExperience = (experience: ResumeData['experience']) => {
+    setResumeData(prevData => ({
+      ...prevData,
+      experience
+    }));
+    setStep(BuilderStep.EDUCATION);
+  };
+  
+  const handleUpdateEducation = (education: ResumeData['education']) => {
+    setResumeData(prevData => ({
+      ...prevData,
+      education
+    }));
+    setStep(BuilderStep.SKILLS);
+  };
+  
+  const handleUpdateSkills = (skills: ResumeData['skills']) => {
+    setResumeData(prevData => ({
+      ...prevData,
+      skills
+    }));
+    setStep(BuilderStep.PROJECTS);
+  };
+  
+  const handleUpdateProjects = (projects: ResumeData['projects']) => {
+    setResumeData(prevData => ({
+      ...prevData,
+      projects
+    }));
+    setStep(BuilderStep.ADDITIONAL_INFO);
+  };
+  
+  const handleUpdateAdditionalInfo = (data: Pick<ResumeData, 'certifications' | 'languages' | 'achievements'>) => {
+    setResumeData(prevData => ({
+      ...prevData,
+      ...data
+    }));
+    setStep(BuilderStep.PREVIEW);
+  };
+  
+  const handleSaveResume = async () => {
+    setIsSaving(true);
     
-  const { fields: experienceFields, append: appendExperience, remove: removeExperience } = 
-    useFieldArray({ control: form.control, name: "experience" });
-    
-  const { fields: projectFields, append: appendProject, remove: removeProject } = 
-    useFieldArray({ control: form.control, name: "projects" });
-
-  const saveMutation = useMutation({
-    mutationFn: async (data: ResumeFormValues) => {
-      // Format data for API
-      const formattedData = {
-        userId,
-        education: data.education,
-        experience: data.experience,
-        projects: data.projects || [],
-        skills: data.skills.skills.split(',').map(skill => skill.trim()),
-        templateId: data.templateId,
-      };
+    try {
+      // In a real app, you would save the resume to the database here
+      // For now, we'll just simulate a successful save
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const response = await apiRequest(
-        existingResume ? "PATCH" : "POST",
-        existingResume ? `/api/resumes/${existingResume.id}` : "/api/resumes",
-        formattedData
-      );
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/users/${userId}/resume`] });
-    },
-  });
-
-  const onSubmit = (data: ResumeFormValues) => {
-    saveMutation.mutate(data);
-  };
-
-  const nextTab = () => {
-    const tabs = ["personal", "education", "experience", "projects", "skills", "preview"];
-    const currentIndex = tabs.indexOf(activeTab);
-    if (currentIndex < tabs.length - 1) {
-      setActiveTab(tabs[currentIndex + 1]);
+      toast({
+        title: "Resume saved successfully",
+        description: "Your resume has been saved to your profile.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error saving resume:', error);
+      toast({
+        title: "Error saving resume",
+        description: "There was an error saving your resume. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
-
+  
+  const handleDownloadResume = () => {
+    // In a real app, this would generate a PDF and trigger a download
+    toast({
+      title: "Download feature",
+      description: "This feature will be implemented to generate and download a PDF of your resume.",
+      variant: "default",
+    });
+  };
+  
+  const handleShareResume = () => {
+    // In a real app, this would generate a shareable link
+    toast({
+      title: "Share feature",
+      description: "This feature will be implemented to generate a shareable link to your resume.",
+      variant: "default",
+    });
+  };
+  
+  const renderStep = () => {
+    switch (step) {
+      case BuilderStep.SELECT_TEMPLATE:
+        return (
+          <TemplateSelector 
+            sampleData={resumeData} 
+            onSelectTemplate={handleSelectTemplate} 
+          />
+        );
+        
+      case BuilderStep.PERSONAL_INFO:
+        return (
+          <PersonalInfoForm 
+            initialData={resumeData.personalInfo}
+            onSubmit={handleUpdatePersonalInfo}
+            onBack={() => setStep(BuilderStep.SELECT_TEMPLATE)}
+          />
+        );
+        
+      case BuilderStep.EXPERIENCE:
+        return (
+          <ExperienceForm 
+            initialData={resumeData.experience}
+            onSubmit={handleUpdateExperience}
+            onBack={() => setStep(BuilderStep.PERSONAL_INFO)}
+          />
+        );
+        
+      case BuilderStep.EDUCATION:
+        return (
+          <EducationForm 
+            initialData={resumeData.education}
+            onSubmit={handleUpdateEducation}
+            onBack={() => setStep(BuilderStep.EXPERIENCE)}
+          />
+        );
+        
+      case BuilderStep.SKILLS:
+        return (
+          <SkillsForm 
+            initialData={resumeData.skills}
+            onSubmit={handleUpdateSkills}
+            onBack={() => setStep(BuilderStep.EDUCATION)}
+          />
+        );
+        
+      case BuilderStep.PROJECTS:
+        return (
+          <ProjectsForm 
+            initialData={resumeData.projects}
+            onSubmit={handleUpdateProjects}
+            onBack={() => setStep(BuilderStep.SKILLS)}
+          />
+        );
+        
+      case BuilderStep.ADDITIONAL_INFO:
+        // This would be a form for certifications, languages, etc.
+        // For now, we'll just simulate it by moving to the preview step
+        return (
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Additional Information</h2>
+            <p className="text-gray-600 mb-8">This section would contain forms for certifications, languages, and achievements.</p>
+            <div className="flex justify-between">
+              <Button
+                variant="outline"
+                onClick={() => setStep(BuilderStep.PROJECTS)}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
+              <Button
+                onClick={() => setStep(BuilderStep.PREVIEW)}
+              >
+                Preview Resume
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        );
+        
+      case BuilderStep.PREVIEW:
+        const SelectedTemplate = templateComponentMap[selectedTemplateId];
+        return (
+          <div>
+            <div className="flex justify-between mb-6">
+              <Button
+                variant="outline"
+                onClick={() => setStep(BuilderStep.ADDITIONAL_INFO)}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Editing
+              </Button>
+              <div className="space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={handleDownloadResume}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleShareResume}
+                >
+                  <Share2 className="mr-2 h-4 w-4" />
+                  Share
+                </Button>
+                <Button
+                  onClick={handleSaveResume}
+                  disabled={isSaving}
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {isSaving ? 'Saving...' : 'Save Resume'}
+                </Button>
+              </div>
+            </div>
+            
+            <Card className="border-2 border-primary/10 p-4">
+              <SelectedTemplate data={resumeData} editable={true} onEdit={() => {}} />
+            </Card>
+          </div>
+        );
+        
+      default:
+        return null;
+    }
+  };
+  
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center text-xl font-semibold">
-          <FileText className="mr-2 h-5 w-5" />
-          Resume Builder
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
-                <TabsTrigger value="personal">Personal</TabsTrigger>
-                <TabsTrigger value="education">Education</TabsTrigger>
-                <TabsTrigger value="experience">Experience</TabsTrigger>
-                <TabsTrigger value="projects">Projects</TabsTrigger>
-                <TabsTrigger value="skills">Skills</TabsTrigger>
-                <TabsTrigger value="preview">Preview</TabsTrigger>
-              </TabsList>
-
-              {/* Personal Info Tab */}
-              <TabsContent value="personal">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Personal Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="personal.fullName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="John Doe" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="personal.email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input placeholder="john.doe@example.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="personal.phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone</FormLabel>
-                          <FormControl>
-                            <Input placeholder="+91 9876543210" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="personal.location"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Location</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Mumbai, India" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="personal.linkedIn"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>LinkedIn (Optional)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://linkedin.com/in/johndoe" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="personal.portfolio"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Portfolio/Website (Optional)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://johndoe.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div className="flex justify-end">
-                    <Button type="button" onClick={nextTab} className="bg-primary">
-                      Next <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-
-              {/* Education Tab */}
-              <TabsContent value="education">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium">Education</h3>
-                    <Button
-                      type="button"
-                      onClick={() => appendEducation({
-                        institution: "",
-                        degree: "",
-                        fieldOfStudy: "",
-                        startDate: "",
-                        endDate: "",
-                        grade: "",
-                      })}
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center"
-                    >
-                      <PlusCircle className="mr-1 h-4 w-4" /> Add Education
-                    </Button>
-                  </div>
-                  
-                  {educationFields.map((field, index) => (
-                    <div key={field.id} className="p-4 border rounded-md">
-                      <div className="flex justify-between items-center mb-4">
-                        <h4 className="font-medium">Education #{index + 1}</h4>
-                        {index > 0 && (
-                          <Button
-                            type="button"
-                            onClick={() => removeEducation(index)}
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <MinusCircle className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name={`education.${index}.institution`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Institution</FormLabel>
-                              <FormControl>
-                                <Input placeholder="IIT Delhi" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`education.${index}.degree`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Degree</FormLabel>
-                              <FormControl>
-                                <Input placeholder="B.Tech" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`education.${index}.fieldOfStudy`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Field of Study</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Computer Science" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`education.${index}.grade`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Grade/CGPA (Optional)</FormLabel>
-                              <FormControl>
-                                <Input placeholder="8.5/10" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`education.${index}.startDate`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Start Date</FormLabel>
-                              <FormControl>
-                                <Input placeholder="June 2018" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`education.${index}.endDate`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>End Date</FormLabel>
-                              <FormControl>
-                                <Input placeholder="May 2022" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  <div className="flex justify-end">
-                    <Button type="button" onClick={nextTab} className="bg-primary">
-                      Next <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-
-              {/* Experience Tab */}
-              <TabsContent value="experience">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium">Work Experience</h3>
-                    <Button
-                      type="button"
-                      onClick={() => appendExperience({
-                        company: "",
-                        position: "",
-                        location: "",
-                        startDate: "",
-                        endDate: "",
-                        description: "",
-                      })}
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center"
-                    >
-                      <PlusCircle className="mr-1 h-4 w-4" /> Add Experience
-                    </Button>
-                  </div>
-                  
-                  {experienceFields.map((field, index) => (
-                    <div key={field.id} className="p-4 border rounded-md">
-                      <div className="flex justify-between items-center mb-4">
-                        <h4 className="font-medium">Experience #{index + 1}</h4>
-                        {index > 0 && (
-                          <Button
-                            type="button"
-                            onClick={() => removeExperience(index)}
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <MinusCircle className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name={`experience.${index}.company`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Company</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Google" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`experience.${index}.position`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Position</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Software Engineer" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`experience.${index}.location`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Location (Optional)</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Bangalore, India" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name={`experience.${index}.startDate`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Start Date</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="June 2022" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name={`experience.${index}.endDate`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>End Date</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Present" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      </div>
-                      <div className="mt-4">
-                        <FormField
-                          control={form.control}
-                          name={`experience.${index}.description`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Description</FormLabel>
-                              <FormControl>
-                                <Textarea 
-                                  placeholder="Describe your responsibilities and achievements" 
-                                  rows={3}
-                                  {...field} 
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  <div className="flex justify-end">
-                    <Button type="button" onClick={nextTab} className="bg-primary">
-                      Next <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-
-              {/* Projects Tab */}
-              <TabsContent value="projects">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium">Projects</h3>
-                    <Button
-                      type="button"
-                      onClick={() => appendProject({
-                        title: "",
-                        description: "",
-                        technologies: "",
-                        link: "",
-                      })}
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center"
-                    >
-                      <PlusCircle className="mr-1 h-4 w-4" /> Add Project
-                    </Button>
-                  </div>
-                  
-                  {projectFields.map((field, index) => (
-                    <div key={field.id} className="p-4 border rounded-md">
-                      <div className="flex justify-between items-center mb-4">
-                        <h4 className="font-medium">Project #{index + 1}</h4>
-                        {index > 0 && (
-                          <Button
-                            type="button"
-                            onClick={() => removeProject(index)}
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <MinusCircle className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name={`projects.${index}.title`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Project Title</FormLabel>
-                              <FormControl>
-                                <Input placeholder="E-commerce Website" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`projects.${index}.technologies`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Technologies Used</FormLabel>
-                              <FormControl>
-                                <Input placeholder="React, Node.js, MongoDB" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`projects.${index}.link`}
-                          render={({ field }) => (
-                            <FormItem className="col-span-1 md:col-span-2">
-                              <FormLabel>Project Link (Optional)</FormLabel>
-                              <FormControl>
-                                <Input placeholder="https://github.com/username/project" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <div className="mt-4">
-                        <FormField
-                          control={form.control}
-                          name={`projects.${index}.description`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Description</FormLabel>
-                              <FormControl>
-                                <Textarea 
-                                  placeholder="Describe the project, your role, and key features" 
-                                  rows={3}
-                                  {...field} 
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  <div className="flex justify-end">
-                    <Button type="button" onClick={nextTab} className="bg-primary">
-                      Next <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-
-              {/* Skills Tab */}
-              <TabsContent value="skills">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Skills</h3>
-                  
-                  <FormField
-                    control={form.control}
-                    name="skills.skills"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Skills (comma-separated)</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="React.js, Node.js, Python, Machine Learning, Data Analysis, SQL, MongoDB, etc." 
-                            rows={5}
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="templateId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Resume Template</FormLabel>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
-                          <label className={`border rounded-md p-4 flex flex-col items-center ${field.value === 'modern' ? 'border-primary bg-indigo-50' : ''}`}>
-                            <input
-                              type="radio"
-                              value="modern"
-                              className="sr-only"
-                              checked={field.value === 'modern'}
-                              onChange={(e) => field.onChange(e.target.value)}
-                            />
-                            <div className="h-24 w-full bg-gray-100 mb-2 rounded flex items-center justify-center">
-                              <span className="text-gray-500">Modern</span>
-                            </div>
-                            <span className={`text-sm ${field.value === 'modern' ? 'text-primary font-medium' : ''}`}>Modern</span>
-                          </label>
-                          
-                          <label className={`border rounded-md p-4 flex flex-col items-center ${field.value === 'classic' ? 'border-primary bg-indigo-50' : ''}`}>
-                            <input
-                              type="radio"
-                              value="classic"
-                              className="sr-only"
-                              checked={field.value === 'classic'}
-                              onChange={(e) => field.onChange(e.target.value)}
-                            />
-                            <div className="h-24 w-full bg-gray-100 mb-2 rounded flex items-center justify-center">
-                              <span className="text-gray-500">Classic</span>
-                            </div>
-                            <span className={`text-sm ${field.value === 'classic' ? 'text-primary font-medium' : ''}`}>Classic</span>
-                          </label>
-                          
-                          <label className={`border rounded-md p-4 flex flex-col items-center ${field.value === 'creative' ? 'border-primary bg-indigo-50' : ''}`}>
-                            <input
-                              type="radio"
-                              value="creative"
-                              className="sr-only"
-                              checked={field.value === 'creative'}
-                              onChange={(e) => field.onChange(e.target.value)}
-                            />
-                            <div className="h-24 w-full bg-gray-100 mb-2 rounded flex items-center justify-center">
-                              <span className="text-gray-500">Creative</span>
-                            </div>
-                            <span className={`text-sm ${field.value === 'creative' ? 'text-primary font-medium' : ''}`}>Creative</span>
-                          </label>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="flex justify-end">
-                    <Button type="button" onClick={nextTab} className="bg-primary">
-                      Preview <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-
-              {/* Preview Tab */}
-              <TabsContent value="preview">
-                <div className="space-y-6">
-                  <h3 className="text-lg font-medium">Resume Preview</h3>
-                  
-                  <div className="border border-dashed rounded-md p-6 bg-gray-50 min-h-[400px] flex flex-col items-center justify-center">
-                    <div className="text-center mb-4">
-                      <h4 className="text-xl font-semibold mb-1">{form.watch('personal.fullName') || 'Your Name'}</h4>
-                      <p className="text-gray-600 text-sm">
-                        {form.watch('personal.email') || 'email@example.com'} • {form.watch('personal.phone') || '+91 1234567890'} • {form.watch('personal.location') || 'City, India'}
-                      </p>
-                      {(form.watch('personal.linkedIn') || form.watch('personal.portfolio')) && (
-                        <p className="text-primary text-sm mt-1">
-                          {form.watch('personal.linkedIn') && 'LinkedIn'} 
-                          {form.watch('personal.linkedIn') && form.watch('personal.portfolio') && ' • '} 
-                          {form.watch('personal.portfolio') && 'Portfolio'}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div className="w-full max-w-lg space-y-4">
-                      {/* Education Preview */}
-                      <div>
-                        <h5 className="font-semibold border-b pb-1 mb-2">Education</h5>
-                        {educationFields.map((field, index) => (
-                          <div key={index} className="mb-2">
-                            <div className="flex justify-between">
-                              <strong>{form.watch(`education.${index}.institution`) || 'Institution Name'}</strong>
-                              <span className="text-sm">
-                                {form.watch(`education.${index}.startDate`) || 'Start Date'} - {form.watch(`education.${index}.endDate`) || 'End Date'}
-                              </span>
-                            </div>
-                            <div className="text-sm">
-                              {form.watch(`education.${index}.degree`) || 'Degree'}, {form.watch(`education.${index}.fieldOfStudy`) || 'Field of Study'}
-                              {form.watch(`education.${index}.grade`) && ` • GPA: ${form.watch(`education.${index}.grade`)}`}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      {/* Experience Preview */}
-                      <div>
-                        <h5 className="font-semibold border-b pb-1 mb-2">Experience</h5>
-                        {experienceFields.map((field, index) => (
-                          <div key={index} className="mb-2">
-                            <div className="flex justify-between">
-                              <strong>{form.watch(`experience.${index}.position`) || 'Position'}</strong>
-                              <span className="text-sm">
-                                {form.watch(`experience.${index}.startDate`) || 'Start Date'} - {form.watch(`experience.${index}.endDate`) || 'End Date'}
-                              </span>
-                            </div>
-                            <div className="text-sm font-medium">{form.watch(`experience.${index}.company`) || 'Company'}{form.watch(`experience.${index}.location`) && `, ${form.watch(`experience.${index}.location`)}`}</div>
-                            <p className="text-sm text-gray-600 mt-1">{form.watch(`experience.${index}.description`) || 'Job description'}</p>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      {/* Projects Preview */}
-                      {projectFields.length > 0 && (
-                        <div>
-                          <h5 className="font-semibold border-b pb-1 mb-2">Projects</h5>
-                          {projectFields.map((field, index) => (
-                            <div key={index} className="mb-2">
-                              <div className="flex justify-between">
-                                <strong>{form.watch(`projects.${index}.title`) || 'Project Title'}</strong>
-                                {form.watch(`projects.${index}.link`) && (
-                                  <span className="text-sm text-primary">[Link]</span>
-                                )}
-                              </div>
-                              <div className="text-sm font-medium">Technologies: {form.watch(`projects.${index}.technologies`) || 'Tech stack'}</div>
-                              <p className="text-sm text-gray-600 mt-1">{form.watch(`projects.${index}.description`) || 'Project description'}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      
-                      {/* Skills Preview */}
-                      <div>
-                        <h5 className="font-semibold border-b pb-1 mb-2">Skills</h5>
-                        <p className="text-sm">{form.watch('skills.skills') || 'Your skills'}</p>
-                      </div>
-                    </div>
-                    
-                    <p className="text-gray-500 mt-8 text-sm">This is a simplified preview. The final resume will be properly formatted based on the template you selected.</p>
-                  </div>
-                  
-                  <div className="flex justify-end space-x-2">
-                    <Button type="submit" className="bg-primary" disabled={saveMutation.isPending}>
-                      {saveMutation.isPending ? 'Saving...' : (existingResume ? 'Update Resume' : 'Save Resume')}
-                    </Button>
-                    <Button type="button" variant="outline">
-                      Download PDF
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </form>
-        </Form>
-      </CardContent>
-      <CardFooter className="border-t pt-6">
-        <p className="text-sm text-gray-500">
-          Your resume will be automatically saved when you complete all sections. You can come back and edit it anytime.
-        </p>
-      </CardFooter>
-    </Card>
+    <div className="container mx-auto py-8">
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl flex items-center">
+                <FileText className="mr-2 h-6 w-6 text-primary" />
+                Resume Builder
+              </CardTitle>
+              <CardDescription>
+                Create a professional resume in minutes with our easy-to-use builder
+              </CardDescription>
+            </div>
+            
+            {step !== BuilderStep.SELECT_TEMPLATE && (
+              <Tabs defaultValue="edit" className="w-[300px]">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="edit" onClick={() => step === BuilderStep.PREVIEW && setStep(BuilderStep.PERSONAL_INFO)}>
+                    <Edit3 className="mr-2 h-4 w-4" />
+                    Edit
+                  </TabsTrigger>
+                  <TabsTrigger value="preview" onClick={() => step !== BuilderStep.PREVIEW && setStep(BuilderStep.PREVIEW)}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
+          </div>
+        </CardHeader>
+        
+        <CardContent>
+          {renderStep()}
+        </CardContent>
+      </Card>
+    </div>
   );
-}
+};
+
+export default ResumeBuilder;
