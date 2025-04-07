@@ -6,9 +6,19 @@ import MobileHeader from "@/components/ui/mobile-header";
 import MobileNavigation from "@/components/layout/MobileNavigation";
 import MobileSidebar from "@/components/layout/MobileSidebar";
 import PathFinder from "@/components/career/PathFinder";
+import CareerExplorer from "@/components/career/CareerExplorer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Compass, MessageCircle, Sparkles, Rocket } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Loader2, 
+  Compass, 
+  MessageCircle, 
+  Sparkles, 
+  Rocket, 
+  List, 
+  Zap 
+} from "lucide-react";
 import { useAuthContext } from "@/hooks/use-auth-context";
 
 interface CareerGuideProps {}
@@ -93,41 +103,70 @@ export default function CareerGuide({}: CareerGuideProps) {
             </Badge>
           </div>
 
-          <Card className="mb-6 shadow-md overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 border-b">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center">
-                    <Sparkles className="h-5 w-5 mr-2 text-primary" />
-                    PathFinder: Your AI Career Buddy
-                  </CardTitle>
-                  <CardDescription>
-                    Chat with our AI to discover your perfect career path based on your interests and goals
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
+          <Tabs defaultValue="pathfinder" className="mb-6">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="pathfinder" className="flex items-center">
+                <Zap className="h-4 w-4 mr-2" />
+                PathFinder Chat
+              </TabsTrigger>
+              <TabsTrigger value="explorer" className="flex items-center">
+                <List className="h-4 w-4 mr-2" />
+                Career Explorer
+              </TabsTrigger>
+            </TabsList>
             
-            <CardContent className="p-0">
-              <div className="p-4 bg-white">
-                <div className="flex items-start space-x-4">
-                  <div className="bg-primary/10 rounded-full p-3 shadow-sm flex-shrink-0">
-                    <MessageCircle className="h-6 w-6 text-primary" />
+            <TabsContent value="pathfinder" className="m-0">
+              <Card className="shadow-md overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 border-b">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center">
+                        <Sparkles className="h-5 w-5 mr-2 text-primary" />
+                        PathFinder: Your AI Career Buddy
+                      </CardTitle>
+                      <CardDescription>
+                        Chat with our AI to discover your perfect career path based on your interests and goals
+                      </CardDescription>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-medium text-lg">How PathFinder Works</h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Tell me about your interests, skills, and goals, and I'll help you discover the perfect career path for you. I'll analyze your preferences and provide personalized recommendations just for you.
-                    </p>
+                </CardHeader>
+                
+                <CardContent className="p-0">
+                  <div className="p-4 bg-white">
+                    <div className="flex items-start space-x-4">
+                      <div className="bg-primary/10 rounded-full p-3 shadow-sm flex-shrink-0">
+                        <MessageCircle className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-lg">How PathFinder Works</h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Tell me about your interests, skills, and goals, and I'll help you discover the perfect career path for you. I'll analyze your preferences and provide personalized recommendations just for you.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                  
+                  <div className="border-t" style={{ height: '70vh' }}>
+                    <PathFinder />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="explorer" className="m-0">
+              <div className="mb-3">
+                <h2 className="text-lg font-semibold flex items-center">
+                  <List className="h-5 w-5 mr-2 text-primary" />
+                  Explore In-Demand Tech Careers
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Browse through comprehensive guides for 30 high-growth tech careers across various domains.
+                  Get insights on skills needed, day-to-day responsibilities, and career paths.
+                </p>
               </div>
-              
-              <div className="border-t" style={{ height: '75vh' }}>
-                <PathFinder />
-              </div>
-            </CardContent>
-          </Card>
+              <CareerExplorer />
+            </TabsContent>
+          </Tabs>
         </div>
         
         {/* Mobile Navigation */}
