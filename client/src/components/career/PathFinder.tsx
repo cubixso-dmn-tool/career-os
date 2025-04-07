@@ -167,16 +167,22 @@ export default function PathFinder() {
       
       // Simple decision tree for recommendations
       if (selectedInterests.includes('logic') && (selectedInterests.includes('coding') || selectedInterests.includes('tech'))) {
-        recommendedPath = "data-science";
+        recommendedPath = "data-scientist";
       } else if (selectedInterests.includes('design') && (selectedInterests.includes('tech') || selectedInterests.includes('writing'))) {
-        recommendedPath = "ui-ux-design";
+        recommendedPath = "ui-ux-designer";
       } else if (selectedInterests.includes('management') && (selectedInterests.includes('finance') || selectedInterests.includes('teaching'))) {
-        recommendedPath = "product-management";
+        recommendedPath = "product-manager";
       } else if (selectedInterests.includes('coding') || selectedInterests.includes('tech')) {
-        recommendedPath = "web-development";
+        recommendedPath = "full-stack-developer";
       } else {
         // Default fallback
-        recommendedPath = "web-development";
+        recommendedPath = "full-stack-developer";
+      }
+      
+      // Ensure the path exists in our roadmaps
+      if (!careerRoadmaps[recommendedPath]) {
+        // Fallback to a path we know exists
+        recommendedPath = "full-stack-developer";
       }
 
       setCareerPath(recommendedPath);
