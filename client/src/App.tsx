@@ -11,6 +11,7 @@ import Community from "@/pages/Community";
 import ResumeBuilder from "@/pages/ResumeBuilder";
 import SoftSkills from "@/pages/SoftSkills";
 import Achievements from "@/pages/Achievements";
+import HowItWorks from "@/pages/HowItWorks";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import LandingPage from "@/pages/LandingPage";
@@ -65,6 +66,7 @@ function Router() {
       </Route>
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/how-it-works" component={HowItWorks} />
       <Route component={NotFound} />
     </Switch>
   );

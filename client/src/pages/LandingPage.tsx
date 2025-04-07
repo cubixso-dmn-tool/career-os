@@ -126,7 +126,12 @@ const LandingPage: React.FC = () => {
                 Start Your Journey – It's Free
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
-              <Button size="lg" variant="outline" className="px-6">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="px-6" 
+                onClick={() => navigate('/how-it-works')}
+              >
                 <Play className="mr-2 h-4 w-4" />
                 Watch How It Works
               </Button>
@@ -149,7 +154,7 @@ const LandingPage: React.FC = () => {
                     <Compass className="h-16 w-16 text-primary mb-4" />
                     <h3 className="text-xl font-medium mb-2">Find Your Path</h3>
                     <p className="text-sm text-gray-500 mb-6">Take our 5-minute quiz to discover careers that match your skills and passion</p>
-                    <Button className="w-full mb-3">Start Career Quiz</Button>
+                    <Button className="w-full mb-3" onClick={() => navigate('/career-guide')}>Start Career Quiz</Button>
                     <p className="text-xs text-gray-400">95% of students find their ideal path in under 10 minutes</p>
                   </div>
                 </div>
@@ -361,30 +366,30 @@ const LandingPage: React.FC = () => {
               <div>
                 <h3 className="text-lg font-medium mb-4">Platform</h3>
                 <ul className="space-y-2">
-                  <li><a href="#" className="text-gray-400 hover:text-white">Features</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white">Career Paths</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white">Courses</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white">Projects</a></li>
+                  <li><span onClick={() => navigate('/how-it-works')} className="text-gray-400 hover:text-white cursor-pointer">Features</span></li>
+                  <li><span onClick={() => navigate('/career-guide')} className="text-gray-400 hover:text-white cursor-pointer">Career Paths</span></li>
+                  <li><span onClick={() => navigate('/courses')} className="text-gray-400 hover:text-white cursor-pointer">Courses</span></li>
+                  <li><span onClick={() => navigate('/projects')} className="text-gray-400 hover:text-white cursor-pointer">Projects</span></li>
                 </ul>
               </div>
               
               <div>
                 <h3 className="text-lg font-medium mb-4">Resources</h3>
                 <ul className="space-y-2">
-                  <li><a href="#" className="text-gray-400 hover:text-white">Blog</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white">Community</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white">Success Stories</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white">Events</a></li>
+                  <li><span onClick={() => navigate('/blog')} className="text-gray-400 hover:text-white cursor-pointer">Blog</span></li>
+                  <li><span onClick={() => navigate('/community')} className="text-gray-400 hover:text-white cursor-pointer">Community</span></li>
+                  <li><span onClick={() => navigate('/success-stories')} className="text-gray-400 hover:text-white cursor-pointer">Success Stories</span></li>
+                  <li><span onClick={() => navigate('/events')} className="text-gray-400 hover:text-white cursor-pointer">Events</span></li>
                 </ul>
               </div>
               
               <div>
                 <h3 className="text-lg font-medium mb-4">Company</h3>
                 <ul className="space-y-2">
-                  <li><a href="#" className="text-gray-400 hover:text-white">About Us</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white">Careers</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white">Contact</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white">Privacy Policy</a></li>
+                  <li><span onClick={() => navigate('/about')} className="text-gray-400 hover:text-white cursor-pointer">About Us</span></li>
+                  <li><span onClick={() => navigate('/company-careers')} className="text-gray-400 hover:text-white cursor-pointer">Careers</span></li>
+                  <li><span onClick={() => navigate('/contact')} className="text-gray-400 hover:text-white cursor-pointer">Contact</span></li>
+                  <li><span onClick={() => navigate('/privacy')} className="text-gray-400 hover:text-white cursor-pointer">Privacy Policy</span></li>
                 </ul>
               </div>
             </div>
