@@ -7,45 +7,84 @@ import {
   Compass,
   Code,
   Users,
-  BarChart
+  BarChart,
+  Sparkles,
+  Target,
+  Brain,
+  Hammer,
+  Bot,
+  Check,
+  Play,
+  School,
+  Medal
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 const LandingPage: React.FC = () => {
   const [_, navigate] = useLocation();
 
   const features = [
     {
-      title: "AI-Powered Career Guidance",
-      description: "Get personalized career recommendations based on your interests, skills, and preferences with our PathFinder AI assistant.",
-      icon: <Compass className="h-10 w-10 text-primary" />
+      title: "Career Discovery",
+      description: "Not sure what fits you best? Our smart tests & insights help you find a path that feels right.",
+      icon: <Target className="h-10 w-10 text-primary" />
     },
     {
-      title: "Curated Learning Resources",
-      description: "Access high-quality courses and tutorials tailored specifically for Indian students and job market requirements.",
-      icon: <BookOpen className="h-10 w-10 text-primary" />
+      title: "Learning, Your Way",
+      description: "No boring long courses. Learn via snackable content, AI tips, projects, and 5-min challenges.",
+      icon: <Brain className="h-10 w-10 text-primary" />
     },
     {
-      title: "Hands-on Projects",
-      description: "Build your portfolio with real-world projects that showcase your skills to potential employers.",
-      icon: <Code className="h-10 w-10 text-primary" />
+      title: "Build Real Stuff",
+      description: "From resumes to side-projects, work on things you can actually show off.",
+      icon: <Hammer className="h-10 w-10 text-primary" />
     },
     {
-      title: "Soft Skills Development",
-      description: "Enhance your communication, leadership, and problem-solving abilities through interactive exercises.",
+      title: "Mentorship + Community",
+      description: "Get matched with mentors. Team up with peers. You're not alone here.",
       icon: <Users className="h-10 w-10 text-primary" />
     },
     {
-      title: "Progress Tracking",
-      description: "Monitor your learning journey with detailed analytics and achievement badges to stay motivated.",
-      icon: <BarChart className="h-10 w-10 text-primary" />
-    },
-    {
-      title: "Community Support",
-      description: "Connect with peers, mentors, and industry experts to expand your network and get guidance.",
-      icon: <Users className="h-10 w-10 text-primary" />
+      title: "AI-Powered Everything",
+      description: "Smart suggestions, flashcards, personalized goals, even project feedback – all handled by your AI buddy.",
+      icon: <Bot className="h-10 w-10 text-primary" />
     }
+  ];
+
+  const benefits = [
+    "Bite-sized, binge-worthy content",
+    "AI-generated notes & cheat sheets",
+    "Unlockable rewards and badges",
+    "Resume, mock interviews & more",
+    "Made for Indian students, by young builders"
+  ];
+
+  const steps = [
+    {
+      title: "Take a 5-minute quiz to find your niche",
+      icon: <Compass className="h-6 w-6 text-primary" />
+    },
+    {
+      title: "Start your personalized learning journey",
+      icon: <BookOpen className="h-6 w-6 text-primary" />
+    },
+    {
+      title: "Build & showcase real projects",
+      icon: <Code className="h-6 w-6 text-primary" />
+    },
+    {
+      title: "Earn rewards, mentorships & prep for jobs",
+      icon: <Medal className="h-6 w-6 text-primary" />
+    }
+  ];
+
+  const audienceGroups = [
+    "College students who feel stuck",
+    "Hustlers looking to upskill fast",
+    "Career switchers who want clarity",
+    "Final years prepping for placements"
   ];
 
   const handleGetStarted = () => {
@@ -59,7 +98,7 @@ const LandingPage: React.FC = () => {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
             <Rocket className="h-8 w-8 text-primary mr-2" />
-            <span className="text-xl font-bold">PathFinder</span>
+            <span className="text-xl font-bold">CareerOS</span>
           </div>
           <div className="space-x-2">
             <Button variant="outline" onClick={() => navigate('/login')}>Login</Button>
@@ -69,44 +108,49 @@ const LandingPage: React.FC = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary/10 to-primary/5 py-20">
+      <section className="bg-gradient-to-r from-primary/10 to-primary/5 py-24">
         <div className="container mx-auto px-4 flex flex-col lg:flex-row items-center">
-          <div className="w-full lg:w-1/2 mb-10 lg:mb-0">
+          <div className="w-full lg:w-1/2 mb-12 lg:mb-0">
+            <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 px-3 py-1 text-sm">Your AI-powered Career Companion</Badge>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Your Personalized
-              <span className="text-primary block">Career Companion</span>
+              Not Sure What To Do With Your Life?
             </h1>
+            <h2 className="text-2xl md:text-3xl font-semibold text-primary mb-6">
+              Let's figure it out — and build it — together.
+            </h2>
             <p className="text-gray-700 text-lg mb-8 max-w-lg">
-              Empowering Indian students with AI-powered career guidance, skill development, and personalized learning pathways.
+              CareerOS is your all-in-one AI-powered dashboard to find your niche, learn the right skills, build real projects, and get ready for life after college. All gamified, all chill.
             </p>
             <div className="space-x-4">
-              <Button size="lg" onClick={handleGetStarted}>
-                Get Started
+              <Button size="lg" onClick={handleGetStarted} className="px-8">
+                Start Your Journey – It's Free
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate('/about')}>
-                Learn More
+              <Button size="lg" variant="outline" className="px-6">
+                <Play className="mr-2 h-4 w-4" />
+                Watch How It Works
               </Button>
             </div>
           </div>
           <div className="w-full lg:w-1/2 flex justify-center">
             <div className="relative w-full max-w-md">
-              <div className="absolute -left-4 -top-4 w-72 h-72 bg-primary/20 rounded-full filter blur-3xl opacity-50"></div>
-              <div className="absolute -right-4 -bottom-4 w-72 h-72 bg-primary/20 rounded-full filter blur-3xl opacity-50"></div>
+              <div className="absolute -left-6 -top-6 w-80 h-80 bg-primary/20 rounded-full filter blur-3xl opacity-50"></div>
+              <div className="absolute -right-6 -bottom-6 w-80 h-80 bg-primary/20 rounded-full filter blur-3xl opacity-50"></div>
               <div className="relative z-10 bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100">
                 {/* Mockup UI */}
                 <div className="p-5 bg-primary/10 border-b border-gray-200">
                   <div className="flex items-center">
                     <Rocket className="h-5 w-5 text-primary mr-2" />
-                    <span className="font-medium">PathFinder Dashboard</span>
+                    <span className="font-medium">CareerOS Dashboard</span>
                   </div>
                 </div>
                 <div className="p-5">
-                  <div className="h-60 flex flex-col items-center justify-center text-center">
-                    <Compass className="h-14 w-14 text-primary mb-3" />
-                    <h3 className="text-lg font-medium mb-1">Find Your Path</h3>
-                    <p className="text-sm text-gray-500 mb-4">Discover the career that matches your skills and passion</p>
-                    <Button className="w-full">Explore Career Paths</Button>
+                  <div className="h-64 flex flex-col items-center justify-center text-center">
+                    <Compass className="h-16 w-16 text-primary mb-4" />
+                    <h3 className="text-xl font-medium mb-2">Find Your Path</h3>
+                    <p className="text-sm text-gray-500 mb-6">Take our 5-minute quiz to discover careers that match your skills and passion</p>
+                    <Button className="w-full mb-3">Start Career Quiz</Button>
+                    <p className="text-xs text-gray-400">95% of students find their ideal path in under 10 minutes</p>
                   </div>
                 </div>
               </div>
@@ -115,13 +159,17 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-16 bg-white">
+      {/* What You Get Section */}
+      <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">All-in-One Career Development Platform</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Everything you need to navigate your career journey, from exploration to landing your dream job
+            <div className="inline-flex items-center mb-3">
+              <Sparkles className="h-5 w-5 text-primary mr-2" />
+              <h3 className="text-xl font-semibold text-primary">What You Get</h3>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Discover. Learn. Launch. Repeat.</h2>
+            <p className="text-gray-600 max-w-3xl mx-auto text-lg">
+              "It's like Duolingo met LinkedIn and made it fun."
             </p>
           </div>
           
@@ -129,8 +177,8 @@ const LandingPage: React.FC = () => {
             {features.map((feature, index) => (
               <Card key={index} className="border-gray-200 hover:shadow-md transition-shadow">
                 <CardHeader className="pb-2">
-                  <div className="mb-2">{feature.icon}</div>
-                  <CardTitle>{feature.title}</CardTitle>
+                  <div className="mb-3">{feature.icon}</div>
+                  <CardTitle className="text-xl">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-600">{feature.description}</p>
@@ -138,24 +186,93 @@ const LandingPage: React.FC = () => {
               </Card>
             ))}
           </div>
+        </div>
+      </section>
 
-          <div className="mt-16 text-center">
-            <Button size="lg" onClick={handleGetStarted}>
-              Start Your Journey
-              <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
+      {/* How It Works */}
+      <section className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center mb-3">
+              <Play className="h-5 w-5 text-primary mr-2" />
+              <h3 className="text-xl font-semibold text-primary">How It Works</h3>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Your Career Journey, Simplified</h2>
+          </div>
+          
+          <div className="max-w-3xl mx-auto">
+            {steps.map((step, index) => (
+              <div key={index} className="flex mb-8 last:mb-0">
+                <div className="mr-6">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                    {step.icon}
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div className="w-0.5 h-12 bg-primary/20 mx-auto mt-2"></div>
+                  )}
+                </div>
+                <div className="pt-3">
+                  <h4 className="text-xl font-medium">{step.title}</h4>
+                  {index === steps.length - 1 && (
+                    <p className="text-primary font-medium mt-2">Share your journey with the world 🌍</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why Students Love It */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center mb-3">
+              <Medal className="h-5 w-5 text-primary mr-2" />
+              <h3 className="text-xl font-semibold text-primary">Why Students Love CareerOS</h3>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Built For Gen Z, By Gen Z</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-4xl mx-auto">
+            <div>
+              <ul className="space-y-4">
+                {benefits.map((benefit, index) => (
+                  <li key={index} className="flex items-start">
+                    <div className="mr-3 bg-primary/10 text-primary rounded-full p-1 mt-0.5">
+                      <Check className="w-4 h-4" />
+                    </div>
+                    <span className="text-lg">{benefit}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="text-xl font-bold mb-4">Perfect For</h4>
+              <div className="grid grid-cols-1 gap-3">
+                {audienceGroups.map((audience, index) => (
+                  <Card key={index} className="border-primary/20 bg-primary/5">
+                    <CardContent className="p-4">
+                      <p className="font-medium">{audience}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">Student Success Stories</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Hear from students who transformed their careers with PathFinder
-            </p>
+            <div className="inline-flex items-center mb-3">
+              <Users className="h-5 w-5 text-primary mr-2" />
+              <h3 className="text-xl font-semibold text-primary">Student Success Stories</h3>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Join Thousands of Happy Students</h2>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -166,7 +283,7 @@ const LandingPage: React.FC = () => {
                     <span className="text-primary font-bold text-xl">PR</span>
                   </div>
                   <p className="mb-4 text-gray-700">
-                    "PathFinder helped me discover my passion for data science and guided me through every step of my learning journey."
+                    "CareerOS helped me discover my passion for data science and guided me through every step of my learning journey."
                   </p>
                   <p className="font-medium">Priya Rai</p>
                   <p className="text-sm text-gray-500">Data Scientist, Bangalore</p>
@@ -196,7 +313,7 @@ const LandingPage: React.FC = () => {
                     <span className="text-primary font-bold text-xl">SM</span>
                   </div>
                   <p className="mb-4 text-gray-700">
-                    "As a non-technical student, I was lost until PathFinder helped me identify my strengths and find the right tech career path."
+                    "As a non-technical student, I was lost until CareerOS helped me identify my strengths and find the right tech career path."
                   </p>
                   <p className="font-medium">Sneha Mehta</p>
                   <p className="text-sm text-gray-500">UI/UX Designer, Mumbai</p>
@@ -210,18 +327,18 @@ const LandingPage: React.FC = () => {
       {/* CTA Section */}
       <section className="py-20 bg-primary text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Discover Your Career Path?</h2>
-          <p className="text-white/80 max-w-2xl mx-auto mb-8">
-            Join thousands of Indian students who have found their ideal career path and started building their future with PathFinder.
+          <h2 className="text-3xl font-bold mb-4">Your career deserves more than guesswork.</h2>
+          <p className="text-white/80 max-w-2xl mx-auto mb-8 text-lg">
+            Let's build it together.
           </p>
           <Button
             size="lg"
             variant="secondary"
             onClick={handleGetStarted}
-            className="bg-white text-primary hover:bg-gray-100"
+            className="bg-white text-primary hover:bg-gray-100 px-8 py-6 text-lg"
           >
-            Get Started For Free
-            <ChevronRight className="ml-2 h-4 w-4" />
+            Start Your Journey – It's Free
+            <ChevronRight className="ml-2 h-5 w-5" />
           </Button>
         </div>
       </section>
@@ -233,7 +350,7 @@ const LandingPage: React.FC = () => {
             <div className="mb-8 md:mb-0">
               <div className="flex items-center mb-4">
                 <Rocket className="h-6 w-6 text-primary mr-2" />
-                <span className="text-xl font-bold">PathFinder</span>
+                <span className="text-xl font-bold">CareerOS</span>
               </div>
               <p className="text-gray-400 max-w-xs">
                 Empowering Indian students to discover and pursue their ideal careers with confidence.
@@ -274,7 +391,7 @@ const LandingPage: React.FC = () => {
           </div>
           
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; {new Date().getFullYear()} PathFinder. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} CareerOS. All rights reserved.</p>
           </div>
         </div>
       </footer>
