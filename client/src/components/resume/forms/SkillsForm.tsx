@@ -228,15 +228,18 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Proficiency Level</label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-medium mb-1">Proficiency Level (Optional)</label>
+                  </div>
                   <Select
                     value={newSkill.level}
                     onValueChange={(value) => setNewSkill({...newSkill, level: value})}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select level" />
+                      <SelectValue placeholder="Select level (optional)" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="">None</SelectItem>
                       {proficiencyLevels.map(level => (
                         <SelectItem key={level} value={level}>
                           {level}
@@ -244,6 +247,7 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-gray-500 mt-1">You can leave this blank if you prefer not to specify your proficiency level</p>
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between">
@@ -299,15 +303,18 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Proficiency Level</label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-medium mb-1">Proficiency Level (Optional)</label>
+                  </div>
                   <Select
                     value={editingSkill.level}
                     onValueChange={(value) => setEditingSkill({...editingSkill, level: value})}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select level" />
+                      <SelectValue placeholder="Select level (optional)" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="">None</SelectItem>
                       {proficiencyLevels.map(level => (
                         <SelectItem key={level} value={level}>
                           {level}
@@ -315,6 +322,7 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-gray-500 mt-1">You can leave this blank if you prefer not to specify your proficiency level</p>
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between">
