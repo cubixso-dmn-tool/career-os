@@ -13,6 +13,7 @@ import SoftSkills from "@/pages/SoftSkills";
 import Achievements from "@/pages/Achievements";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import LandingPage from "@/pages/LandingPage";
 import { useState } from "react";
 import { SidebarProvider } from "@/hooks/use-sidebar";
 import { AuthProvider } from "@/hooks/use-auth-context";
@@ -21,7 +22,8 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 function Router() {
   return (
     <Switch>
-      <Route path="/">
+      <Route path="/" component={LandingPage} />
+      <Route path="/dashboard">
         <ProtectedRoute>
           <Dashboard />
         </ProtectedRoute>

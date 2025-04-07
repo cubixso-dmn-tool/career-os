@@ -51,7 +51,7 @@ export default function Register() {
         title: "Registration successful",
         description: "Your account has been created!",
       });
-      setLocation("/");
+      setLocation("/dashboard");
     } catch (err: any) {
       setError(err.message || "Registration failed. Please try again.");
     }

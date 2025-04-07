@@ -26,7 +26,7 @@ export default function Sidebar({ user }: SidebarProps) {
   const [location] = useLocation();
 
   const navItems = [
-    { path: "/", icon: LayoutDashboard, label: "Dashboard" },
+    { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/career-guide", icon: Compass, label: "Career Guide" },
     { path: "/courses", icon: BookOpen, label: "Courses" },
     { path: "/projects", icon: GitBranch, label: "Projects" },
