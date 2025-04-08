@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useAuthContext } from "@/hooks/use-auth-context";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,8 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function Register() {
-  const { register, loading } = useAuthContext();
+  const { registerMutation } = useAuth();
+  const isLoading = registerMutation.isPending;
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string | null>(null);
@@ -46,12 +47,19 @@ export default function Register() {
       setError(null);
       // Remove confirmPassword as the API doesn't need it
       const { confirmPassword, ...registrationData } = data;
-      await register(registrationData);
-      toast({
-        title: "Registration successful",
-        description: "Your account has been created!",
+      
+      registerMutation.mutate(registrationData, {
+        onSuccess: () => {
+          toast({
+            title: "Registration successful",
+            description: "Your account has been created!",
+          });
+          setLocation("/dashboard");
+        },
+        onError: (err: any) => {
+          setError(err.message || "Registration failed. Please try again.");
+        }
       });
-      setLocation("/dashboard");
     } catch (err: any) {
       setError(err.message || "Registration failed. Please try again.");
     }
@@ -137,8 +145,8 @@ export default function Register() {
               {error && (
                 <div className="text-sm font-medium text-destructive mt-2">{error}</div>
               )}
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Creating account...
