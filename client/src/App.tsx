@@ -18,9 +18,8 @@ import LandingPage from "@/pages/LandingPage";
 import Communities from "@/pages/Communities";
 import CommunityDetail from "@/pages/CommunityDetail";
 import CommunityManagement from "@/pages/CommunityManagement";
-import { useState } from "react";
 import { SidebarProvider } from "@/hooks/use-sidebar";
-import { AuthProvider } from "@/hooks/use-auth-context";
+import { AuthProvider } from "@/hooks/use-auth";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 function Router() {
@@ -71,7 +70,7 @@ function Router() {
       <Route path="/communities" component={Communities} />
       <Route path="/communities/:id" component={CommunityDetail} />
       <Route path="/communities/:id/manage">
-        <ProtectedRoute>
+        <ProtectedRoute requiredRole="community_founder">
           <CommunityManagement />
         </ProtectedRoute>
       </Route>

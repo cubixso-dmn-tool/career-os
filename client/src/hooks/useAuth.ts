@@ -1,26 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
-
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  avatar?: string;
-  name?: string;
-  isVerified?: boolean;
-  isAdmin?: boolean;
-  roles?: string[];
-}
+import { useAuthContext } from './use-auth-context';
+import { User } from '@shared/schema';
 
 export function useAuth() {
-  const { data, isLoading, error } = useQuery<{ isAuthenticated: boolean; user?: User }>({
-    queryKey: ['/api/auth/status'],
-    refetchOnWindowFocus: false,
-  });
+  const { isAuthenticated, user, loading: isLoading, error } = useAuthContext();
 
   return {
-    user: data?.user || null,
+    user,
+    isAuthenticated,
     isLoading,
-    isAuthenticated: data?.isAuthenticated || false,
     error
   };
 }

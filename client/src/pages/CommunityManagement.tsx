@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { useParams, useLocation } from 'wouter';
-import { useQuery } from '@tanstack/react-query';
-import { 
-  Home, Users, Calendar, Settings, MessageSquare, FileText, Briefcase, 
-  BarChart, MessageCircle, UserPlus, Shield, PlusCircle, ArrowLeft,
-  ImagePlus, Info, Bell, Flag, ExternalLink, Trash2, Edit, Globe
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLocation, Link } from 'wouter';
+import {
+  Users, BarChart, Calendar, FileText, Settings, Flag, ArrowLeft,
+  User, Shield, UserX, CheckCircle, XCircle, Clock, MessageSquare,
+  BarChart2, UserCheck, Share2, Edit, Trash, Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,994 +12,1126 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { formatDistanceToNow } from 'date-fns';
 
-// Types
-type Community = {
+// Interfaces
+interface Community {
   id: number;
   name: string;
   description: string;
   founderId: number;
   category: string;
   isVerified: boolean;
-  logo?: string | null;
-  banner?: string | null;
+  logo: string | null;
+  banner: string | null;
   memberCount: number;
   createdAt: string;
   founderName: string;
-  rules?: string[];
-  links?: { title: string; url: string }[];
-};
+  rules: string[];
+  links: { title: string; url: string }[];
+}
 
-type CommunityMember = {
+interface CommunityMember {
   userId: number;
   communityId: number;
   name: string;
-  avatar?: string;
-  role: 'member' | 'moderator' | 'admin';
+  avatar: string | null;
+  role: 'admin' | 'moderator' | 'member';
   joinedAt: string;
   isActive: boolean;
-};
+}
 
-type CommunityPost = {
+interface FlaggedContent {
   id: number;
   communityId: number;
-  authorId: number;
-  authorName: string;
-  authorAvatar?: string;
-  title: string;
+  contentId: number;
+  contentType: 'post' | 'comment' | 'poll';
   content: string;
-  type: 'announcement' | 'discussion' | 'event' | 'job' | 'blog';
+  reporterId: number;
+  reporterName: string;
+  reason: string;
   createdAt: string;
-  commentCount: number;
-  isFeatured: boolean;
-  likes: number;
-};
+  status: 'pending' | 'resolved' | 'dismissed';
+}
 
-type CommunityEvent = {
+interface CommunityCollaboration {
   id: number;
-  communityId: number;
-  organizerId: number;
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  location: string;
-  isOnline: boolean;
-  attendeeCount: number;
-};
+  sourceCommunityId: number;
+  sourceCommunityName: string;
+  targetCommunityId: number;
+  targetCommunityName: string;
+  type: 'event' | 'project';
+  status: 'pending' | 'approved' | 'rejected';
+  details: string;
+  createdAt: string;
+}
 
-type CommunityStats = {
+interface CommunityStats {
   totalMembers: number;
   activeMembers: number;
   totalPosts: number;
   totalEvents: number;
   engagementRate: number;
-  memberGrowth: { date: string; count: number }[];
-  postEngagement: { date: string; count: number }[];
+  memberGrowth: Array<{ date: string; count: number }>;
+  postEngagement: Array<{ date: string; count: number }>;
   newJoins: number;
-};
+}
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
-  });
-};
+// Community Management Page Component
+export default function CommunityManagementPage() {
+  const [location, setLocation] = useLocation();
+  const pathParts = location.split('/');
+  const communityId = parseInt(pathParts[pathParts.length - 2] || '1');
+  const [activeTab, setActiveTab] = useState('overview');
+  const [isUpdateCommunityDialogOpen, setIsUpdateCommunityDialogOpen] = useState(false);
+  const [isCollaborationDialogOpen, setIsCollaborationDialogOpen] = useState(false);
+  const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-const getPostTypeIcon = (type: string) => {
-  switch(type) {
-    case 'announcement': return <Info className="h-4 w-4" />;
-    case 'discussion': return <MessageCircle className="h-4 w-4" />;
-    case 'event': return <Calendar className="h-4 w-4" />;
-    case 'job': return <Briefcase className="h-4 w-4" />;
-    case 'blog': return <FileText className="h-4 w-4" />;
-    default: return <MessageCircle className="h-4 w-4" />;
-  }
-};
-
-const CommunityManagement: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const [_, navigate] = useLocation();
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("overview");
-
-  // Fetch community data
+  // Fetch community details
   const { data: community, isLoading: isLoadingCommunity } = useQuery<Community>({
-    queryKey: [`/api/communities/${id}`],
-    enabled: !!id,
+    queryKey: [`/api/communities/${communityId}`],
+    queryFn: async () => {
+      const res = await fetch(`/api/communities/${communityId}`);
+      if (!res.ok) throw new Error('Failed to fetch community');
+      return res.json();
+    },
   });
 
   // Fetch community members
   const { data: members = [], isLoading: isLoadingMembers } = useQuery<CommunityMember[]>({
-    queryKey: [`/api/communities/${id}/members`],
-    enabled: !!id,
+    queryKey: [`/api/communities/${communityId}/members`],
+    queryFn: async () => {
+      const res = await fetch(`/api/communities/${communityId}/members`);
+      if (!res.ok) throw new Error('Failed to fetch members');
+      return res.json();
+    },
   });
 
-  // Fetch community posts
-  const { data: posts = [], isLoading: isLoadingPosts } = useQuery<CommunityPost[]>({
-    queryKey: [`/api/communities/${id}/posts`],
-    enabled: !!id,
+  // Fetch flagged content
+  const { data: flaggedContent = [], isLoading: isLoadingFlagged } = useQuery<FlaggedContent[]>({
+    queryKey: [`/api/communities/${communityId}/flagged`],
+    queryFn: async () => {
+      const res = await fetch(`/api/communities/${communityId}/flagged`);
+      if (!res.ok) return [];
+      return res.json();
+    },
   });
 
-  // Fetch community events
-  const { data: events = [], isLoading: isLoadingEvents } = useQuery<CommunityEvent[]>({
-    queryKey: [`/api/communities/${id}/events`],
-    enabled: !!id,
+  // Fetch collaboration opportunities
+  const { data: collaborations = [], isLoading: isLoadingCollaborations } = useQuery<CommunityCollaboration[]>({
+    queryKey: [`/api/communities/${communityId}/collaborations`],
+    queryFn: async () => {
+      const res = await fetch(`/api/communities/${communityId}/collaborations`);
+      if (!res.ok) return [];
+      return res.json();
+    },
   });
 
-  // Fetch community stats
+  // Fetch community analytics
   const { data: stats, isLoading: isLoadingStats } = useQuery<CommunityStats>({
-    queryKey: [`/api/communities/${id}/stats`],
-    enabled: !!id,
+    queryKey: [`/api/communities/${communityId}/stats`],
+    queryFn: async () => {
+      const res = await fetch(`/api/communities/${communityId}/stats`);
+      if (!res.ok) throw new Error('Failed to fetch community stats');
+      return res.json();
+    },
   });
 
-  // Check if user is authorized to manage this community
-  const isFounder = community && user ? community.founderId === user.id : false;
-  const isAdmin = members.some(member => member.userId === user?.id && (member.role === 'admin' || member.role === 'moderator'));
-  const canManage = isFounder || isAdmin;
+  // Check if user is an admin or moderator
+  const userRole = members.find(member => member.userId === user?.id)?.role;
+  const isAdmin = userRole === 'admin';
+  const isModerator = userRole === 'moderator';
 
+  // Update community mutation
+  const updateCommunityMutation = useMutation({
+    mutationFn: async (communityData: any) => {
+      const res = await fetch(`/api/communities/${communityId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(communityData),
+      });
+      
+      if (!res.ok) throw new Error('Failed to update community');
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Community updated',
+        description: 'Your community has been updated successfully.',
+      });
+      setIsUpdateCommunityDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}`] });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to update community. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Update member role mutation
+  const updateMemberRoleMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: number; role: string }) => {
+      const res = await fetch(`/api/communities/${communityId}/members/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ role }),
+      });
+      
+      if (!res.ok) throw new Error('Failed to update member role');
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Member updated',
+        description: 'Member role has been updated successfully.',
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/members`] });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to update member. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Remove member mutation
+  const removeMemberMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const res = await fetch(`/api/communities/${communityId}/members/${userId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!res.ok) throw new Error('Failed to remove member');
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Member removed',
+        description: 'Member has been removed from the community.',
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/members`] });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to remove member. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Handle flagged content mutation
+  const handleFlaggedContentMutation = useMutation({
+    mutationFn: async ({ flagId, action }: { flagId: number; action: string }) => {
+      const res = await fetch(`/api/communities/${communityId}/flagged/${flagId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action }),
+      });
+      
+      if (!res.ok) throw new Error('Failed to handle flagged content');
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Content moderated',
+        description: 'Flagged content has been handled successfully.',
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/flagged`] });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to moderate content. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Propose collaboration mutation
+  const proposeCollaborationMutation = useMutation({
+    mutationFn: async (collaborationData: any) => {
+      const res = await fetch(`/api/communities/${communityId}/collaborations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(collaborationData),
+      });
+      
+      if (!res.ok) throw new Error('Failed to propose collaboration');
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Collaboration proposed',
+        description: 'Your collaboration proposal has been sent.',
+      });
+      setIsCollaborationDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/collaborations`] });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to propose collaboration. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Respond to collaboration mutation
+  const respondToCollaborationMutation = useMutation({
+    mutationFn: async ({ collaborationId, status }: { collaborationId: number; status: string }) => {
+      const res = await fetch(`/api/communities/${communityId}/collaborations/${collaborationId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      });
+      
+      if (!res.ok) throw new Error('Failed to respond to collaboration');
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Response sent',
+        description: 'Your response to the collaboration request has been sent.',
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/collaborations`] });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to respond to collaboration. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Handle community update form submission
+  const handleUpdateCommunity = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    
+    const name = formData.get('name') as string;
+    const description = formData.get('description') as string;
+    const category = formData.get('category') as string;
+    
+    // Parse rules and links
+    const rulesText = formData.get('rules') as string;
+    const rules = rulesText.split('\n').filter(rule => rule.trim() !== '');
+    
+    const linksText = formData.get('links') as string;
+    const links = linksText.split('\n')
+      .filter(link => link.trim() !== '')
+      .map(link => {
+        const parts = link.split('|');
+        return {
+          title: parts[0]?.trim() || 'Link',
+          url: parts[1]?.trim() || '#',
+        };
+      });
+    
+    updateCommunityMutation.mutate({
+      name,
+      description,
+      category,
+      rules,
+      links
+    });
+  };
+
+  // Handle collaboration proposal form submission
+  const handleProposeCollaboration = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    
+    const targetCommunityId = Number(formData.get('targetCommunityId'));
+    const type = formData.get('type') as string;
+    const details = formData.get('details') as string;
+    
+    proposeCollaborationMutation.mutate({
+      targetCommunityId,
+      type,
+      details
+    });
+  };
+
+  // Loading state
   if (isLoadingCommunity) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-        <p className="ml-3">Loading community management dashboard...</p>
+      <div className="container max-w-7xl mx-auto py-10 px-4">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
       </div>
     );
   }
 
+  // Error state
   if (!community) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <Users className="h-16 w-16 text-gray-400 mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Community Not Found</h2>
-        <p className="text-gray-600 mb-6">The community you're looking for doesn't exist or has been removed.</p>
-        <Button onClick={() => navigate('/communities')}>
-          Back to Communities
-        </Button>
+      <div className="container max-w-7xl mx-auto py-10 px-4">
+        <div className="text-center py-10">
+          <h2 className="text-2xl font-bold text-red-500">Community not found</h2>
+          <p className="text-gray-500 mt-2">The community you're looking for might have been removed or doesn't exist.</p>
+          <Link href="/communities">
+            <a className="inline-block mt-4">
+              <Button>Back to Communities</Button>
+            </a>
+          </Link>
+        </div>
       </div>
     );
   }
 
-  if (!canManage) {
+  // Check permissions
+  if (!isAdmin && !isModerator) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <Shield className="h-16 w-16 text-gray-400 mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
-        <p className="text-gray-600 mb-6">You don't have permission to manage this community.</p>
-        <Button onClick={() => navigate(`/communities/${id}`)}>
-          View Community
-        </Button>
+      <div className="container max-w-7xl mx-auto py-10 px-4">
+        <div className="text-center py-10">
+          <h2 className="text-2xl font-bold text-red-500">Access Denied</h2>
+          <p className="text-gray-500 mt-2">You don't have permission to manage this community.</p>
+          <Link href={`/communities/${communityId}`}>
+            <a className="inline-block mt-4">
+              <Button>Back to Community</Button>
+            </a>
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="mr-2"
-                onClick={() => navigate(`/communities/${id}`)}
-              >
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Back to Community
-              </Button>
-              <Separator orientation="vertical" className="h-6 mx-2" />
-              <h1 className="text-xl font-bold flex items-center">
-                {community.name}
-                {community.isVerified && (
-                  <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-600 border-blue-200 text-xs">
-                    Verified
-                  </Badge>
-                )}
-              </h1>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`/communities/${id}`)}
-              >
-                <ExternalLink className="h-4 w-4 mr-1" />
-                View Public Page
-              </Button>
-            </div>
+    <div className="container max-w-7xl mx-auto py-10 px-4 sm:px-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+        <div className="flex items-center gap-4">
+          <Link href={`/communities/${communityId}`}>
+            <a className="bg-secondary p-2 rounded-md hover:bg-secondary/80">
+              <ArrowLeft className="h-5 w-5" />
+            </a>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold">
+              Manage {community.name}
+            </h1>
+            <p className="text-gray-500">
+              {isAdmin ? 'Admin Dashboard' : 'Moderator Dashboard'}
+            </p>
           </div>
         </div>
-      </header>
-
-      {/* Management Interface */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-12 gap-6">
-          {/* Sidebar */}
-          <div className="col-span-12 md:col-span-3 lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <div className="p-4 border-b">
-                <h2 className="font-semibold">Management</h2>
-              </div>
-              <nav className="space-y-1 p-2">
-                <Button
-                  variant={activeTab === "overview" ? "secondary" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => setActiveTab("overview")}
-                >
-                  <Home className="h-4 w-4 mr-2" />
-                  Overview
-                </Button>
-                <Button
-                  variant={activeTab === "posts" ? "secondary" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => setActiveTab("posts")}
-                >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Posts
-                </Button>
-                <Button
-                  variant={activeTab === "events" ? "secondary" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => setActiveTab("events")}
-                >
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Events
-                </Button>
-                <Button
-                  variant={activeTab === "members" ? "secondary" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => setActiveTab("members")}
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Members
-                </Button>
-                <Button
-                  variant={activeTab === "analytics" ? "secondary" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => setActiveTab("analytics")}
-                >
-                  <BarChart className="h-4 w-4 mr-2" />
-                  Analytics
-                </Button>
-                <Button
-                  variant={activeTab === "settings" ? "secondary" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => setActiveTab("settings")}
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </Button>
-              </nav>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="col-span-12 md:col-span-9 lg:col-span-10">
-            {/* Overview Tab */}
-            {activeTab === "overview" && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-gray-500">Total Members</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{community.memberCount}</div>
-                      {stats && (
-                        <p className="text-xs text-green-500">+{stats.newJoins} this week</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-gray-500">Total Posts</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{posts.length}</div>
-                      <p className="text-xs text-gray-500">Across all categories</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-gray-500">Upcoming Events</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{events.length}</div>
-                      <p className="text-xs text-gray-500">In the next 30 days</p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Recent Activity */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Recent Activity</CardTitle>
-                      <CardDescription>Latest posts and events</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {posts.length === 0 && events.length === 0 ? (
-                        <div className="text-center py-6">
-                          <p className="text-gray-500">No recent activity</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {[...posts, ...events.map(e => ({
-                            id: e.id,
-                            communityId: e.communityId,
-                            authorId: e.organizerId,
-                            authorName: "Event Organizer", // Placeholder
-                            title: e.title,
-                            content: e.description,
-                            type: "event" as const,
-                            createdAt: e.startDate,
-                            commentCount: 0,
-                            isFeatured: false,
-                            likes: 0
-                          }))]
-                            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                            .slice(0, 5)
-                            .map(item => (
-                              <div key={`${item.type}-${item.id}`} className="flex items-start py-2 border-b last:border-b-0">
-                                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
-                                  {getPostTypeIcon(item.type)}
-                                </div>
-                                <div>
-                                  <div className="font-medium">{item.title}</div>
-                                  <div className="text-sm text-gray-500">
-                                    {item.type.charAt(0).toUpperCase() + item.type.slice(1)} • {formatDate(item.createdAt)}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      )}
-                    </CardContent>
-                    <CardFooter>
-                      <div className="w-full flex justify-between">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setActiveTab("posts")}
-                        >
-                          View All Posts
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setActiveTab("events")}
-                        >
-                          View All Events
-                        </Button>
-                      </div>
-                    </CardFooter>
-                  </Card>
-
-                  {/* New Members */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>New Members</CardTitle>
-                      <CardDescription>Recently joined community members</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {members.length === 0 ? (
-                        <div className="text-center py-6">
-                          <p className="text-gray-500">No members yet</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {members
-                            .sort((a, b) => new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime())
-                            .slice(0, 5)
-                            .map(member => (
-                              <div key={member.userId} className="flex items-center">
-                                <Avatar className="h-10 w-10 mr-3">
-                                  <AvatarImage src={member.avatar} />
-                                  <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <div className="font-medium">{member.name}</div>
-                                  <div className="text-sm text-gray-500">
-                                    Joined {formatDate(member.joinedAt)}
-                                  </div>
-                                </div>
-                                {member.role !== 'member' && (
-                                  <Badge variant="outline" className="ml-auto capitalize">
-                                    {member.role}
-                                  </Badge>
-                                )}
-                              </div>
-                            ))}
-                        </div>
-                      )}
-                    </CardContent>
-                    <CardFooter>
-                      <Button 
-                        variant="outline" 
-                        className="w-full"
-                        onClick={() => setActiveTab("members")}
-                      >
-                        View All Members
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                </div>
-
-                {/* Quick Actions */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
-                    <CardDescription>Manage your community with these commonly used actions</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                      <Button 
-                        className="h-auto py-6 flex flex-col"
-                        onClick={() => navigate(`/communities/${id}/post/new?type=announcement`)}
-                      >
-                        <Bell className="h-6 w-6 mb-2" />
-                        <span>Post Announcement</span>
-                      </Button>
-                      <Button 
-                        className="h-auto py-6 flex flex-col"
-                        variant="outline"
-                        onClick={() => navigate(`/communities/${id}/event/new`)}
-                      >
-                        <Calendar className="h-6 w-6 mb-2" />
-                        <span>Create Event</span>
-                      </Button>
-                      <Button 
-                        className="h-auto py-6 flex flex-col"
-                        variant="outline"
-                        onClick={() => navigate(`/communities/${id}/post/new?type=job`)}
-                      >
-                        <Briefcase className="h-6 w-6 mb-2" />
-                        <span>Post Job</span>
-                      </Button>
-                      <Button 
-                        className="h-auto py-6 flex flex-col"
-                        variant="outline"
-                        onClick={() => setActiveTab("settings")}
-                      >
-                        <Settings className="h-6 w-6 mb-2" />
-                        <span>Edit Settings</span>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {/* Posts Tab */}
-            {activeTab === "posts" && (
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold">Manage Posts</h2>
-                  <Button onClick={() => navigate(`/communities/${id}/post/new`)}>
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Create New Post
-                  </Button>
-                </div>
-
-                <Tabs defaultValue="all">
-                  <TabsList>
-                    <TabsTrigger value="all">All Posts</TabsTrigger>
-                    <TabsTrigger value="announcements">Announcements</TabsTrigger>
-                    <TabsTrigger value="discussions">Discussions</TabsTrigger>
-                    <TabsTrigger value="jobs">Job Listings</TabsTrigger>
-                    <TabsTrigger value="blogs">Blog Posts</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="all" className="mt-6">
-                    {isLoadingPosts ? (
-                      <div className="text-center py-8">
-                        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                        <p>Loading posts...</p>
-                      </div>
-                    ) : posts.length === 0 ? (
-                      <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-                        <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                        <h3 className="text-lg font-medium mb-2">No Posts Yet</h3>
-                        <p className="text-gray-500 mb-6">Start creating content for your community.</p>
-                        <Button onClick={() => navigate(`/communities/${id}/post/new`)}>
-                          Create First Post
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                              <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Engagement</th>
-                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                              </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                              {posts.map(post => (
-                                <tr key={post.id} className="hover:bg-gray-50">
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="font-medium text-gray-900 truncate max-w-xs">{post.title}</div>
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <Badge variant="outline" className="capitalize flex items-center">
-                                      {getPostTypeIcon(post.type)}
-                                      <span className="ml-1">{post.type}</span>
-                                    </Badge>
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center">
-                                      <Avatar className="h-6 w-6 mr-2">
-                                        <AvatarImage src={post.authorAvatar} />
-                                        <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
-                                      </Avatar>
-                                      <span className="text-sm">{post.authorName}</span>
-                                    </div>
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {formatDate(post.createdAt)}
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    <div className="flex items-center space-x-2">
-                                      <span>{post.likes} likes</span>
-                                      <span>•</span>
-                                      <span>{post.commentCount} comments</span>
-                                    </div>
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                    <div className="flex justify-center space-x-2">
-                                      <Button 
-                                        variant="ghost" 
-                                        size="sm"
-                                        onClick={() => navigate(`/communities/${id}/post/${post.id}/edit`)}
-                                      >
-                                        <Edit className="h-4 w-4" />
-                                      </Button>
-                                      <Button 
-                                        variant="ghost" 
-                                        size="sm"
-                                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  {/* Other post type tabs would follow the same pattern */}
-                  <TabsContent value="announcements" className="mt-6">
-                    {/* Similar to 'all' tab but filtered for announcements */}
-                  </TabsContent>
-                </Tabs>
-              </div>
-            )}
-
-            {/* Events Tab */}
-            {activeTab === "events" && (
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold">Manage Events</h2>
-                  <Button onClick={() => navigate(`/communities/${id}/event/new`)}>
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Create New Event
-                  </Button>
-                </div>
-
-                <Tabs defaultValue="upcoming">
-                  <TabsList>
-                    <TabsTrigger value="upcoming">Upcoming Events</TabsTrigger>
-                    <TabsTrigger value="past">Past Events</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="upcoming" className="mt-6">
-                    {isLoadingEvents ? (
-                      <div className="text-center py-8">
-                        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                        <p>Loading events...</p>
-                      </div>
-                    ) : events.length === 0 ? (
-                      <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-                        <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                        <h3 className="text-lg font-medium mb-2">No Upcoming Events</h3>
-                        <p className="text-gray-500 mb-6">Schedule your first community event.</p>
-                        <Button onClick={() => navigate(`/communities/${id}/event/new`)}>
-                          Create First Event
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {events.map(event => (
-                          <Card key={event.id}>
-                            <CardHeader>
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <CardTitle>{event.title}</CardTitle>
-                                  <CardDescription>
-                                    {new Date(event.startDate).toLocaleDateString()} at {new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                  </CardDescription>
-                                </div>
-                                <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">
-                                  {event.isOnline ? 'Online Event' : 'In-person Event'}
-                                </Badge>
-                              </div>
-                            </CardHeader>
-                            <CardContent>
-                              <p className="text-gray-700">{event.description}</p>
-                              <div className="flex items-center mt-4 text-sm text-gray-500">
-                                <div className="flex items-center mr-4">
-                                  <Users className="h-4 w-4 mr-1" />
-                                  <span>{event.attendeeCount} attending</span>
-                                </div>
-                                {!event.isOnline && (
-                                  <div className="flex items-center">
-                                    <Globe className="h-4 w-4 mr-1" />
-                                    <span>{event.location}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </CardContent>
-                            <CardFooter className="flex justify-end space-x-2">
-                              <Button 
-                                variant="outline"
-                                onClick={() => navigate(`/communities/${id}/event/${event.id}/edit`)}
-                              >
-                                <Edit className="h-4 w-4 mr-1" />
-                                Edit
-                              </Button>
-                              <Button 
-                                variant="outline"
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200"
-                              >
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                Cancel Event
-                              </Button>
-                            </CardFooter>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="past" className="mt-6">
-                    {/* Similar to 'upcoming' tab but filtered for past events */}
-                  </TabsContent>
-                </Tabs>
-              </div>
-            )}
-
-            {/* Members Tab */}
-            {activeTab === "members" && (
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold">Manage Members</h2>
-                  <Button onClick={() => {/* Invite members flow */}}>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Invite Members
-                  </Button>
-                </div>
-
-                <Card>
-                  <CardHeader>
-                    <div className="flex justify-between items-center">
-                      <CardTitle>Community Members</CardTitle>
-                      <div className="flex items-center">
-                        <Input
-                          placeholder="Search members..."
-                          className="w-64 mr-2"
-                        />
-                        <Button variant="outline" size="sm">
-                          Search
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoadingMembers ? (
-                      <div className="text-center py-8">
-                        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                        <p>Loading members...</p>
-                      </div>
-                    ) : members.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                        <h3 className="text-lg font-medium mb-2">No Members Yet</h3>
-                        <p className="text-gray-500">Invite people to join your community.</p>
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {members.map(member => (
-                              <tr key={member.userId} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="flex items-center">
-                                    <Avatar className="h-8 w-8 mr-3">
-                                      <AvatarImage src={member.avatar} />
-                                      <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                      <div className="font-medium">{member.name}</div>
-                                      {member.userId === community.founderId && (
-                                        <div className="text-xs text-gray-500">Community Founder</div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <Badge variant="outline" className="capitalize">
-                                    {member.role}
-                                  </Badge>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {formatDate(member.joinedAt)}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <Badge className={member.isActive ? "bg-green-100 text-green-800 border-green-200" : "bg-red-100 text-red-800 border-red-200"}>
-                                    {member.isActive ? "Active" : "Inactive"}
-                                  </Badge>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-center">
-                                  <div className="flex justify-center space-x-2">
-                                    {member.userId !== community.founderId && (
-                                      <>
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm"
-                                        >
-                                          Change Role
-                                        </Button>
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm"
-                                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                        >
-                                          Remove
-                                        </Button>
-                                      </>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {/* Analytics Tab */}
-            {activeTab === "analytics" && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold">Community Analytics</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-gray-500">Engagement Rate</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {stats ? `${(stats.engagementRate * 100).toFixed(1)}%` : 'N/A'}
-                      </div>
-                      <p className="text-xs text-gray-500">Based on posts, comments, likes</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-gray-500">Active Members</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {stats ? stats.activeMembers : 'N/A'}
-                      </div>
-                      <p className="text-xs text-gray-500">Of {community.memberCount} total</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-gray-500">Total Post Views</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">N/A</div>
-                      <p className="text-xs text-gray-500">Analytics in development</p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Charts and detailed analytics would go here */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Growth & Engagement</CardTitle>
-                    <CardDescription>Community metrics over time</CardDescription>
-                  </CardHeader>
-                  <CardContent className="h-80 flex items-center justify-center">
-                    <div className="text-center">
-                      <BarChart className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                      <h3 className="text-lg font-medium mb-2">Detailed Analytics Coming Soon</h3>
-                      <p className="text-gray-500">
-                        We're working on building comprehensive analytics for community founders.
+        
+        {isAdmin && (
+          <Dialog open={isUpdateCommunityDialogOpen} onOpenChange={setIsUpdateCommunityDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="mt-4 md:mt-0">
+                <Settings className="h-4 w-4 mr-2" />
+                Community Settings
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Update Community</DialogTitle>
+                <DialogDescription>
+                  Make changes to your community settings and information.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <form onSubmit={handleUpdateCommunity}>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">
+                      Name
+                    </Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      defaultValue={community.name}
+                      className="col-span-3"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="category" className="text-right">
+                      Category
+                    </Label>
+                    <Select name="category" defaultValue={community.category}>
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Tech">Tech</SelectItem>
+                        <SelectItem value="Business">Business</SelectItem>
+                        <SelectItem value="Design">Design</SelectItem>
+                        <SelectItem value="Career">Career</SelectItem>
+                        <SelectItem value="Education">Education</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="description" className="text-right pt-2">
+                      Description
+                    </Label>
+                    <Textarea
+                      id="description"
+                      name="description"
+                      defaultValue={community.description}
+                      className="col-span-3"
+                      rows={3}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="rules" className="text-right pt-2">
+                      Rules
+                    </Label>
+                    <Textarea
+                      id="rules"
+                      name="rules"
+                      defaultValue={community.rules.join('\n')}
+                      className="col-span-3"
+                      rows={4}
+                      placeholder="One rule per line"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="links" className="text-right pt-2">
+                      Links
+                    </Label>
+                    <div className="col-span-3">
+                      <Textarea
+                        id="links"
+                        name="links"
+                        defaultValue={community.links.map(link => `${link.title}|${link.url}`).join('\n')}
+                        rows={3}
+                        placeholder="Format: Title|URL (one per line)"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Format: Link Title|https://example.com (one per line)
                       </p>
                     </div>
+                  </div>
+                </div>
+                
+                <DialogFooter>
+                  <Button type="submit" disabled={updateCommunityMutation.isPending}>
+                    {updateCommunityMutation.isPending ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+      
+      {/* Management Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-4 mb-8">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="members">Members</TabsTrigger>
+          <TabsTrigger value="moderation">Moderation</TabsTrigger>
+          <TabsTrigger value="collaborations">Collaborations</TabsTrigger>
+        </TabsList>
+        
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          {isLoadingStats ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardHeader className="pb-2">
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : stats ? (
+            <div>
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-500">Total Members</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.totalMembers}</div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {stats.newJoins} new this month
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-500">Active Members</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.activeMembers}</div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {Math.round(stats.activeMembers / stats.totalMembers * 100)}% of total
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-500">Total Posts</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.totalPosts}</div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-500">Engagement Rate</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{(stats.engagementRate * 100).toFixed(1)}%</div>
                   </CardContent>
                 </Card>
               </div>
-            )}
-
-            {/* Settings Tab */}
-            {activeTab === "settings" && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold">Community Settings</h2>
-                
+              
+              {/* Growth and Engagement Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>General Information</CardTitle>
-                    <CardDescription>Basic details about your community</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Community Name</label>
-                        <Input defaultValue={community.name} />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                        <Textarea 
-                          defaultValue={community.description} 
-                          className="min-h-32"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                        <Input defaultValue={community.category} />
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button>Save Changes</Button>
-                  </CardFooter>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Community Images</CardTitle>
-                    <CardDescription>Update your community's visual identity</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-3">Logo Image</label>
-                        <div className="flex items-center">
-                          <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mr-4">
-                            {community.logo ? (
-                              <img 
-                                src={community.logo} 
-                                alt="Community logo" 
-                                className="w-full h-full rounded-full object-cover"
-                              />
-                            ) : (
-                              <Users className="h-10 w-10 text-gray-400" />
-                            )}
-                          </div>
-                          <Button>
-                            <ImagePlus className="h-4 w-4 mr-2" />
-                            Upload Logo
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-3">Banner Image</label>
-                        <div className="flex items-center">
-                          <div className="w-40 h-24 bg-gray-100 rounded-md flex items-center justify-center mr-4">
-                            {community.banner ? (
-                              <img 
-                                src={community.banner} 
-                                alt="Community banner" 
-                                className="w-full h-full rounded-md object-cover"
-                              />
-                            ) : (
-                              <ImagePlus className="h-10 w-10 text-gray-400" />
-                            )}
-                          </div>
-                          <Button>
-                            <ImagePlus className="h-4 w-4 mr-2" />
-                            Upload Banner
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Community Rules</CardTitle>
-                    <CardDescription>Set guidelines for your community members</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Textarea
-                      placeholder="Enter community rules, one per line..."
-                      className="min-h-32"
-                      defaultValue={community.rules?.join('\n')}
-                    />
-                  </CardContent>
-                  <CardFooter>
-                    <Button>Save Rules</Button>
-                  </CardFooter>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Danger Zone</CardTitle>
-                    <CardDescription className="text-red-500">
-                      These actions cannot be undone
+                    <CardTitle>Member Growth</CardTitle>
+                    <CardDescription>
+                      Monthly growth in community members
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center p-4 border border-red-200 rounded-md">
-                        <div>
-                          <h4 className="font-semibold">Archive Community</h4>
-                          <p className="text-sm text-gray-500">
-                            Community will be hidden from public view but data will be preserved
-                          </p>
+                    <div className="h-[200px] flex items-end">
+                      {stats.memberGrowth.map((point, index) => (
+                        <div 
+                          key={index} 
+                          className="flex-1 mx-1 flex flex-col items-center justify-end"
+                        >
+                          <div 
+                            className="w-full bg-primary/60 rounded-t"
+                            style={{ 
+                              height: `${(point.count / Math.max(...stats.memberGrowth.map(p => p.count)) * 160)}px` 
+                            }}
+                          ></div>
+                          <div className="text-xs mt-2 text-gray-500">
+                            {new Date(point.date).toLocaleDateString(undefined, { month: 'short' })}
+                          </div>
                         </div>
-                        <Button variant="outline" className="border-red-200 text-red-500 hover:text-red-700 hover:bg-red-50">
-                          Archive
-                        </Button>
-                      </div>
-                      
-                      <div className="flex justify-between items-center p-4 border border-red-200 rounded-md">
-                        <div>
-                          <h4 className="font-semibold">Delete Community</h4>
-                          <p className="text-sm text-gray-500">
-                            This will permanently delete all community data
-                          </p>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Post Engagement</CardTitle>
+                    <CardDescription>
+                      Monthly engagement with community posts
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[200px] flex items-end">
+                      {stats.postEngagement.map((point, index) => (
+                        <div 
+                          key={index} 
+                          className="flex-1 mx-1 flex flex-col items-center justify-end"
+                        >
+                          <div 
+                            className="w-full bg-primary/60 rounded-t"
+                            style={{ 
+                              height: `${(point.count / Math.max(...stats.postEngagement.map(p => p.count)) * 160)}px` 
+                            }}
+                          ></div>
+                          <div className="text-xs mt-2 text-gray-500">
+                            {new Date(point.date).toLocaleDateString(undefined, { month: 'short' })}
+                          </div>
                         </div>
-                        <Button variant="destructive">
-                          Delete Forever
-                        </Button>
-                      </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
               </div>
-            )}
-          </div>
-        </div>
-      </div>
+            </div>
+          ) : (
+            <div className="text-center py-10">
+              <h3 className="text-xl font-medium">Statistics not available</h3>
+              <p className="text-gray-500 mt-2">
+                We couldn't load the statistics for this community.
+              </p>
+            </div>
+          )}
+        </TabsContent>
+        
+        {/* Members Tab */}
+        <TabsContent value="members" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Community Members</CardTitle>
+              <CardDescription>
+                Manage members and their roles
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingMembers ? (
+                <div className="space-y-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="animate-pulse flex items-center">
+                      <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
+                      <div className="ml-4 space-y-2 flex-1">
+                        <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/5"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : members.length === 0 ? (
+                <div className="text-center py-6">
+                  <h3 className="text-lg font-medium">No members yet</h3>
+                  <p className="text-gray-500 mt-2">
+                    Invite people to join your community.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {members.map((member) => (
+                    <div key={member.userId} className="flex items-center justify-between border-b pb-4">
+                      <div className="flex items-center">
+                        {member.avatar ? (
+                          <img 
+                            src={member.avatar} 
+                            alt={member.name} 
+                            className="h-10 w-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <User className="h-5 w-5 text-primary" />
+                          </div>
+                        )}
+                        <div className="ml-4">
+                          <div className="font-medium">{member.name}</div>
+                          <div className="text-sm text-gray-500 flex items-center">
+                            {member.role === 'admin' ? (
+                              <Shield className="h-3 w-3 text-primary mr-1" />
+                            ) : member.role === 'moderator' ? (
+                              <Shield className="h-3 w-3 text-orange-500 mr-1" />
+                            ) : (
+                              <User className="h-3 w-3 text-gray-400 mr-1" />
+                            )}
+                            <span className="capitalize">{member.role}</span>
+                            {!member.isActive && (
+                              <Badge variant="outline" className="ml-2 text-xs">Inactive</Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        {isAdmin && member.userId !== user?.id && (
+                          <>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  Role
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuLabel>Change Role</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => updateMemberRoleMutation.mutate({ 
+                                    userId: member.userId, 
+                                    role: 'member' 
+                                  })}
+                                  disabled={member.role === 'member'}
+                                >
+                                  <User className="h-4 w-4 mr-2" />
+                                  Member
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => updateMemberRoleMutation.mutate({ 
+                                    userId: member.userId, 
+                                    role: 'moderator' 
+                                  })}
+                                  disabled={member.role === 'moderator'}
+                                >
+                                  <Shield className="h-4 w-4 mr-2" />
+                                  Moderator
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => updateMemberRoleMutation.mutate({ 
+                                    userId: member.userId, 
+                                    role: 'admin' 
+                                  })}
+                                  disabled={member.role === 'admin'}
+                                >
+                                  <Shield className="h-4 w-4 mr-2" />
+                                  Admin
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                            
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => {
+                                if (window.confirm(`Are you sure you want to remove ${member.name} from the community?`)) {
+                                  removeMemberMutation.mutate(member.userId);
+                                }
+                              }}
+                            >
+                              <UserX className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Moderation Tab */}
+        <TabsContent value="moderation" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Flagged Content</CardTitle>
+              <CardDescription>
+                Review and take action on content flagged by community members
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingFlagged ? (
+                <div className="space-y-4">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="h-5 bg-gray-200 rounded w-1/3 mb-2"></div>
+                      <div className="h-16 bg-gray-200 rounded w-full mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : flaggedContent.length === 0 ? (
+                <div className="text-center py-6">
+                  <h3 className="text-lg font-medium">No flagged content</h3>
+                  <p className="text-gray-500 mt-2">
+                    All content in your community is currently in good standing.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {flaggedContent.map((flag) => (
+                    <div key={flag.id} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <Badge className="capitalize">{flag.contentType}</Badge>
+                          <Badge 
+                            variant={
+                              flag.status === 'pending' ? 'outline' : 
+                              flag.status === 'resolved' ? 'default' : 
+                              'destructive'
+                            }
+                            className="ml-2"
+                          >
+                            {flag.status}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {formatDistanceToNow(new Date(flag.createdAt), { addSuffix: true })}
+                        </div>
+                      </div>
+                      
+                      <div className="bg-secondary/30 p-3 rounded my-3">
+                        <p className="text-sm whitespace-pre-line">{flag.content}</p>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <div className="text-sm text-gray-500">
+                          <span className="font-medium">Reported by:</span> {flag.reporterName}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          <span className="font-medium">Reason:</span> {flag.reason}
+                        </div>
+                      </div>
+                      
+                      {flag.status === 'pending' && (
+                        <div className="flex justify-end mt-4 gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleFlaggedContentMutation.mutate({ 
+                              flagId: flag.id, 
+                              action: 'ignore' 
+                            })}
+                          >
+                            <XCircle className="h-4 w-4 mr-2" />
+                            Ignore
+                          </Button>
+                          <Button 
+                            variant="default" 
+                            size="sm"
+                            onClick={() => handleFlaggedContentMutation.mutate({ 
+                              flagId: flag.id, 
+                              action: 'approve' 
+                            })}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Approve
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => handleFlaggedContentMutation.mutate({ 
+                              flagId: flag.id, 
+                              action: 'remove' 
+                            })}
+                          >
+                            <Trash className="h-4 w-4 mr-2" />
+                            Remove
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Collaborations Tab */}
+        <TabsContent value="collaborations" className="space-y-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <div>
+                <CardTitle>Collaboration Requests</CardTitle>
+                <CardDescription>
+                  Partner with other communities for joint events or projects
+                </CardDescription>
+              </div>
+              
+              <Dialog open={isCollaborationDialogOpen} onOpenChange={setIsCollaborationDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Collaboration
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Propose Collaboration</DialogTitle>
+                    <DialogDescription>
+                      Reach out to another community to collaborate on events or projects.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <form onSubmit={handleProposeCollaboration}>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="targetCommunityId" className="text-right">
+                          Community
+                        </Label>
+                        <Select name="targetCommunityId" required>
+                          <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Select a community" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="3">Future Leaders</SelectItem>
+                            <SelectItem value="4">Creative Design Collective</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="type" className="text-right">
+                          Type
+                        </Label>
+                        <Select name="type" defaultValue="event">
+                          <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Select collaboration type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="event">Joint Event</SelectItem>
+                            <SelectItem value="project">Project Collaboration</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="grid grid-cols-4 items-start gap-4">
+                        <Label htmlFor="details" className="text-right pt-2">
+                          Details
+                        </Label>
+                        <Textarea
+                          id="details"
+                          name="details"
+                          className="col-span-3"
+                          rows={4}
+                          placeholder="Describe the collaboration opportunity..."
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <DialogFooter>
+                      <Button type="submit" disabled={proposeCollaborationMutation.isPending}>
+                        {proposeCollaborationMutation.isPending ? 'Proposing...' : 'Propose Collaboration'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              {isLoadingCollaborations ? (
+                <div className="space-y-4">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="h-5 bg-gray-200 rounded w-1/3 mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : collaborations.length === 0 ? (
+                <div className="text-center py-6">
+                  <h3 className="text-lg font-medium">No collaborations yet</h3>
+                  <p className="text-gray-500 mt-2">
+                    Propose partnerships with other communities to grow together.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {collaborations.map((collab) => {
+                    const isIncoming = collab.targetCommunityId === communityId;
+                    const communityName = isIncoming ? collab.sourceCommunityName : collab.targetCommunityName;
+                    
+                    return (
+                      <Card key={collab.id}>
+                        <CardHeader className="pb-2">
+                          <div className="flex justify-between">
+                            <div>
+                              <div className="font-medium flex items-center">
+                                {isIncoming ? (
+                                  <Badge variant="outline" className="mr-2">Incoming</Badge>
+                                ) : (
+                                  <Badge variant="outline" className="mr-2">Outgoing</Badge>
+                                )}
+                                Collaboration with {communityName}
+                              </div>
+                              <div className="text-sm text-gray-500 mt-1">
+                                <Badge variant="secondary" className="mr-2 capitalize">
+                                  {collab.type}
+                                </Badge>
+                                <Badge 
+                                  variant={
+                                    collab.status === 'pending' ? 'outline' : 
+                                    collab.status === 'approved' ? 'default' : 
+                                    'destructive'
+                                  }
+                                >
+                                  {collab.status}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {formatDistanceToNow(new Date(collab.createdAt), { addSuffix: true })}
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm">{collab.details}</p>
+                          
+                          {isIncoming && collab.status === 'pending' && (
+                            <div className="flex justify-end mt-4 gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => respondToCollaborationMutation.mutate({ 
+                                  collaborationId: collab.id, 
+                                  status: 'rejected' 
+                                })}
+                              >
+                                Decline
+                              </Button>
+                              <Button 
+                                variant="default" 
+                                size="sm"
+                                onClick={() => respondToCollaborationMutation.mutate({ 
+                                  collaborationId: collab.id, 
+                                  status: 'approved' 
+                                })}
+                              >
+                                Accept
+                              </Button>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
-};
-
-export default CommunityManagement;
+}

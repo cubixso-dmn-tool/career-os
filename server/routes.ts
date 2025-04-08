@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, type WebSocket } from "ws";
 import { storage } from "./storage";
 import { ZodError } from "zod";
 
@@ -44,7 +45,61 @@ import {
   chatWithPathFinder
 } from "./lib/openai";
 
+// Community types and interfaces
+interface CommunityPostData {
+  communityId: number;
+  title: string;
+  content: string;
+  type: 'announcement' | 'discussion' | 'event' | 'job' | 'blog';
+  authorId: number;
+  scheduleDate?: string;
+}
+
+interface CommunityEventData {
+  communityId: number;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  location: string;
+  isOnline: boolean;
+  organizerId: number;
+}
+
+interface CommunityPollData {
+  communityId: number;
+  question: string;
+  options: string[];
+  expiresAt?: string;
+  authorId: number;
+}
+
+interface CommunityMembershipData {
+  userId: number;
+  communityId: number;
+  role: 'member' | 'moderator' | 'admin';
+}
+
+interface FlaggedContentData {
+  contentId: number;
+  contentType: 'post' | 'comment' | 'poll';
+  reporterId: number;
+  reason: string;
+}
+
+interface CommunityCollaborationData {
+  sourceCommunityId: number;
+  targetCommunityId: number;
+  type: 'event' | 'project';
+  status: 'pending' | 'approved' | 'rejected';
+  details: string;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication
+  const { setupAuth } = require('./auth');
+  setupAuth(app);
+  
   // USERS
   app.post("/api/users", async (req, res) => {
     try {
@@ -1728,6 +1783,1013 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // COMMUNITY ENDPOINTS
+  // Get all communities
+  app.get("/api/communities", async (req, res) => {
+    try {
+      const { category, search } = req.query;
+      
+      // Mock implementation for demo purposes
+      const communities = [
+        {
+          id: 1,
+          name: "Tech Innovators",
+          description: "A community for tech enthusiasts and innovators to share ideas and collaborate on projects.",
+          founderId: 1,
+          category: "Tech",
+          isVerified: true,
+          logo: null,
+          banner: null,
+          memberCount: 250,
+          createdAt: new Date().toISOString(),
+          founderName: "Admin User"
+        },
+        {
+          id: 2,
+          name: "Data Science Hub",
+          description: "Connect with data scientists, analysts, and machine learning engineers to discuss the latest trends and techniques.",
+          founderId: 1,
+          category: "Tech",
+          isVerified: true,
+          logo: null,
+          banner: null,
+          memberCount: 180,
+          createdAt: new Date().toISOString(),
+          founderName: "Admin User"
+        },
+        {
+          id: 3,
+          name: "Future Leaders",
+          description: "A community for young professionals looking to develop leadership skills and advance their careers.",
+          founderId: 2,
+          category: "Career",
+          isVerified: false,
+          logo: null,
+          banner: null,
+          memberCount: 120,
+          createdAt: new Date().toISOString(),
+          founderName: "Mentor User"
+        },
+        {
+          id: 4,
+          name: "Creative Design Collective",
+          description: "A space for designers to share their work, get feedback, and collaborate on projects.",
+          founderId: 3,
+          category: "Design",
+          isVerified: false,
+          logo: null,
+          banner: null,
+          memberCount: 95,
+          createdAt: new Date().toISOString(),
+          founderName: "Designer User"
+        },
+        {
+          id: 5,
+          name: "Entrepreneurship Network",
+          description: "Connect with fellow entrepreneurs, share experiences, and learn from each other's successes and failures.",
+          founderId: 1,
+          category: "Business",
+          isVerified: true,
+          logo: null,
+          banner: null,
+          memberCount: 210,
+          createdAt: new Date().toISOString(),
+          founderName: "Admin User"
+        }
+      ];
+      
+      // Filter by category if provided
+      let filteredCommunities = communities;
+      if (category && typeof category === 'string') {
+        filteredCommunities = filteredCommunities.filter(c => 
+          c.category.toLowerCase() === category.toLowerCase()
+        );
+      }
+      
+      // Search by name or description if provided
+      if (search && typeof search === 'string') {
+        const searchLower = search.toLowerCase();
+        filteredCommunities = filteredCommunities.filter(c => 
+          c.name.toLowerCase().includes(searchLower) || 
+          c.description.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      res.json(filteredCommunities);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get communities" });
+    }
+  });
+
+  // Get communities founded by the user
+  app.get("/api/communities/founded", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      // Mock implementation for demo
+      const communities = [
+        {
+          id: 1,
+          name: "Tech Innovators",
+          description: "A community for tech enthusiasts and innovators to share ideas and collaborate on projects.",
+          founderId: 1,
+          category: "Tech",
+          isVerified: true,
+          logo: null,
+          banner: null,
+          memberCount: 250,
+          createdAt: new Date().toISOString(),
+          founderName: "Admin User"
+        },
+        {
+          id: 2,
+          name: "Data Science Hub",
+          description: "Connect with data scientists, analysts, and machine learning engineers to discuss the latest trends and techniques.",
+          founderId: 1,
+          category: "Tech",
+          isVerified: true,
+          logo: null,
+          banner: null,
+          memberCount: 180,
+          createdAt: new Date().toISOString(),
+          founderName: "Admin User"
+        },
+        {
+          id: 5,
+          name: "Entrepreneurship Network",
+          description: "Connect with fellow entrepreneurs, share experiences, and learn from each other's successes and failures.",
+          founderId: 1,
+          category: "Business",
+          isVerified: true,
+          logo: null,
+          banner: null,
+          memberCount: 210,
+          createdAt: new Date().toISOString(),
+          founderName: "Admin User"
+        }
+      ];
+      
+      const userCommunities = communities.filter(c => c.founderId === req.user.id);
+      res.json(userCommunities);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community list" });
+    }
+  });
+
+  // Get a specific community
+  app.get("/api/communities/:id", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.id);
+      
+      // Mock implementation for demo
+      const community = {
+        id: communityId,
+        name: communityId === 1 ? "Tech Innovators" : "Data Science Hub",
+        description: communityId === 1 
+          ? "A community for tech enthusiasts and innovators to share ideas and collaborate on projects."
+          : "Connect with data scientists, analysts, and machine learning engineers to discuss the latest trends and techniques.",
+        founderId: 1,
+        category: "Tech",
+        isVerified: true,
+        logo: null,
+        banner: null,
+        memberCount: communityId === 1 ? 250 : 180,
+        createdAt: new Date().toISOString(),
+        founderName: "Admin User",
+        rules: [
+          "Be respectful to all members",
+          "No spam or self-promotion without permission",
+          "Stay on topic in discussions",
+          "Share knowledge generously",
+          "Give credit when using others' work"
+        ],
+        links: [
+          { title: "Community Website", url: "https://example.com" },
+          { title: "Resources Repository", url: "https://github.com/example" },
+          { title: "Discord Server", url: "https://discord.gg/example" }
+        ]
+      };
+      
+      if (!community) {
+        return res.status(404).json({ message: "Community not found" });
+      }
+      
+      res.json(community);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community" });
+    }
+  });
+
+  // Create a new community
+  app.post("/api/communities", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const { name, description, category } = req.body;
+      
+      if (!name || !description || !category) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Mock implementation for demo
+      const newCommunity = {
+        id: 6,  // In a real implementation, this would be auto-generated
+        name,
+        description,
+        founderId: req.user.id,
+        category,
+        isVerified: false,
+        logo: null,
+        banner: null,
+        memberCount: 1,  // Start with the founder
+        createdAt: new Date().toISOString(),
+        founderName: req.user.username || "User"
+      };
+      
+      res.status(201).json(newCommunity);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create community" });
+    }
+  });
+
+  // Update community details
+  app.patch("/api/communities/:id", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const communityId = parseInt(req.params.id);
+      
+      // Mock implementation for demo - check if the user is the founder
+      const isFounder = communityId <= 2 && req.user.id === 1;
+      
+      if (!isFounder) {
+        return res.status(403).json({ message: "Permission denied" });
+      }
+      
+      // In a real implementation, you would fetch the community, verify ownership,
+      // then update the requested fields
+      
+      const updatedCommunity = {
+        id: communityId,
+        name: req.body.name || "Tech Innovators",
+        description: req.body.description || "Updated description",
+        founderId: 1,
+        category: req.body.category || "Tech",
+        isVerified: true,
+        logo: req.body.logo || null,
+        banner: req.body.banner || null,
+        memberCount: 250,
+        createdAt: new Date().toISOString(),
+        founderName: "Admin User",
+        rules: req.body.rules || ["Be respectful to all members"],
+        links: req.body.links || [{ title: "Community Website", url: "https://example.com" }]
+      };
+      
+      res.json(updatedCommunity);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update community" });
+    }
+  });
+
+  // Get community members
+  app.get("/api/communities/:id/members", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.id);
+      
+      // Mock implementation for demo
+      const members = [
+        {
+          userId: 1,
+          communityId,
+          name: "Admin User",
+          avatar: null,
+          role: "admin",
+          joinedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days ago
+          isActive: true
+        },
+        {
+          userId: 2,
+          communityId,
+          name: "Mentor User",
+          avatar: null,
+          role: "moderator",
+          joinedAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 days ago
+          isActive: true
+        },
+        {
+          userId: 3,
+          communityId,
+          name: "Regular User 1",
+          avatar: null,
+          role: "member",
+          joinedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ago
+          isActive: true
+        },
+        {
+          userId: 4,
+          communityId,
+          name: "Regular User 2",
+          avatar: null,
+          role: "member",
+          joinedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days ago
+          isActive: true
+        },
+        {
+          userId: 5,
+          communityId,
+          name: "Inactive User",
+          avatar: null,
+          role: "member",
+          joinedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(), // 45 days ago
+          isActive: false
+        }
+      ];
+      
+      res.json(members);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community members" });
+    }
+  });
+
+  // Add/update community membership
+  app.post("/api/communities/:id/members", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const communityId = parseInt(req.params.id);
+      const { role } = req.body;
+      
+      // In a real implementation, you would check permissions if a role is specified
+      
+      // Mock implementation for demo
+      const membership = {
+        userId: req.user.id,
+        communityId,
+        name: req.user.username || "User",
+        avatar: null,
+        role: role && ["admin", "moderator"].includes(role) ? role : "member",
+        joinedAt: new Date().toISOString(),
+        isActive: true
+      };
+      
+      res.status(201).json(membership);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to add member" });
+    }
+  });
+
+  // Remove community membership
+  app.delete("/api/communities/:id/members/:userId", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const communityId = parseInt(req.params.id);
+      const targetUserId = parseInt(req.params.userId);
+      
+      // In a real implementation, check if the user is an admin or the member being removed
+      const canRemove = req.user.id === targetUserId || (communityId <= 2 && req.user.id === 1);
+      
+      if (!canRemove) {
+        return res.status(403).json({ message: "Permission denied" });
+      }
+      
+      res.status(200).json({ message: "Member removed successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to remove member" });
+    }
+  });
+
+  // Get community posts
+  app.get("/api/communities/:id/posts", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.id);
+      const { type } = req.query;
+      
+      // Mock implementation for demo
+      const posts = [
+        {
+          id: 1,
+          communityId,
+          authorId: 1,
+          authorName: "Admin User",
+          authorAvatar: null,
+          title: "Welcome to our community!",
+          content: "We're excited to have you join our community! This is a space for tech enthusiasts to collaborate, share ideas, and learn from each other. Feel free to introduce yourself in the comments!",
+          type: "announcement",
+          createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+          commentCount: 15,
+          isFeatured: true,
+          likes: 42
+        },
+        {
+          id: 2,
+          communityId,
+          authorId: 2,
+          authorName: "Mentor User",
+          authorAvatar: null,
+          title: "Monthly Tech Meetup - June 2023",
+          content: "Join us for our monthly tech meetup! We'll be discussing the latest trends in AI and machine learning. RSVP in the comments if you plan to attend.",
+          type: "event",
+          createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+          commentCount: 8,
+          isFeatured: false,
+          likes: 27
+        },
+        {
+          id: 3,
+          communityId,
+          authorId: 3,
+          authorName: "Regular User 1",
+          authorAvatar: null,
+          title: "Question about React Hooks",
+          content: "I'm new to React and have been learning about hooks. Could someone explain the difference between useEffect and useLayoutEffect? When should I use one over the other?",
+          type: "discussion",
+          createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          commentCount: 12,
+          isFeatured: false,
+          likes: 18
+        },
+        {
+          id: 4,
+          communityId,
+          authorId: 1,
+          authorName: "Admin User",
+          authorAvatar: null,
+          title: "Frontend Developer Position at TechCorp",
+          content: "TechCorp is hiring frontend developers! We're looking for someone with experience in React, TypeScript, and modern CSS frameworks. Remote work available. Apply with your portfolio and resume.",
+          type: "job",
+          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+          commentCount: 5,
+          isFeatured: true,
+          likes: 31
+        },
+        {
+          id: 5,
+          communityId,
+          authorId: 2,
+          authorName: "Mentor User",
+          authorAvatar: null,
+          title: "The Future of Web Development",
+          content: "I've been thinking about where web development is headed in the next few years. With the rise of AI, Web Assembly, and edge computing, the landscape is changing rapidly. Here are my thoughts...",
+          type: "blog",
+          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          commentCount: 7,
+          isFeatured: false,
+          likes: 24
+        }
+      ];
+      
+      // Filter by post type if provided
+      let filteredPosts = posts;
+      if (type && typeof type === 'string') {
+        filteredPosts = filteredPosts.filter(p => p.type === type);
+      }
+      
+      res.json(filteredPosts);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community posts" });
+    }
+  });
+
+  // Create a community post
+  app.post("/api/communities/:id/posts", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const communityId = parseInt(req.params.id);
+      const { title, content, type, scheduleDate } = req.body;
+      
+      if (!title || !content || !type) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      if (!['announcement', 'discussion', 'event', 'job', 'blog'].includes(type)) {
+        return res.status(400).json({ message: "Invalid post type" });
+      }
+      
+      // Mock implementation for demo
+      const post = {
+        id: 6, // In a real implementation, this would be auto-generated
+        communityId,
+        authorId: req.user.id,
+        authorName: req.user.username || "User",
+        authorAvatar: null,
+        title,
+        content,
+        type,
+        createdAt: scheduleDate || new Date().toISOString(),
+        commentCount: 0,
+        isFeatured: false,
+        likes: 0
+      };
+      
+      res.status(201).json(post);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create post" });
+    }
+  });
+
+  // Get community events
+  app.get("/api/communities/:id/events", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.id);
+      
+      // Mock implementation for demo
+      const events = [
+        {
+          id: 1,
+          communityId,
+          organizerId: 1,
+          title: "Monthly Tech Meetup - June 2023",
+          description: "Join us for our monthly tech meetup! We'll be discussing the latest trends in AI and machine learning.",
+          startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(), // 2 hours later
+          location: "Tech Hub, Downtown",
+          isOnline: false,
+          attendeeCount: 42
+        },
+        {
+          id: 2,
+          communityId,
+          organizerId: 2,
+          title: "Web Development Workshop",
+          description: "Learn the basics of modern web development with React, TypeScript, and TailwindCSS in this hands-on workshop.",
+          startDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
+          endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000).toISOString(), // 4 hours later
+          location: "Zoom",
+          isOnline: true,
+          attendeeCount: 75
+        },
+        {
+          id: 3,
+          communityId,
+          organizerId: 1,
+          title: "Career Panel: Transitioning to Tech",
+          description: "Industry professionals share their experiences transitioning to tech careers from non-technical backgrounds.",
+          startDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(), // 21 days from now
+          endDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000 + 1.5 * 60 * 60 * 1000).toISOString(), // 1.5 hours later
+          location: "Google Meet",
+          isOnline: true,
+          attendeeCount: 120
+        }
+      ];
+      
+      res.json(events);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community events" });
+    }
+  });
+
+  // Create a community event
+  app.post("/api/communities/:id/events", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const communityId = parseInt(req.params.id);
+      const { title, description, startDate, endDate, location, isOnline } = req.body;
+      
+      if (!title || !description || !startDate || !endDate) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Mock implementation for demo
+      const event = {
+        id: 4, // In a real implementation, this would be auto-generated
+        communityId,
+        organizerId: req.user.id,
+        title,
+        description,
+        startDate,
+        endDate,
+        location: location || (isOnline ? "Online" : "TBD"),
+        isOnline: isOnline || false,
+        attendeeCount: 0
+      };
+      
+      res.status(201).json(event);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create event" });
+    }
+  });
+
+  // Get community polls
+  app.get("/api/communities/:id/polls", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.id);
+      
+      // Mock implementation for demo
+      const polls = [
+        {
+          id: 1,
+          communityId,
+          authorId: 1,
+          authorName: "Admin User",
+          question: "What topic would you like to see covered in our next workshop?",
+          options: ["React Hooks", "TypeScript Advanced Types", "State Management", "Testing Strategies"],
+          votes: [12, 8, 15, 7],
+          createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+          expiresAt: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
+          isActive: true
+        },
+        {
+          id: 2,
+          communityId,
+          authorId: 2,
+          authorName: "Mentor User",
+          question: "Which day works best for our monthly meetups?",
+          options: ["Monday", "Wednesday", "Friday", "Saturday"],
+          votes: [5, 12, 8, 25],
+          createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          expiresAt: new Date(Date.now() - 16 * 24 * 60 * 60 * 1000).toISOString(),
+          isActive: false
+        }
+      ];
+      
+      res.json(polls);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community polls" });
+    }
+  });
+
+  // Create a community poll
+  app.post("/api/communities/:id/polls", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const communityId = parseInt(req.params.id);
+      const { question, options, expiresAt } = req.body;
+      
+      if (!question || !options || !Array.isArray(options) || options.length < 2) {
+        return res.status(400).json({ message: "Invalid poll data" });
+      }
+      
+      // Calculate expiration (default to 7 days if not specified)
+      const expiry = expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      
+      // Mock implementation for demo
+      const poll = {
+        id: 3, // In a real implementation, this would be auto-generated
+        communityId,
+        authorId: req.user.id,
+        authorName: req.user.username || "User",
+        question,
+        options,
+        votes: Array(options.length).fill(0), // Initialize with 0 votes for each option
+        createdAt: new Date().toISOString(),
+        expiresAt: expiry,
+        isActive: true
+      };
+      
+      res.status(201).json(poll);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create poll" });
+    }
+  });
+
+  // Vote in a poll
+  app.post("/api/communities/:id/polls/:pollId/vote", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const { optionIndex } = req.body;
+      
+      if (optionIndex === undefined || typeof optionIndex !== 'number') {
+        return res.status(400).json({ message: "Invalid vote data" });
+      }
+      
+      // Mock implementation for demo - just send success response
+      res.status(200).json({ message: "Vote recorded successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to record vote" });
+    }
+  });
+
+  // Get community analytics
+  app.get("/api/communities/:id/stats", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.id);
+      
+      // Mock implementation for demo
+      const stats = {
+        totalMembers: 250,
+        activeMembers: 180,
+        totalPosts: 45,
+        totalEvents: 12,
+        engagementRate: 0.72,
+        memberGrowth: [
+          { date: "2023-01-01", count: 150 },
+          { date: "2023-02-01", count: 165 },
+          { date: "2023-03-01", count: 185 },
+          { date: "2023-04-01", count: 210 },
+          { date: "2023-05-01", count: 235 },
+          { date: "2023-06-01", count: 250 }
+        ],
+        postEngagement: [
+          { date: "2023-01-01", count: 85 },
+          { date: "2023-02-01", count: 92 },
+          { date: "2023-03-01", count: 110 },
+          { date: "2023-04-01", count: 125 },
+          { date: "2023-05-01", count: 145 },
+          { date: "2023-06-01", count: 160 }
+        ],
+        newJoins: 15
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community stats" });
+    }
+  });
+
+  // Get flagged content
+  app.get("/api/communities/:id/flagged", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const communityId = parseInt(req.params.id);
+      
+      // Check if user is admin or moderator (in a real implementation)
+      const isAdminOrMod = communityId <= 2 && req.user.id === 1;
+      
+      if (!isAdminOrMod) {
+        return res.status(403).json({ message: "Permission denied" });
+      }
+      
+      // Mock implementation for demo
+      const flaggedContent = [
+        {
+          id: 1,
+          communityId,
+          contentId: 42,
+          contentType: "comment",
+          content: "This is spam content that was flagged by users.",
+          reporterId: 3,
+          reporterName: "Regular User 1",
+          reason: "Spam",
+          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          status: "pending"
+        },
+        {
+          id: 2,
+          communityId,
+          contentId: 65,
+          contentType: "post",
+          content: "This post contains inappropriate language that violates community guidelines.",
+          reporterId: 4,
+          reporterName: "Regular User 2",
+          reason: "Inappropriate language",
+          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          status: "pending"
+        }
+      ];
+      
+      res.json(flaggedContent);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get flagged content" });
+    }
+  });
+
+  // Flag content
+  app.post("/api/communities/:id/flag", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const communityId = parseInt(req.params.id);
+      const { contentId, contentType, reason } = req.body;
+      
+      if (!contentId || !contentType || !reason) {
+        return res.status(400).json({ message: "Invalid flag data" });
+      }
+      
+      // Mock implementation for demo
+      const flaggedContent = {
+        id: 3, // In a real implementation, this would be auto-generated
+        communityId,
+        contentId,
+        contentType,
+        content: "Content that was flagged", // In a real implementation, this would be fetched based on contentId
+        reporterId: req.user.id,
+        reporterName: req.user.username || "User",
+        reason,
+        createdAt: new Date().toISOString(),
+        status: "pending"
+      };
+      
+      res.status(201).json({ message: "Content flagged successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to flag content" });
+    }
+  });
+
+  // Handle flagged content
+  app.patch("/api/communities/:id/flagged/:flagId", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const communityId = parseInt(req.params.id);
+      const flagId = parseInt(req.params.flagId);
+      const { action } = req.body; // 'remove', 'approve', 'ignore'
+      
+      if (!action || !['remove', 'approve', 'ignore'].includes(action)) {
+        return res.status(400).json({ message: "Invalid action" });
+      }
+      
+      // Check if user is admin or moderator (in a real implementation)
+      const isAdminOrMod = communityId <= 2 && req.user.id === 1;
+      
+      if (!isAdminOrMod) {
+        return res.status(403).json({ message: "Permission denied" });
+      }
+      
+      // Mock implementation for demo - just send success response
+      res.status(200).json({ message: `Flagged content ${action}d successfully` });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to handle flagged content" });
+    }
+  });
+
+  // Get collaboration opportunities
+  app.get("/api/communities/:id/collaborations", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const communityId = parseInt(req.params.id);
+      
+      // Mock implementation for demo
+      const collaborations = [
+        {
+          id: 1,
+          sourceCommunityId: communityId,
+          sourceCommunityName: "Tech Innovators",
+          targetCommunityId: 3,
+          targetCommunityName: "Future Leaders",
+          type: "event",
+          status: "approved",
+          details: "Joint tech leadership workshop",
+          createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 2,
+          sourceCommunityId: 4,
+          sourceCommunityName: "Creative Design Collective",
+          targetCommunityId: communityId,
+          targetCommunityName: "Tech Innovators",
+          type: "project",
+          status: "pending",
+          details: "Collaboration on UI/UX for open source project",
+          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ];
+      
+      res.json(collaborations);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get collaborations" });
+    }
+  });
+
+  // Propose collaboration
+  app.post("/api/communities/:id/collaborations", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const sourceCommunityId = parseInt(req.params.id);
+      const { targetCommunityId, type, details } = req.body;
+      
+      if (!targetCommunityId || !type || !details) {
+        return res.status(400).json({ message: "Invalid collaboration data" });
+      }
+      
+      // Check if user is admin or moderator of source community (in a real implementation)
+      const isSourceAdmin = sourceCommunityId <= 2 && req.user.id === 1;
+      
+      if (!isSourceAdmin) {
+        return res.status(403).json({ message: "Permission denied" });
+      }
+      
+      // Mock implementation for demo
+      const collaboration = {
+        id: 3, // In a real implementation, this would be auto-generated
+        sourceCommunityId,
+        sourceCommunityName: "Tech Innovators",
+        targetCommunityId,
+        targetCommunityName: "Creative Design Collective", // In a real implementation, this would be fetched
+        type,
+        status: "pending",
+        details,
+        createdAt: new Date().toISOString()
+      };
+      
+      res.status(201).json(collaboration);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to propose collaboration" });
+    }
+  });
+
+  // Respond to collaboration proposal
+  app.patch("/api/communities/:id/collaborations/:collaborationId", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const communityId = parseInt(req.params.id);
+      const collaborationId = parseInt(req.params.collaborationId);
+      const { status } = req.body; // 'approved', 'rejected'
+      
+      if (!status || !['approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      // Check if user is admin or moderator of target community (in a real implementation)
+      const isTargetAdmin = communityId <= 2 && req.user.id === 1;
+      
+      if (!isTargetAdmin) {
+        return res.status(403).json({ message: "Permission denied" });
+      }
+      
+      // Mock implementation for demo - just send success response
+      res.status(200).json({ message: `Collaboration proposal ${status}` });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to respond to collaboration" });
+    }
+  });
+
+  // Create HTTP server
   const httpServer = createServer(app);
+  
+  // WebSocket server
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+
+  wss.on('connection', (ws: any) => {
+    console.log('WebSocket client connected');
+
+    ws.on('message', (message: any) => {
+      try {
+        const data = JSON.parse(message.toString());
+        console.log('Received message:', data);
+
+        // Handle different message types
+        if (data.type === 'join_community') {
+          // In a real implementation, you would subscribe the client to community updates
+          ws.send(JSON.stringify({
+            type: 'joined_community',
+            communityId: data.communityId,
+            success: true
+          }));
+        } else if (data.type === 'leave_community') {
+          // In a real implementation, you would unsubscribe the client from community updates
+          ws.send(JSON.stringify({
+            type: 'left_community',
+            communityId: data.communityId,
+            success: true
+          }));
+        }
+      } catch (error) {
+        console.error('Error handling WebSocket message:', error);
+        ws.send(JSON.stringify({
+          type: 'error',
+          message: 'Invalid message format'
+        }));
+      }
+    });
+
+    ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+    });
+
+    // Send initial welcome message
+    ws.send(JSON.stringify({
+      type: 'welcome',
+      message: 'Connected to CareerOS Communities WebSocket'
+    }));
+  });
   return httpServer;
 }

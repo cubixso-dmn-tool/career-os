@@ -1,46 +1,77 @@
 import React, { useState } from 'react';
-import { useParams, useLocation } from 'wouter';
-import { useQuery } from '@tanstack/react-query';
-import { 
-  Users, Calendar, Award, MessageSquare, ArrowLeft, Bell, BellOff, Share2, Flag,
-  FileText, Briefcase, Globe, Info, MoreVertical, PlusCircle, Edit, MessageCircle,
-  CalendarDays, Vote, Activity, Settings
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLocation, Link } from 'wouter';
+import {
+  Users, MessageSquare, Calendar, FileText, Plus, User, ChevronRight,
+  ListOrdered, ChevronDown, MoreHorizontal, Send, Flag, Heart, MessageCircle,
+  ThumbsUp, ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-  DropdownMenuTrigger 
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Separator } from '@/components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { formatDistanceToNow } from 'date-fns';
 
-// Types
-type Community = {
+// Interfaces
+interface Community {
   id: number;
   name: string;
   description: string;
   founderId: number;
   category: string;
   isVerified: boolean;
-  logo?: string | null;
-  banner?: string | null;
+  logo: string | null;
+  banner: string | null;
   memberCount: number;
   createdAt: string;
   founderName: string;
-  rules?: string[];
-  links?: { title: string; url: string }[];
-};
+  rules: string[];
+  links: { title: string; url: string }[];
+}
 
-type CommunityPost = {
+interface CommunityMember {
+  userId: number;
+  communityId: number;
+  name: string;
+  avatar: string | null;
+  role: 'admin' | 'moderator' | 'member';
+  joinedAt: string;
+  isActive: boolean;
+}
+
+interface CommunityPost {
   id: number;
   communityId: number;
   authorId: number;
   authorName: string;
-  authorAvatar?: string;
+  authorAvatar: string | null;
   title: string;
   content: string;
   type: 'announcement' | 'discussion' | 'event' | 'job' | 'blog';
@@ -48,9 +79,9 @@ type CommunityPost = {
   commentCount: number;
   isFeatured: boolean;
   likes: number;
-};
+}
 
-type CommunityEvent = {
+interface CommunityEvent {
   id: number;
   communityId: number;
   organizerId: number;
@@ -61,776 +92,714 @@ type CommunityEvent = {
   location: string;
   isOnline: boolean;
   attendeeCount: number;
-};
+}
 
-type CommunityMember = {
-  userId: number;
-  communityId: number;
-  name: string;
-  avatar?: string;
-  role: 'member' | 'moderator' | 'admin';
-  joinedAt: string;
-};
+// Community Detail Page Component
+export default function CommunityDetailPage() {
+  const [location] = useLocation();
+  const communityId = parseInt(location.split('/').pop() || '1');
+  const [activeTab, setActiveTab] = useState('discussion');
+  const [newPostType, setNewPostType] = useState<string>('discussion');
+  const [isCreatePostDialogOpen, setIsCreatePostDialogOpen] = useState(false);
+  const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
+  const [isPollDialogOpen, setIsPollDialogOpen] = useState(false);
+  const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
-  });
-};
-
-const formatDateTime = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
-const getPostTypeIcon = (type: string) => {
-  switch(type) {
-    case 'announcement': return <Info className="h-4 w-4" />;
-    case 'discussion': return <MessageCircle className="h-4 w-4" />;
-    case 'event': return <CalendarDays className="h-4 w-4" />;
-    case 'job': return <Briefcase className="h-4 w-4" />;
-    case 'blog': return <FileText className="h-4 w-4" />;
-    default: return <MessageCircle className="h-4 w-4" />;
-  }
-};
-
-const getPostTypeBadge = (type: string) => {
-  switch(type) {
-    case 'announcement':
-      return <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Announcement</Badge>;
-    case 'discussion':
-      return <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">Discussion</Badge>;
-    case 'event':
-      return <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">Event</Badge>;
-    case 'job':
-      return <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">Job Opportunity</Badge>;
-    case 'blog':
-      return <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">Blog Post</Badge>;
-    default:
-      return <Badge variant="outline">Post</Badge>;
-  }
-};
-
-const getCommunityTypeIcon = (category: string) => {
-  switch(category.toLowerCase()) {
-    case 'tech': return <Globe className="h-4 w-4" />;
-    case 'education': return <Award className="h-4 w-4" />;
-    case 'career': return <Briefcase className="h-4 w-4" />;
-    default: return <Users className="h-4 w-4" />;
-  }
-};
-
-const CommunityDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const [_, navigate] = useLocation();
-  const { user } = useAuth();
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const [isMember, setIsMember] = useState(false);
-
-  // Fetch community data
+  // Fetch community details
   const { data: community, isLoading: isLoadingCommunity } = useQuery<Community>({
-    queryKey: [`/api/communities/${id}`],
-    enabled: !!id,
+    queryKey: [`/api/communities/${communityId}`],
+    queryFn: async () => {
+      const res = await fetch(`/api/communities/${communityId}`);
+      if (!res.ok) throw new Error('Failed to fetch community');
+      return res.json();
+    },
   });
 
   // Fetch community posts
   const { data: posts = [], isLoading: isLoadingPosts } = useQuery<CommunityPost[]>({
-    queryKey: [`/api/communities/${id}/posts`],
-    enabled: !!id,
+    queryKey: [`/api/communities/${communityId}/posts`, activeTab],
+    queryFn: async () => {
+      let url = `/api/communities/${communityId}/posts`;
+      const params = new URLSearchParams();
+      
+      // Map tabs to post types
+      if (activeTab === 'announcements') params.append('type', 'announcement');
+      else if (activeTab === 'discussions') params.append('type', 'discussion');
+      else if (activeTab === 'jobs') params.append('type', 'job');
+      else if (activeTab === 'blogs') params.append('type', 'blog');
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to fetch posts');
+      return res.json();
+    },
   });
 
   // Fetch community events
   const { data: events = [], isLoading: isLoadingEvents } = useQuery<CommunityEvent[]>({
-    queryKey: [`/api/communities/${id}/events`],
-    enabled: !!id,
+    queryKey: [`/api/communities/${communityId}/events`],
+    queryFn: async () => {
+      const res = await fetch(`/api/communities/${communityId}/events`);
+      if (!res.ok) throw new Error('Failed to fetch events');
+      return res.json();
+    },
   });
 
-  // Fetch community members
-  const { data: members = [], isLoading: isLoadingMembers } = useQuery<CommunityMember[]>({
-    queryKey: [`/api/communities/${id}/members`],
-    enabled: !!id,
+  // Check if user is a member
+  const { data: membership, isLoading: isLoadingMembership } = useQuery<CommunityMember | null>({
+    queryKey: [`/api/communities/${communityId}/members`, isAuthenticated ? user?.id : 'anonymous'],
+    queryFn: async () => {
+      if (!isAuthenticated) return null;
+      
+      const res = await fetch(`/api/communities/${communityId}/members`);
+      if (!res.ok) return null;
+      
+      const members = await res.json();
+      return members.find((member: CommunityMember) => member.userId === user?.id) || null;
+    },
+    enabled: isAuthenticated,
   });
 
-  const isFounder = community && user ? community.founderId === user.id : false;
-  const isAdmin = members.some(member => member.userId === user?.id && (member.role === 'admin' || member.role === 'moderator'));
-  const canManage = isFounder || isAdmin;
+  // Join community mutation
+  const joinMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/communities/${communityId}/members`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ role: 'member' }),
+      });
+      
+      if (!res.ok) throw new Error('Failed to join community');
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: `You have joined ${community?.name}!`,
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/members`] });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to join community. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
 
+  // Create post mutation
+  const createPostMutation = useMutation({
+    mutationFn: async (postData: { title: string; content: string; type: string }) => {
+      const res = await fetch(`/api/communities/${communityId}/posts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(postData),
+      });
+      
+      if (!res.ok) throw new Error('Failed to create post');
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Post created',
+        description: 'Your post has been published successfully.',
+      });
+      setIsCreatePostDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/posts`] });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to create post. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Create event mutation
+  const createEventMutation = useMutation({
+    mutationFn: async (eventData: any) => {
+      const res = await fetch(`/api/communities/${communityId}/events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventData),
+      });
+      
+      if (!res.ok) throw new Error('Failed to create event');
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Event created',
+        description: 'Your event has been created successfully.',
+      });
+      setIsEventDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: [`/api/communities/${communityId}/events`] });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to create event. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Handle post creation
+  const handleCreatePost = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const title = formData.get('title') as string;
+    const content = formData.get('content') as string;
+    
+    createPostMutation.mutate({ title, content, type: newPostType });
+  };
+
+  // Handle event creation
+  const handleCreateEvent = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    
+    const eventData = {
+      title: formData.get('title') as string,
+      description: formData.get('description') as string,
+      startDate: formData.get('startDate') as string,
+      endDate: formData.get('endDate') as string,
+      location: formData.get('location') as string,
+      isOnline: formData.get('isOnline') === 'true',
+    };
+    
+    createEventMutation.mutate(eventData);
+  };
+
+  // Loading state
   if (isLoadingCommunity) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-        <p className="ml-3">Loading community...</p>
+      <div className="container max-w-7xl mx-auto py-10 px-4">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
       </div>
     );
   }
 
+  // Error state
   if (!community) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <Users className="h-16 w-16 text-gray-400 mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Community Not Found</h2>
-        <p className="text-gray-600 mb-6">The community you're looking for doesn't exist or has been removed.</p>
-        <Button onClick={() => navigate('/communities')}>
-          Back to Communities
-        </Button>
+      <div className="container max-w-7xl mx-auto py-10 px-4">
+        <div className="text-center py-10">
+          <h2 className="text-2xl font-bold text-red-500">Community not found</h2>
+          <p className="text-gray-500 mt-2">The community you're looking for might have been removed or doesn't exist.</p>
+          <Link href="/communities">
+            <a className="inline-block mt-4">
+              <Button>Back to Communities</Button>
+            </a>
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Community Header / Banner */}
-      <div className="relative">
+    <div className="container max-w-7xl mx-auto py-10 px-4 sm:px-6">
+      {/* Community Header */}
+      <div className="bg-white rounded-lg overflow-hidden border border-gray-200 mb-8">
         {community.banner ? (
-          <div className="h-64 bg-gray-200">
-            <img 
-              src={community.banner} 
-              alt={`${community.name} banner`} 
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-          </div>
+          <div className="h-40 bg-cover bg-center" style={{ backgroundImage: `url(${community.banner})` }}></div>
         ) : (
-          <div className="h-64 bg-gradient-to-r from-primary/20 to-primary/5"></div>
+          <div className="h-40 bg-gradient-to-r from-primary/20 to-primary/10 flex items-center justify-center">
+            <h1 className="text-4xl font-bold text-primary/70">{community.name}</h1>
+          </div>
         )}
-
-        {/* Back button */}
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="absolute top-4 left-4 bg-white/90"
-          onClick={() => navigate('/communities')}
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back
-        </Button>
-
-        {/* Action buttons */}
-        <div className="absolute top-4 right-4 space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="bg-white/90"
-            onClick={() => setIsSubscribed(!isSubscribed)}
-          >
-            {isSubscribed ? (
-              <>
-                <BellOff className="h-4 w-4 mr-1" />
-                Unsubscribe
-              </>
-            ) : (
-              <>
-                <Bell className="h-4 w-4 mr-1" />
-                Subscribe
-              </>
-            )}
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="bg-white/90"
-          >
-            <Share2 className="h-4 w-4 mr-1" />
-            Share
-          </Button>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="bg-white/90">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {canManage && (
-                <DropdownMenuItem onClick={() => navigate(`/communities/${id}/manage`)}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Manage Community
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem>
-                <Flag className="h-4 w-4 mr-2" />
-                Report Community
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {/* Community info card (positioned over the banner) */}
-        <div className="container mx-auto px-4">
-          <div className="relative -mt-24">
-            <Card className="shadow-lg">
-              <CardHeader className="pb-4">
-                <div className="flex flex-col md:flex-row md:items-center">
-                  <div className="flex items-center mb-4 md:mb-0 md:mr-6">
-                    <div className="w-20 h-20 rounded-full bg-white p-1 shadow-md mr-4">
-                      {community.logo ? (
-                        <img 
-                          src={community.logo} 
-                          alt={community.name} 
-                          className="w-full h-full rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
-                          <Users className="h-10 w-10 text-primary" />
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <div className="flex items-center">
-                        <CardTitle className="text-2xl">{community.name}</CardTitle>
-                        {community.isVerified && (
-                          <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-600 border-blue-200">
-                            Verified
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center mt-1">
-                        <Badge variant="outline" className="flex items-center">
-                          {getCommunityTypeIcon(community.category)}
-                          <span className="ml-1">{community.category}</span>
-                        </Badge>
-                        <CardDescription className="ml-3">
-                          Founded by {community.founderName} · {new Date(community.createdAt).toLocaleDateString()}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2 md:ml-auto">
-                    {user && (isMember ? (
-                      <Button variant="outline" onClick={() => setIsMember(false)}>
-                        Leave Community
-                      </Button>
-                    ) : (
-                      <Button onClick={() => setIsMember(true)}>
-                        Join Community
-                      </Button>
-                    ))}
-                    
-                    {canManage && (
-                      <Button variant="outline" onClick={() => navigate(`/communities/${id}/manage`)}>
-                        <Settings className="h-4 w-4 mr-1" />
-                        Manage
-                      </Button>
-                    )}
-                  </div>
+        
+        <div className="p-6">
+          <div className="flex flex-col md:flex-row justify-between">
+            <div className="flex items-center gap-4 mb-4 md:mb-0">
+              {community.logo ? (
+                <img 
+                  src={community.logo} 
+                  alt={community.name} 
+                  className="h-16 w-16 rounded-full object-cover border-2 border-primary/20"
+                />
+              ) : (
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Users className="h-8 w-8 text-primary" />
                 </div>
-              </CardHeader>
+              )}
               
-              <CardContent>
-                <div className="flex flex-wrap items-center text-sm text-gray-500 mb-4">
-                  <div className="flex items-center mr-6 mb-2">
-                    <Users className="h-4 w-4 mr-1" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-bold">{community.name}</h1>
+                  {community.isVerified && (
+                    <Badge variant="default">Verified</Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
+                  <Badge variant="outline">{community.category}</Badge>
+                  <div className="flex items-center">
+                    <User className="h-4 w-4 mr-1" />
                     <span>{community.memberCount} members</span>
                   </div>
-                  <div className="flex items-center mr-6 mb-2">
-                    <MessageSquare className="h-4 w-4 mr-1" />
-                    <span>{posts.length} posts</span>
-                  </div>
-                  <div className="flex items-center mb-2">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    <span>{events.length} upcoming events</span>
-                  </div>
+                  <div>Founded by {community.founderName}</div>
                 </div>
-                
-                <p className="text-gray-700">{community.description}</p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {isAuthenticated && !membership ? (
+                <Button onClick={() => joinMutation.mutate()} disabled={joinMutation.isPending}>
+                  {joinMutation.isPending ? "Joining..." : "Join Community"}
+                </Button>
+              ) : membership ? (
+                <Badge variant="outline" className="px-3 py-1.5">
+                  {membership.role === 'admin' ? 'Admin' : 
+                   membership.role === 'moderator' ? 'Moderator' : 'Member'}
+                </Badge>
+              ) : (
+                <Link href="/auth">
+                  <a>
+                    <Button variant="outline">Login to Join</Button>
+                  </a>
+                </Link>
+              )}
+              
+              {membership?.role === 'admin' && (
+                <Link href={`/communities/${communityId}/manage`}>
+                  <a>
+                    <Button variant="outline">Manage Community</Button>
+                  </a>
+                </Link>
+              )}
+            </div>
           </div>
+          
+          <p className="mt-4 text-gray-600">{community.description}</p>
         </div>
       </div>
-
+      
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Community Content (Left and Center) */}
-          <div className="md:col-span-2">
-            <Tabs defaultValue="discussions">
-              <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
-                <TabsList className="grid grid-cols-4 w-full">
-                  <TabsTrigger value="discussions">Discussions</TabsTrigger>
-                  <TabsTrigger value="announcements">Announcements</TabsTrigger>
-                  <TabsTrigger value="events">Events</TabsTrigger>
-                  <TabsTrigger value="jobs">Jobs</TabsTrigger>
-                </TabsList>
-              </div>
-
-              {/* Create Post Button */}
-              {isMember && (
-                <div className="bg-white p-4 rounded-lg shadow-sm mb-6 flex justify-between">
-                  <Button onClick={() => navigate(`/communities/${id}/post/new`)}>
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Create New Post
-                  </Button>
-                  <Button variant="outline" onClick={() => navigate(`/communities/${id}/event/new`)}>
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Create Event
-                  </Button>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Sidebar */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* About */}
+          <Card>
+            <CardHeader>
+              <CardTitle>About</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {community.rules.length > 0 && (
+                <div>
+                  <h3 className="font-medium text-sm mb-2">Community Rules</h3>
+                  <ul className="list-decimal pl-5 text-sm space-y-1">
+                    {community.rules.map((rule, idx) => (
+                      <li key={idx}>{rule}</li>
+                    ))}
+                  </ul>
                 </div>
               )}
-
-              {/* Discussions Tab */}
-              <TabsContent value="discussions">
-                {isLoadingPosts ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p>Loading discussions...</p>
-                  </div>
-                ) : posts.filter(post => post.type === 'discussion').length > 0 ? (
-                  <div className="space-y-4">
-                    {posts
-                      .filter(post => post.type === 'discussion')
-                      .map(post => (
-                        <Card key={post.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                          <CardHeader className="pb-2">
-                            <div className="flex justify-between items-start">
-                              <div className="flex items-center">
-                                <Avatar className="h-10 w-10 mr-2">
-                                  <AvatarImage src={post.authorAvatar} />
-                                  <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <div className="font-medium">{post.authorName}</div>
-                                  <div className="text-sm text-gray-500">{formatDate(post.createdAt)}</div>
-                                </div>
-                              </div>
-                              {getPostTypeBadge(post.type)}
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <CardTitle className="text-xl mb-2">{post.title}</CardTitle>
-                            <p className="text-gray-700 line-clamp-3">{post.content}</p>
-                          </CardContent>
-                          <CardFooter className="border-t pt-3 flex justify-between">
-                            <div className="flex items-center space-x-4 text-sm">
-                              <div className="flex items-center">
-                                <Activity className="h-4 w-4 mr-1 text-gray-500" />
-                                <span>{post.likes} likes</span>
-                              </div>
-                              <div className="flex items-center">
-                                <MessageSquare className="h-4 w-4 mr-1 text-gray-500" />
-                                <span>{post.commentCount} comments</span>
-                              </div>
-                            </div>
-                            <Button 
-                              variant="ghost" 
-                              className="text-primary"
-                              onClick={() => navigate(`/communities/${id}/post/${post.id}`)}
-                            >
-                              View Discussion
-                            </Button>
-                          </CardFooter>
-                        </Card>
-                      ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-                    <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <h3 className="text-lg font-medium mb-2">No Discussions Yet</h3>
-                    <p className="text-gray-500 mb-6">Be the first to start a discussion in this community.</p>
-                    {isMember ? (
-                      <Button onClick={() => navigate(`/communities/${id}/post/new`)}>
-                        Start a Discussion
-                      </Button>
-                    ) : user ? (
-                      <Button onClick={() => setIsMember(true)}>
-                        Join to Participate
-                      </Button>
-                    ) : (
-                      <Button onClick={() => navigate('/login')}>
-                        Sign in to Participate
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </TabsContent>
-
-              {/* Announcements Tab */}
-              <TabsContent value="announcements">
-                {isLoadingPosts ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p>Loading announcements...</p>
-                  </div>
-                ) : posts.filter(post => post.type === 'announcement').length > 0 ? (
-                  <div className="space-y-4">
-                    {posts
-                      .filter(post => post.type === 'announcement')
-                      .map(post => (
-                        <Card key={post.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                          <CardHeader className="pb-2">
-                            <div className="flex justify-between items-start">
-                              <div className="flex items-center">
-                                <Avatar className="h-10 w-10 mr-2">
-                                  <AvatarImage src={post.authorAvatar} />
-                                  <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <div className="font-medium">{post.authorName}</div>
-                                  <div className="text-sm text-gray-500">{formatDate(post.createdAt)}</div>
-                                </div>
-                              </div>
-                              {getPostTypeBadge(post.type)}
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <CardTitle className="text-xl mb-2">{post.title}</CardTitle>
-                            <p className="text-gray-700 line-clamp-3">{post.content}</p>
-                          </CardContent>
-                          <CardFooter className="border-t pt-3 flex justify-between">
-                            <div className="flex items-center space-x-4 text-sm">
-                              <div className="flex items-center">
-                                <Activity className="h-4 w-4 mr-1 text-gray-500" />
-                                <span>{post.likes} likes</span>
-                              </div>
-                              <div className="flex items-center">
-                                <MessageSquare className="h-4 w-4 mr-1 text-gray-500" />
-                                <span>{post.commentCount} comments</span>
-                              </div>
-                            </div>
-                            <Button 
-                              variant="ghost" 
-                              className="text-primary"
-                              onClick={() => navigate(`/communities/${id}/post/${post.id}`)}
-                            >
-                              View Announcement
-                            </Button>
-                          </CardFooter>
-                        </Card>
-                      ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-                    <Info className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <h3 className="text-lg font-medium mb-2">No Announcements</h3>
-                    <p className="text-gray-500 mb-6">There are no announcements in this community yet.</p>
-                    {canManage && (
-                      <Button onClick={() => navigate(`/communities/${id}/post/new?type=announcement`)}>
-                        Create Announcement
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </TabsContent>
-
-              {/* Events Tab */}
-              <TabsContent value="events">
-                {isLoadingEvents ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p>Loading events...</p>
-                  </div>
-                ) : events.length > 0 ? (
-                  <div className="space-y-4">
-                    {events.map(event => (
-                      <Card key={event.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                        <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <CardTitle className="text-xl">{event.title}</CardTitle>
-                              <div className="text-sm text-gray-500">
-                                {new Date(event.startDate).toLocaleDateString()} at {new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </div>
-                            </div>
-                            <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">
-                              {event.isOnline ? 'Online Event' : 'In-person Event'}
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-gray-700 line-clamp-3">{event.description}</p>
-                          <div className="flex items-center mt-3 text-sm text-gray-500">
-                            <Calendar className="h-4 w-4 mr-1" />
-                            <span>
-                              {formatDateTime(event.startDate)} - {formatDateTime(event.endDate)}
-                            </span>
-                          </div>
-                          {!event.isOnline && (
-                            <div className="flex items-center mt-2 text-sm text-gray-500">
-                              <Globe className="h-4 w-4 mr-1" />
-                              <span>{event.location}</span>
-                            </div>
-                          )}
-                        </CardContent>
-                        <CardFooter className="border-t pt-3 flex justify-between">
-                          <div className="flex items-center">
-                            <Users className="h-4 w-4 mr-1 text-gray-500" />
-                            <span>{event.attendeeCount} attending</span>
-                          </div>
-                          <div className="space-x-2">
-                            <Button 
-                              variant="outline"
-                              onClick={() => navigate(`/communities/${id}/event/${event.id}`)}
-                            >
-                              View Details
-                            </Button>
-                            {user && (
-                              <Button>
-                                Attend Event
-                              </Button>
-                            )}
-                          </div>
-                        </CardFooter>
-                      </Card>
+              
+              {community.links.length > 0 && (
+                <div>
+                  <h3 className="font-medium text-sm mb-2">Links</h3>
+                  <ul className="space-y-1">
+                    {community.links.map((link, idx) => (
+                      <li key={idx} className="text-sm">
+                        <a 
+                          href={link.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline flex items-center"
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          {link.title}
+                        </a>
+                      </li>
                     ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <h3 className="text-lg font-medium mb-2">No Upcoming Events</h3>
-                    <p className="text-gray-500 mb-6">There are no events scheduled in this community.</p>
-                    {isMember && (
-                      <Button onClick={() => navigate(`/communities/${id}/event/new`)}>
-                        Create an Event
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </TabsContent>
-
-              {/* Jobs Tab */}
-              <TabsContent value="jobs">
-                {isLoadingPosts ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p>Loading job opportunities...</p>
-                  </div>
-                ) : posts.filter(post => post.type === 'job').length > 0 ? (
-                  <div className="space-y-4">
-                    {posts
-                      .filter(post => post.type === 'job')
-                      .map(post => (
-                        <Card key={post.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                          <CardHeader className="pb-2">
-                            <div className="flex justify-between items-start">
-                              <div className="flex items-center">
-                                <Avatar className="h-10 w-10 mr-2">
-                                  <AvatarImage src={post.authorAvatar} />
-                                  <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <div className="font-medium">{post.authorName}</div>
-                                  <div className="text-sm text-gray-500">{formatDate(post.createdAt)}</div>
-                                </div>
-                              </div>
-                              {getPostTypeBadge(post.type)}
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <CardTitle className="text-xl mb-2">{post.title}</CardTitle>
-                            <p className="text-gray-700 line-clamp-3">{post.content}</p>
-                          </CardContent>
-                          <CardFooter className="border-t pt-3 flex justify-between">
-                            <div className="flex items-center space-x-4 text-sm">
-                              <div className="flex items-center">
-                                <Activity className="h-4 w-4 mr-1 text-gray-500" />
-                                <span>{post.likes} likes</span>
-                              </div>
-                              <div className="flex items-center">
-                                <MessageSquare className="h-4 w-4 mr-1 text-gray-500" />
-                                <span>{post.commentCount} comments</span>
-                              </div>
-                            </div>
-                            <Button 
-                              variant="ghost" 
-                              className="text-primary"
-                              onClick={() => navigate(`/communities/${id}/post/${post.id}`)}
-                            >
-                              View Job Details
-                            </Button>
-                          </CardFooter>
-                        </Card>
-                      ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-                    <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <h3 className="text-lg font-medium mb-2">No Job Opportunities</h3>
-                    <p className="text-gray-500 mb-6">There are no job listings in this community yet.</p>
-                    {isMember && (
-                      <Button onClick={() => navigate(`/communities/${id}/post/new?type=job`)}>
-                        Post a Job Opportunity
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {/* Sidebar (Right) */}
-          <div className="space-y-6">
-            {/* About Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>About this Community</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-2">Description</h4>
-                  <p className="text-gray-600 text-sm">{community.description}</p>
+                  </ul>
                 </div>
-
-                {community.rules && community.rules.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">Community Rules</h4>
-                    <ul className="text-sm text-gray-600 space-y-2">
-                      {community.rules.map((rule, index) => (
-                        <li key={index} className="flex items-start">
-                          <span className="font-medium mr-2">{index + 1}.</span>
-                          <span>{rule}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {community.links && community.links.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">Useful Links</h4>
-                    <ul className="text-sm text-primary space-y-1">
-                      {community.links.map((link, index) => (
-                        <li key={index}>
-                          <a href={link.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                            {link.title}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                <div>
-                  <h4 className="font-medium mb-2">Created</h4>
-                  <p className="text-sm text-gray-600">{formatDate(community.createdAt)}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Moderators Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Moderators</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoadingMembers ? (
-                  <div className="text-center py-4">
-                    <div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
-                    <p className="text-sm">Loading moderators...</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {members
-                      .filter(member => member.role === 'admin' || member.role === 'moderator')
-                      .map(member => (
-                        <div key={member.userId} className="flex items-center">
-                          <Avatar className="h-8 w-8 mr-2">
-                            <AvatarImage src={member.avatar} />
-                            <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium text-sm">{member.name}</div>
-                            <div className="text-xs text-gray-500 capitalize">{member.role}</div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Upcoming Events */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-center">
+                <CardTitle>Upcoming Events</CardTitle>
+                {membership && (
+                  <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Create Event</DialogTitle>
+                        <DialogDescription>
+                          Schedule an event for the community. All members will be notified.
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <form onSubmit={handleCreateEvent}>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="title" className="text-right">
+                              Title
+                            </Label>
+                            <Input
+                              id="title"
+                              name="title"
+                              className="col-span-3"
+                              required
+                            />
+                          </div>
+                          
+                          <div className="grid grid-cols-4 items-start gap-4">
+                            <Label htmlFor="description" className="text-right pt-2">
+                              Description
+                            </Label>
+                            <Textarea
+                              id="description"
+                              name="description"
+                              className="col-span-3"
+                              rows={3}
+                              required
+                            />
+                          </div>
+                          
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="startDate" className="text-right">
+                              Start Date
+                            </Label>
+                            <Input
+                              id="startDate"
+                              name="startDate"
+                              type="datetime-local"
+                              className="col-span-3"
+                              required
+                            />
+                          </div>
+                          
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="endDate" className="text-right">
+                              End Date
+                            </Label>
+                            <Input
+                              id="endDate"
+                              name="endDate"
+                              type="datetime-local"
+                              className="col-span-3"
+                              required
+                            />
+                          </div>
+                          
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="isOnline" className="text-right">
+                              Event Type
+                            </Label>
+                            <Select name="isOnline" defaultValue="false">
+                              <SelectTrigger className="col-span-3">
+                                <SelectValue placeholder="Select event type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="true">Online</SelectItem>
+                                <SelectItem value="false">In-person</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="location" className="text-right">
+                              Location
+                            </Label>
+                            <Input
+                              id="location"
+                              name="location"
+                              className="col-span-3"
+                              placeholder="URL or physical address"
+                              required
+                            />
                           </div>
                         </div>
-                      ))}
-                    {members.filter(member => member.role === 'admin' || member.role === 'moderator').length === 0 && (
-                      <p className="text-sm text-gray-500">No moderators yet.</p>
-                    )}
-                  </div>
+                        
+                        <DialogFooter>
+                          <Button type="submit" disabled={createEventMutation.isPending}>
+                            {createEventMutation.isPending ? "Creating..." : "Create Event"}
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
                 )}
-              </CardContent>
-              {canManage && (
-                <CardFooter className="border-t pt-3">
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => navigate(`/communities/${id}/manage/moderators`)}
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Manage Moderators
-                  </Button>
-                </CardFooter>
-              )}
-            </Card>
-
-            {/* Members Section */}
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Members</CardTitle>
-                  <Badge variant="outline">{community.memberCount}</Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoadingEvents ? (
+                <div className="space-y-4">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                  ))}
                 </div>
-              </CardHeader>
-              <CardContent>
-                {isLoadingMembers ? (
-                  <div className="text-center py-4">
-                    <div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
-                    <p className="text-sm">Loading members...</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {members.slice(0, 5).map(member => (
-                      <div key={member.userId} className="flex items-center">
-                        <Avatar className="h-8 w-8 mr-2">
-                          <AvatarImage src={member.avatar} />
-                          <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
+              ) : events.length === 0 ? (
+                <div className="text-center py-4 text-sm text-gray-500">
+                  No upcoming events
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {events.slice(0, 3).map((event) => {
+                    const startDate = new Date(event.startDate);
+                    return (
+                      <div key={event.id} className="flex gap-3">
+                        <div className="flex-shrink-0 w-10 h-10 bg-primary/10 rounded flex items-center justify-center">
+                          <Calendar className="h-5 w-5 text-primary" />
+                        </div>
                         <div>
-                          <div className="font-medium text-sm">{member.name}</div>
+                          <h4 className="font-medium text-sm">{event.title}</h4>
                           <div className="text-xs text-gray-500">
-                            Joined {formatDate(member.joinedAt)}
+                            {startDate.toLocaleDateString()} at {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                          <div className="text-xs text-gray-500 flex items-center mt-1">
+                            <User className="h-3 w-3 mr-1" />
+                            <span>{event.attendeeCount} attending</span>
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-              <CardFooter className="border-t pt-3">
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => navigate(`/communities/${id}/members`)}
-                >
-                  View All Members
-                </Button>
-              </CardFooter>
-            </Card>
-
-            {/* Related Communities Suggestion */}
-            <Card>
-              <CardHeader>
-                <CardTitle>You might also like</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-4">
-                  Discover other communities in the {community.category} category.
-                </p>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => navigate(`/communities?category=${community.category}`)}
-                >
-                  Browse Related Communities
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+                    );
+                  })}
+                  
+                  {events.length > 3 && (
+                    <Link href={`/communities/${communityId}/events`}>
+                      <a className="text-xs text-primary flex items-center hover:underline">
+                        View all events
+                        <ChevronRight className="h-3 w-3 ml-1" />
+                      </a>
+                    </Link>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Main Content Area */}
+        <div className="lg:col-span-2">
+          {/* New Post Button */}
+          {membership && (
+            <div className="mb-6">
+              <Dialog open={isCreatePostDialogOpen} onOpenChange={setIsCreatePostDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="w-full justify-start">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create New Post
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create Post</DialogTitle>
+                    <DialogDescription>
+                      Share something with the community
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <form onSubmit={handleCreatePost}>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="postType" className="text-right">
+                          Post Type
+                        </Label>
+                        <Select value={newPostType} onValueChange={setNewPostType}>
+                          <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Select post type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="discussion">Discussion</SelectItem>
+                            <SelectItem value="announcement">Announcement</SelectItem>
+                            <SelectItem value="job">Job/Opportunity</SelectItem>
+                            <SelectItem value="blog">Blog/Article</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="title" className="text-right">
+                          Title
+                        </Label>
+                        <Input
+                          id="title"
+                          name="title"
+                          className="col-span-3"
+                          required
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-4 items-start gap-4">
+                        <Label htmlFor="content" className="text-right pt-2">
+                          Content
+                        </Label>
+                        <Textarea
+                          id="content"
+                          name="content"
+                          className="col-span-3"
+                          rows={6}
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <DialogFooter>
+                      <Button type="submit" disabled={createPostMutation.isPending}>
+                        {createPostMutation.isPending ? "Posting..." : "Post"}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
+          
+          {/* Posts Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid grid-cols-5 mb-6">
+              <TabsTrigger value="discussion">All</TabsTrigger>
+              <TabsTrigger value="announcements">Announcements</TabsTrigger>
+              <TabsTrigger value="discussions">Discussions</TabsTrigger>
+              <TabsTrigger value="jobs">Jobs</TabsTrigger>
+              <TabsTrigger value="blogs">Blogs</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value={activeTab} className="space-y-6">
+              {isLoadingPosts ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <Card key={i} className="animate-pulse">
+                      <CardHeader className="pb-2">
+                        <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : posts.length === 0 ? (
+                <div className="text-center py-10">
+                  <h3 className="text-xl font-medium">No posts yet</h3>
+                  <p className="text-gray-500 mt-2">
+                    {membership ? "Be the first to start a conversation!" : "Join the community to start posting."}
+                  </p>
+                </div>
+              ) : (
+                posts.map((post) => (
+                  <Card key={post.id} className={post.isFeatured ? "border-primary/30" : ""}>
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-start gap-2">
+                          {post.authorAvatar ? (
+                            <img 
+                              src={post.authorAvatar} 
+                              alt={post.authorName} 
+                              className="h-8 w-8 rounded-full mt-1 object-cover"
+                            />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-primary/10 mt-1 flex items-center justify-center">
+                              <User className="h-4 w-4 text-primary" />
+                            </div>
+                          )}
+                          <div>
+                            <CardTitle className="text-lg">{post.title}</CardTitle>
+                            <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                              <span>{post.authorName}</span>
+                              <span>•</span>
+                              <span>
+                                {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+                              </span>
+                              <Badge variant="outline" className="capitalize">
+                                {post.type}
+                              </Badge>
+                              {post.isFeatured && (
+                                <Badge variant="default">Featured</Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                toast({
+                                  title: "Post flagged",
+                                  description: "A moderator will review this post soon.",
+                                });
+                              }}
+                            >
+                              <Flag className="h-4 w-4 mr-2" />
+                              Report
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-gray-600 whitespace-pre-line">
+                        {post.content}
+                      </p>
+                    </CardContent>
+                    <CardFooter className="pt-0 flex justify-between">
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <button className="flex items-center hover:text-primary">
+                          <ThumbsUp className="h-4 w-4 mr-1" />
+                          <span>{post.likes}</span>
+                        </button>
+                        <button className="flex items-center hover:text-primary">
+                          <MessageCircle className="h-4 w-4 mr-1" />
+                          <span>{post.commentCount}</span>
+                        </button>
+                      </div>
+                      
+                      <Link href={`/communities/${communityId}/posts/${post.id}`}>
+                        <a className="text-sm text-primary flex items-center hover:underline">
+                          View Discussion
+                          <ChevronRight className="h-4 w-4 ml-1" />
+                        </a>
+                      </Link>
+                    </CardFooter>
+                  </Card>
+                ))
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
   );
-};
-
-export default CommunityDetail;
+}

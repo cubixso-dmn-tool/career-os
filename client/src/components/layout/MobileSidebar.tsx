@@ -34,7 +34,6 @@ export default function MobileSidebar({ isOpen, onClose, user }: MobileSidebarPr
     { path: "/career-guide", icon: Compass, label: "Career Guide" },
     { path: "/courses", icon: BookOpen, label: "Courses" },
     { path: "/projects", icon: GitBranch, label: "Projects" },
-    { path: "/communities", icon: Users, label: "Communities" },
     { path: "/community", icon: MessageSquare, label: "Community" },
     { path: "/resume-builder", icon: FileText, label: "Resume Builder" },
     { path: "/soft-skills", icon: UserCheck, label: "Soft Skills" },
