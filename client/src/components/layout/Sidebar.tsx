@@ -7,7 +7,8 @@ import {
   MessageSquare,
   FileText,
   UserCheck,
-  Trophy
+  Trophy,
+  Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LogoutButton from "@/components/auth/LogoutButton";
@@ -30,6 +31,7 @@ export default function Sidebar({ user }: SidebarProps) {
     { path: "/career-guide", icon: Compass, label: "Career Guide" },
     { path: "/courses", icon: BookOpen, label: "Courses" },
     { path: "/projects", icon: GitBranch, label: "Projects" },
+    { path: "/communities", icon: Users, label: "Communities" },
     { path: "/community", icon: MessageSquare, label: "Community" },
     { path: "/resume-builder", icon: FileText, label: "Resume Builder" },
     { path: "/soft-skills", icon: UserCheck, label: "Soft Skills" },

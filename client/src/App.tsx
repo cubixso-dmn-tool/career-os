@@ -15,6 +15,9 @@ import HowItWorks from "@/pages/HowItWorks";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import LandingPage from "@/pages/LandingPage";
+import Communities from "@/pages/Communities";
+import CommunityDetail from "@/pages/CommunityDetail";
+import CommunityManagement from "@/pages/CommunityManagement";
 import { useState } from "react";
 import { SidebarProvider } from "@/hooks/use-sidebar";
 import { AuthProvider } from "@/hooks/use-auth-context";
@@ -62,6 +65,14 @@ function Router() {
       <Route path="/achievements">
         <ProtectedRoute>
           <Achievements />
+        </ProtectedRoute>
+      </Route>
+      {/* New Community Routes */}
+      <Route path="/communities" component={Communities} />
+      <Route path="/communities/:id" component={CommunityDetail} />
+      <Route path="/communities/:id/manage">
+        <ProtectedRoute>
+          <CommunityManagement />
         </ProtectedRoute>
       </Route>
       <Route path="/login" component={Login} />
