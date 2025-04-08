@@ -17,7 +17,7 @@ import Register from "@/pages/Register";
 import LandingPage from "@/pages/LandingPage";
 import { useState } from "react";
 import { SidebarProvider } from "@/hooks/use-sidebar";
-import { AuthProvider } from "@/hooks/use-auth-context";
+import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 function Router() {

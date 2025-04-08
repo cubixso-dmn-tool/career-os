@@ -15,7 +15,17 @@ import {
   insertUserAchievementSchema,
   insertUserEventSchema,
   insertDailyByteSchema,
-  insertUserDailyByteSchema
+  insertUserDailyByteSchema,
+  insertCommunitySchema,
+  insertCommunityPostSchema,
+  insertCommunityEventSchema,
+  insertCommunityMemberSchema,
+  insertCommunityQuestionSchema,
+  insertCommunityQuestionAnswerSchema,
+  insertCommunityAdminSchema,
+  insertCommunityPollSchema,
+  insertCommunityPollVoteSchema,
+  insertCommunityEventRegistrationSchema
 } from "@shared/schema";
 import { 
   generateCareerRecommendations,
@@ -893,6 +903,577 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // COMMUNITIES
+  app.get("/api/communities", async (req, res) => {
+    try {
+      const { stream, isVerified } = req.query;
+      
+      let parsedIsVerified: boolean | undefined;
+      if (isVerified !== undefined) {
+        parsedIsVerified = isVerified === 'true';
+      }
+      
+      const communities = await storage.getFilteredCommunities(
+        stream as string | undefined,
+        parsedIsVerified
+      );
+      
+      res.json(communities);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get communities" });
+    }
+  });
+
+  app.post("/api/communities", async (req, res) => {
+    try {
+      const communityData = insertCommunitySchema.parse(req.body);
+      const community = await storage.createCommunity(communityData);
+      res.status(201).json(community);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return handleZodError(error, res);
+      }
+      res.status(500).json({ message: "Failed to create community" });
+    }
+  });
+
+  app.get("/api/communities/:id", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.id);
+      const community = await storage.getCommunity(communityId);
+      
+      if (!community) {
+        return res.status(404).json({ message: "Community not found" });
+      }
+      
+      res.json(community);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community" });
+    }
+  });
+
+  app.get("/api/communities/slug/:slug", async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const community = await storage.getCommunityBySlug(slug);
+      
+      if (!community) {
+        return res.status(404).json({ message: "Community not found" });
+      }
+      
+      res.json(community);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community" });
+    }
+  });
+
+  app.patch("/api/communities/:id", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.id);
+      const updatedCommunity = await storage.updateCommunity(communityId, req.body);
+      res.json(updatedCommunity);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update community" });
+    }
+  });
+
+  // COMMUNITY MEMBERS
+  app.post("/api/community-members", async (req, res) => {
+    try {
+      const memberData = insertCommunityMemberSchema.parse(req.body);
+      const member = await storage.createCommunityMember(memberData);
+      res.status(201).json(member);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return handleZodError(error, res);
+      }
+      res.status(500).json({ message: "Failed to add member to community" });
+    }
+  });
+
+  app.get("/api/communities/:communityId/members", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.communityId);
+      const members = await storage.getCommunityMembers(communityId);
+      res.json(members);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community members" });
+    }
+  });
+
+  app.get("/api/users/:userId/communities", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const communities = await storage.getUserCommunities(userId);
+      res.json(communities);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user communities" });
+    }
+  });
+
+  app.delete("/api/community-members/:communityId/:userId", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.communityId);
+      const userId = parseInt(req.params.userId);
+      await storage.removeCommunityMember(communityId, userId);
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to remove member from community" });
+    }
+  });
+
+  // COMMUNITY ADMINS
+  app.post("/api/community-admins", async (req, res) => {
+    try {
+      const adminData = insertCommunityAdminSchema.parse(req.body);
+      const admin = await storage.createCommunityAdmin(adminData);
+      res.status(201).json(admin);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return handleZodError(error, res);
+      }
+      res.status(500).json({ message: "Failed to add admin to community" });
+    }
+  });
+
+  app.get("/api/communities/:communityId/admins", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.communityId);
+      const admins = await storage.getCommunityAdmins(communityId);
+      res.json(admins);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community admins" });
+    }
+  });
+
+  app.get("/api/users/:userId/admin-communities", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const communities = await storage.getUserAdminCommunities(userId);
+      res.json(communities);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user admin communities" });
+    }
+  });
+
+  app.delete("/api/community-admins/:communityId/:userId", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.communityId);
+      const userId = parseInt(req.params.userId);
+      await storage.removeCommunityAdmin(communityId, userId);
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to remove admin from community" });
+    }
+  });
+
+  // COMMUNITY POSTS
+  app.get("/api/communities/:communityId/posts", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.communityId);
+      const { type } = req.query;
+      
+      const posts = await storage.getCommunityPosts(
+        communityId,
+        type as string | undefined
+      );
+      
+      res.json(posts);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community posts" });
+    }
+  });
+
+  app.post("/api/community-posts", async (req, res) => {
+    try {
+      const postData = insertCommunityPostSchema.parse(req.body);
+      const post = await storage.createCommunityPost(postData);
+      res.status(201).json(post);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return handleZodError(error, res);
+      }
+      res.status(500).json({ message: "Failed to create community post" });
+    }
+  });
+
+  app.get("/api/community-posts/:id", async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const post = await storage.getCommunityPost(postId);
+      
+      if (!post) {
+        return res.status(404).json({ message: "Community post not found" });
+      }
+      
+      // Increment view count
+      await storage.incrementCommunityPostViews(postId);
+      
+      res.json(post);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community post" });
+    }
+  });
+
+  app.patch("/api/community-posts/:id", async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const updatedPost = await storage.updateCommunityPost(postId, req.body);
+      res.json(updatedPost);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update community post" });
+    }
+  });
+
+  app.delete("/api/community-posts/:id", async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      await storage.deleteCommunityPost(postId);
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete community post" });
+    }
+  });
+
+  // COMMUNITY EVENTS
+  app.get("/api/communities/:communityId/events", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.communityId);
+      const { type, upcoming } = req.query;
+      
+      let parsedUpcoming: boolean | undefined;
+      if (upcoming !== undefined) {
+        parsedUpcoming = upcoming === 'true';
+      }
+      
+      const events = await storage.getCommunityEvents(
+        communityId,
+        type as string | undefined,
+        parsedUpcoming
+      );
+      
+      res.json(events);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community events" });
+    }
+  });
+
+  app.post("/api/community-events", async (req, res) => {
+    try {
+      const eventData = insertCommunityEventSchema.parse(req.body);
+      const event = await storage.createCommunityEvent(eventData);
+      res.status(201).json(event);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return handleZodError(error, res);
+      }
+      res.status(500).json({ message: "Failed to create community event" });
+    }
+  });
+
+  app.get("/api/community-events/:id", async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      const event = await storage.getCommunityEvent(eventId);
+      
+      if (!event) {
+        return res.status(404).json({ message: "Community event not found" });
+      }
+      
+      res.json(event);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community event" });
+    }
+  });
+
+  app.patch("/api/community-events/:id", async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      const updatedEvent = await storage.updateCommunityEvent(eventId, req.body);
+      res.json(updatedEvent);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update community event" });
+    }
+  });
+
+  app.delete("/api/community-events/:id", async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      await storage.deleteCommunityEvent(eventId);
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete community event" });
+    }
+  });
+
+  // EVENT REGISTRATIONS
+  app.post("/api/community-event-registrations", async (req, res) => {
+    try {
+      const registrationData = insertCommunityEventRegistrationSchema.parse(req.body);
+      const registration = await storage.createCommunityEventRegistration(registrationData);
+      res.status(201).json(registration);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return handleZodError(error, res);
+      }
+      res.status(500).json({ message: "Failed to register for event" });
+    }
+  });
+
+  app.get("/api/community-events/:eventId/registrations", async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      const registrations = await storage.getEventRegistrations(eventId);
+      res.json(registrations);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get event registrations" });
+    }
+  });
+
+  app.get("/api/users/:userId/event-registrations", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const registrations = await storage.getUserEventRegistrations(userId);
+      res.json(registrations);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user event registrations" });
+    }
+  });
+
+  app.patch("/api/community-event-registrations/:id", async (req, res) => {
+    try {
+      const registrationId = parseInt(req.params.id);
+      const updatedRegistration = await storage.updateEventRegistration(registrationId, req.body);
+      res.json(updatedRegistration);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update event registration" });
+    }
+  });
+
+  app.delete("/api/community-event-registrations/:eventId/:userId", async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      const userId = parseInt(req.params.userId);
+      await storage.cancelEventRegistration(eventId, userId);
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to cancel event registration" });
+    }
+  });
+
+  // COMMUNITY QUESTIONS
+  app.get("/api/communities/:communityId/questions", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.communityId);
+      const { isAnswered } = req.query;
+      
+      let parsedIsAnswered: boolean | undefined;
+      if (isAnswered !== undefined) {
+        parsedIsAnswered = isAnswered === 'true';
+      }
+      
+      const questions = await storage.getCommunityQuestions(
+        communityId,
+        parsedIsAnswered
+      );
+      
+      res.json(questions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community questions" });
+    }
+  });
+
+  app.post("/api/community-questions", async (req, res) => {
+    try {
+      const questionData = insertCommunityQuestionSchema.parse(req.body);
+      const question = await storage.createCommunityQuestion(questionData);
+      res.status(201).json(question);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return handleZodError(error, res);
+      }
+      res.status(500).json({ message: "Failed to create community question" });
+    }
+  });
+
+  app.get("/api/community-questions/:id", async (req, res) => {
+    try {
+      const questionId = parseInt(req.params.id);
+      const question = await storage.getCommunityQuestion(questionId);
+      
+      if (!question) {
+        return res.status(404).json({ message: "Community question not found" });
+      }
+      
+      // Increment view count
+      await storage.incrementCommunityQuestionViews(questionId);
+      
+      res.json(question);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community question" });
+    }
+  });
+
+  app.patch("/api/community-questions/:id", async (req, res) => {
+    try {
+      const questionId = parseInt(req.params.id);
+      const updatedQuestion = await storage.updateCommunityQuestion(questionId, req.body);
+      res.json(updatedQuestion);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update community question" });
+    }
+  });
+
+  app.delete("/api/community-questions/:id", async (req, res) => {
+    try {
+      const questionId = parseInt(req.params.id);
+      await storage.deleteCommunityQuestion(questionId);
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete community question" });
+    }
+  });
+
+  // QUESTION ANSWERS
+  app.get("/api/community-questions/:questionId/answers", async (req, res) => {
+    try {
+      const questionId = parseInt(req.params.questionId);
+      const answers = await storage.getQuestionAnswers(questionId);
+      res.json(answers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get question answers" });
+    }
+  });
+
+  app.post("/api/community-question-answers", async (req, res) => {
+    try {
+      const answerData = insertCommunityQuestionAnswerSchema.parse(req.body);
+      const answer = await storage.createQuestionAnswer(answerData);
+      res.status(201).json(answer);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return handleZodError(error, res);
+      }
+      res.status(500).json({ message: "Failed to create question answer" });
+    }
+  });
+
+  app.patch("/api/community-question-answers/:id", async (req, res) => {
+    try {
+      const answerId = parseInt(req.params.id);
+      const updatedAnswer = await storage.updateQuestionAnswer(answerId, req.body);
+      res.json(updatedAnswer);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update question answer" });
+    }
+  });
+
+  app.delete("/api/community-question-answers/:id", async (req, res) => {
+    try {
+      const answerId = parseInt(req.params.id);
+      await storage.deleteQuestionAnswer(answerId);
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete question answer" });
+    }
+  });
+
+  app.post("/api/community-question-answers/:id/accept", async (req, res) => {
+    try {
+      const answerId = parseInt(req.params.id);
+      const questionId = parseInt(req.body.questionId);
+      
+      await storage.acceptAnswer(answerId, questionId);
+      res.status(200).json({ message: "Answer accepted" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to accept answer" });
+    }
+  });
+
+  // COMMUNITY POLLS
+  app.get("/api/communities/:communityId/polls", async (req, res) => {
+    try {
+      const communityId = parseInt(req.params.communityId);
+      const { active } = req.query;
+      
+      let parsedActive: boolean | undefined;
+      if (active !== undefined) {
+        parsedActive = active === 'true';
+      }
+      
+      const polls = await storage.getCommunityPolls(
+        communityId,
+        parsedActive
+      );
+      
+      res.json(polls);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community polls" });
+    }
+  });
+
+  app.post("/api/community-polls", async (req, res) => {
+    try {
+      const pollData = insertCommunityPollSchema.parse(req.body);
+      const poll = await storage.createCommunityPoll(pollData);
+      res.status(201).json(poll);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return handleZodError(error, res);
+      }
+      res.status(500).json({ message: "Failed to create community poll" });
+    }
+  });
+
+  app.get("/api/community-polls/:id", async (req, res) => {
+    try {
+      const pollId = parseInt(req.params.id);
+      const poll = await storage.getCommunityPoll(pollId);
+      
+      if (!poll) {
+        return res.status(404).json({ message: "Community poll not found" });
+      }
+      
+      res.json(poll);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get community poll" });
+    }
+  });
+
+  app.post("/api/community-poll-votes", async (req, res) => {
+    try {
+      const voteData = insertCommunityPollVoteSchema.parse(req.body);
+      const vote = await storage.createPollVote(voteData);
+      res.status(201).json(vote);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return handleZodError(error, res);
+      }
+      res.status(500).json({ message: "Failed to vote on poll" });
+    }
+  });
+
+  app.get("/api/community-polls/:pollId/votes", async (req, res) => {
+    try {
+      const pollId = parseInt(req.params.pollId);
+      const votes = await storage.getPollVotes(pollId);
+      res.json(votes);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get poll votes" });
+    }
+  });
+
+  app.get("/api/users/:userId/poll-votes", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const votes = await storage.getUserPollVotes(userId);
+      res.json(votes);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user poll votes" });
+    }
+  });
+
+  // Set up the HTTP server
   const httpServer = createServer(app);
   return httpServer;
 }
