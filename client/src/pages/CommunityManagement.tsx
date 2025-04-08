@@ -37,7 +37,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -432,8 +432,11 @@ export default function CommunityManagementPage() {
     );
   }
 
-  // Check permissions
-  if (!isAdmin && !isModerator) {
+  // Check if user is the founder of the community
+  const isFounder = user?.id === community.founderId;
+  
+  // Check permissions - only founders, admins, or moderators can manage
+  if (!isFounder && !isAdmin && !isModerator) {
     return (
       <div className="container max-w-7xl mx-auto py-10 px-4">
         <div className="text-center py-10">
@@ -464,12 +467,12 @@ export default function CommunityManagementPage() {
               Manage {community.name}
             </h1>
             <p className="text-gray-500">
-              {isAdmin ? 'Admin Dashboard' : 'Moderator Dashboard'}
+              {isFounder ? 'Founder Dashboard' : isAdmin ? 'Admin Dashboard' : 'Moderator Dashboard'}
             </p>
           </div>
         </div>
         
-        {isAdmin && (
+        {(isFounder || isAdmin) && (
           <Dialog open={isUpdateCommunityDialogOpen} onOpenChange={setIsUpdateCommunityDialogOpen}>
             <DialogTrigger asChild>
               <Button className="mt-4 md:mt-0">
@@ -782,7 +785,7 @@ export default function CommunityManagementPage() {
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        {isAdmin && member.userId !== user?.id && (
+                        {(isFounder || isAdmin) && member.userId !== user?.id && (
                           <>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>

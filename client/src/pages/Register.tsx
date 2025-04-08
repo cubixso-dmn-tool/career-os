@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useAuthContext } from "@/hooks/use-auth-context";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,9 +25,16 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function Register() {
-  const { register, loading } = useAuthContext();
+  const { registerMutation, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation('/dashboard');
+    }
+  }, [isAuthenticated, setLocation]);
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<RegisterFormValues>({
@@ -42,19 +49,22 @@ export default function Register() {
   });
 
   const onSubmit = async (data: RegisterFormValues) => {
-    try {
-      setError(null);
-      // Remove confirmPassword as the API doesn't need it
-      const { confirmPassword, ...registrationData } = data;
-      await register(registrationData);
-      toast({
-        title: "Registration successful",
-        description: "Your account has been created!",
-      });
-      setLocation("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Registration failed. Please try again.");
-    }
+    setError(null);
+    // Remove confirmPassword as the API doesn't need it
+    const { confirmPassword, ...registrationData } = data;
+    
+    registerMutation.mutate(registrationData, {
+      onSuccess: () => {
+        toast({
+          title: "Registration successful",
+          description: "Your account has been created!",
+        });
+        setLocation("/dashboard");
+      },
+      onError: (err: Error) => {
+        setError(err.message || "Registration failed. Please try again.");
+      },
+    });
   };
 
   return (
@@ -137,8 +147,8 @@ export default function Register() {
               {error && (
                 <div className="text-sm font-medium text-destructive mt-2">{error}</div>
               )}
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
+              <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
+                {registerMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Creating account...

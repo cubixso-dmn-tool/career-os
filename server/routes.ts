@@ -2528,8 +2528,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const communityId = parseInt(req.params.id);
       
-      // Check if user is admin or moderator (in a real implementation)
-      const isAdminOrMod = communityId <= 2 && req.user.id === 1;
+      // Check if user is founder, admin or moderator
+      // First check if user is the founder of the community
+      const community = await storage.getCommunity(communityId);
+      if (!community) {
+        return res.status(404).json({ message: "Community not found" });
+      }
+      
+      const isFounder = community.founderId === req.user.id;
+      
+      // If not founder, check if user is admin or moderator
+      const member = isFounder ? null : await storage.getCommunityMember(communityId, req.user.id);
+      const isAdminOrMod = isFounder || (member && (member.role === 'admin' || member.role === 'moderator'));
       
       if (!isAdminOrMod) {
         return res.status(403).json({ message: "Permission denied" });
@@ -2618,8 +2628,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid action" });
       }
       
-      // Check if user is admin or moderator (in a real implementation)
-      const isAdminOrMod = communityId <= 2 && req.user.id === 1;
+      // Check if user is founder, admin or moderator
+      // First check if user is the founder of the community
+      const community = await storage.getCommunity(communityId);
+      if (!community) {
+        return res.status(404).json({ message: "Community not found" });
+      }
+      
+      const isFounder = community.founderId === req.user.id;
+      
+      // If not founder, check if user is admin or moderator
+      const member = isFounder ? null : await storage.getCommunityMember(communityId, req.user.id);
+      const isAdminOrMod = isFounder || (member && (member.role === 'admin' || member.role === 'moderator'));
       
       if (!isAdminOrMod) {
         return res.status(403).json({ message: "Permission denied" });
@@ -2687,8 +2707,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid collaboration data" });
       }
       
-      // Check if user is admin or moderator of source community (in a real implementation)
-      const isSourceAdmin = sourceCommunityId <= 2 && req.user.id === 1;
+      // Check if user is founder, admin or moderator of source community
+      // First check if user is the founder of the community
+      const sourceComm = await storage.getCommunity(sourceCommunityId);
+      if (!sourceComm) {
+        return res.status(404).json({ message: "Community not found" });
+      }
+      
+      const isFounder = sourceComm.founderId === req.user.id;
+      
+      // If not founder, check if user is admin or moderator
+      const member = isFounder ? null : await storage.getCommunityMember(sourceCommunityId, req.user.id);
+      const isSourceAdmin = isFounder || (member && (member.role === 'admin' || member.role === 'moderator'));
       
       if (!isSourceAdmin) {
         return res.status(403).json({ message: "Permission denied" });
@@ -2728,8 +2758,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid status" });
       }
       
-      // Check if user is admin or moderator of target community (in a real implementation)
-      const isTargetAdmin = communityId <= 2 && req.user.id === 1;
+      // Check if user is founder, admin or moderator of target community
+      // First check if user is the founder of the community
+      const targetComm = await storage.getCommunity(communityId);
+      if (!targetComm) {
+        return res.status(404).json({ message: "Community not found" });
+      }
+      
+      const isFounder = targetComm.founderId === req.user.id;
+      
+      // If not founder, check if user is admin or moderator
+      const member = isFounder ? null : await storage.getCommunityMember(communityId, req.user.id);
+      const isTargetAdmin = isFounder || (member && (member.role === 'admin' || member.role === 'moderator'));
       
       if (!isTargetAdmin) {
         return res.status(403).json({ message: "Permission denied" });
