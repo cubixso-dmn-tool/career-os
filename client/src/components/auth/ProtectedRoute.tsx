@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "@/hooks/use-auth-context";
 import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
@@ -8,16 +8,16 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, isLoading } = useAuth();
+  const { isAuthenticated, loading } = useAuthContext();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!loading && !isAuthenticated) {
       setLocation("/login");
     }
-  }, [user, isLoading, setLocation]);
+  }, [isAuthenticated, loading, setLocation]);
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -26,7 +26,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (!user) {
+  if (!isAuthenticated) {
     return null; // Will redirect in useEffect
   }
 
