@@ -54,9 +54,9 @@ export default function CommunitiesPage() {
 
   // Query communities with filters
   const { data: communities = [], isLoading, error } = useQuery<Community[]>({
-    queryKey: ['/api/communities', searchQuery, category, sortBy],
+    queryKey: ['/api/all-communities', searchQuery, category, sortBy],
     queryFn: async () => {
-      let url = '/api/communities';
+      let url = '/api/all-communities';
       const params = new URLSearchParams();
       
       if (searchQuery) params.append('search', searchQuery);

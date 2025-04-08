@@ -96,9 +96,7 @@ interface CommunityCollaborationData {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Set up authentication
-  const { setupAuth } = require('./auth');
-  setupAuth(app);
+  // Authentication is set up in server/index.ts
   
   // USERS
   app.post("/api/users", async (req, res) => {
@@ -966,6 +964,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ----------- COMMUNITY MANAGEMENT API ROUTES -----------
 
   // COMMUNITIES
+  // This endpoint is unused and has been replaced by the one below
+  // Keeping commented code for reference
+  /*
   app.get("/api/communities", async (req, res) => {
     try {
       // If verified flag is passed, only get verified communities
@@ -983,6 +984,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to get communities" });
     }
   });
+  */
   
   app.post("/api/communities", isAuthenticated, isVerified, async (req, res) => {
     try {
@@ -1785,7 +1787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // COMMUNITY ENDPOINTS
   // Get all communities
-  app.get("/api/communities", async (req, res) => {
+  app.get("/api/all-communities", async (req, res) => {
     try {
       const { category, search } = req.query;
       
