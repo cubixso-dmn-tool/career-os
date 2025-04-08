@@ -15,7 +15,17 @@ import {
   events, Event, InsertEvent,
   userEvents, UserEvent, InsertUserEvent,
   dailyBytes, DailyByte, InsertDailyByte,
-  userDailyBytes, UserDailyByte, InsertUserDailyByte
+  userDailyBytes, UserDailyByte, InsertUserDailyByte,
+  communities, Community, InsertCommunity,
+  communityMembers, CommunityMember, InsertCommunityMember,
+  communityPosts, CommunityPost, InsertCommunityPost,
+  communityPostComments, CommunityPostComment, InsertCommunityPostComment,
+  communityEvents, CommunityEvent, InsertCommunityEvent,
+  communityEventAttendees, CommunityEventAttendee, InsertCommunityEventAttendee,
+  polls, Poll, InsertPoll,
+  pollResponses, PollResponse, InsertPollResponse,
+  flaggedContent, FlaggedContent, InsertFlaggedContent,
+  communityCollaborations, CommunityCollaboration, InsertCommunityCollaboration
 } from "@shared/schema";
 
 export interface IStorage {
@@ -120,6 +130,73 @@ export interface IStorage {
   getUserDailyByteByDailyByteAndUser(dailyByteId: number, userId: number): Promise<UserDailyByte | undefined>;
   createUserDailyByte(userDailyByte: InsertUserDailyByte): Promise<UserDailyByte>;
   updateUserDailyByte(id: number, updates: Partial<UserDailyByte>): Promise<UserDailyByte>;
+  
+  // Community operations
+  getCommunity(id: number): Promise<Community | undefined>;
+  getCommunityByName(name: string): Promise<Community | undefined>;
+  getAllCommunities(): Promise<Community[]>;
+  getVerifiedCommunities(): Promise<Community[]>;
+  getCommunitiesByFounder(founderId: number): Promise<Community[]>;
+  createCommunity(community: InsertCommunity): Promise<Community>;
+  updateCommunity(id: number, updates: Partial<Community>): Promise<Community>;
+
+  // Community Member operations
+  getCommunityMember(communityId: number, userId: number): Promise<CommunityMember | undefined>;
+  getCommunityMembers(communityId: number): Promise<CommunityMember[]>;
+  getCommunityMembersByRole(communityId: number, role: string): Promise<CommunityMember[]>;
+  createCommunityMember(member: InsertCommunityMember): Promise<CommunityMember>;
+  updateCommunityMember(communityId: number, userId: number, updates: Partial<CommunityMember>): Promise<CommunityMember>;
+  
+  // Community Post operations
+  getCommunityPost(id: number): Promise<CommunityPost | undefined>;
+  getCommunityPosts(communityId: number): Promise<CommunityPost[]>;
+  getCommunityPostsByType(communityId: number, type: string): Promise<CommunityPost[]>;
+  getFeaturedCommunityPosts(communityId: number): Promise<CommunityPost[]>;
+  createCommunityPost(post: InsertCommunityPost): Promise<CommunityPost>;
+  updateCommunityPost(id: number, updates: Partial<CommunityPost>): Promise<CommunityPost>;
+  
+  // Community Post Comment operations
+  getCommunityPostComment(id: number): Promise<CommunityPostComment | undefined>;
+  getCommunityPostComments(postId: number): Promise<CommunityPostComment[]>;
+  createCommunityPostComment(comment: InsertCommunityPostComment): Promise<CommunityPostComment>;
+  updateCommunityPostComment(id: number, updates: Partial<CommunityPostComment>): Promise<CommunityPostComment>;
+  
+  // Community Event operations
+  getCommunityEvent(id: number): Promise<CommunityEvent | undefined>;
+  getCommunityEvents(communityId: number): Promise<CommunityEvent[]>;
+  getUpcomingCommunityEvents(communityId: number): Promise<CommunityEvent[]>;
+  createCommunityEvent(event: InsertCommunityEvent): Promise<CommunityEvent>;
+  updateCommunityEvent(id: number, updates: Partial<CommunityEvent>): Promise<CommunityEvent>;
+  
+  // Community Event Attendee operations
+  getCommunityEventAttendee(eventId: number, userId: number): Promise<CommunityEventAttendee | undefined>;
+  getCommunityEventAttendees(eventId: number): Promise<CommunityEventAttendee[]>;
+  createCommunityEventAttendee(attendee: InsertCommunityEventAttendee): Promise<CommunityEventAttendee>;
+  updateCommunityEventAttendee(eventId: number, userId: number, updates: Partial<CommunityEventAttendee>): Promise<CommunityEventAttendee>;
+  
+  // Poll operations
+  getPoll(id: number): Promise<Poll | undefined>;
+  getPollsByPost(postId: number): Promise<Poll[]>;
+  createPoll(poll: InsertPoll): Promise<Poll>;
+  
+  // Poll Response operations
+  getPollResponse(id: number): Promise<PollResponse | undefined>;
+  getPollResponsesByPoll(pollId: number): Promise<PollResponse[]>;
+  getPollResponseByPollAndUser(pollId: number, userId: number): Promise<PollResponse | undefined>;
+  createPollResponse(response: InsertPollResponse): Promise<PollResponse>;
+  
+  // Flagged Content operations
+  getFlaggedContent(id: number): Promise<FlaggedContent | undefined>;
+  getFlaggedContentByStatus(status: string): Promise<FlaggedContent[]>;
+  createFlaggedContent(content: InsertFlaggedContent): Promise<FlaggedContent>;
+  updateFlaggedContent(id: number, updates: Partial<FlaggedContent>): Promise<FlaggedContent>;
+  
+  // Community Collaboration operations
+  getCommunityCollaboration(id: number): Promise<CommunityCollaboration | undefined>;
+  getCommunityCollaborations(communityId: number): Promise<CommunityCollaboration[]>;
+  getCommunityCollaborationsByStatus(communityId: number, status: string): Promise<CommunityCollaboration[]>;
+  createCommunityCollaboration(collaboration: InsertCommunityCollaboration): Promise<CommunityCollaboration>;
+  updateCommunityCollaboration(id: number, updates: Partial<CommunityCollaboration>): Promise<CommunityCollaboration>;
 }
 
 import { eq, desc, and, or, sql, like } from "drizzle-orm";
@@ -681,6 +758,517 @@ export class DatabaseStorage implements IStorage {
     
     if (!updatedUserDailyByte) throw new Error("User daily byte not found");
     return updatedUserDailyByte;
+  }
+
+  // Community operations
+  async getCommunity(id: number): Promise<Community | undefined> {
+    const [community] = await db.select().from(communities).where(eq(communities.id, id));
+    return community || undefined;
+  }
+
+  async getCommunityByName(name: string): Promise<Community | undefined> {
+    const [community] = await db.select().from(communities).where(eq(communities.name, name));
+    return community || undefined;
+  }
+
+  async getAllCommunities(): Promise<Community[]> {
+    return await db.select().from(communities);
+  }
+
+  async getVerifiedCommunities(): Promise<Community[]> {
+    return await db
+      .select()
+      .from(communities)
+      .where(eq(communities.isVerified, true));
+  }
+
+  async getCommunitiesByFounder(founderId: number): Promise<Community[]> {
+    return await db
+      .select()
+      .from(communities)
+      .where(eq(communities.founderId, founderId));
+  }
+
+  async createCommunity(insertCommunity: InsertCommunity): Promise<Community> {
+    const communityData = {
+      ...insertCommunity,
+      memberCount: 0,
+      createdAt: new Date()
+    };
+    
+    const [community] = await db.insert(communities).values(communityData).returning();
+    
+    // Auto-add the founder as an admin member
+    await this.createCommunityMember({
+      communityId: community.id,
+      userId: community.founderId,
+      role: 'admin',
+      isActive: true
+    });
+    
+    return community;
+  }
+
+  async updateCommunity(id: number, updates: Partial<Community>): Promise<Community> {
+    const [updatedCommunity] = await db
+      .update(communities)
+      .set(updates)
+      .where(eq(communities.id, id))
+      .returning();
+    
+    if (!updatedCommunity) throw new Error("Community not found");
+    return updatedCommunity;
+  }
+
+  // Community Member operations
+  async getCommunityMember(communityId: number, userId: number): Promise<CommunityMember | undefined> {
+    const [member] = await db
+      .select()
+      .from(communityMembers)
+      .where(
+        and(
+          eq(communityMembers.communityId, communityId),
+          eq(communityMembers.userId, userId)
+        )
+      );
+    
+    return member || undefined;
+  }
+
+  async getCommunityMembers(communityId: number): Promise<CommunityMember[]> {
+    return await db
+      .select()
+      .from(communityMembers)
+      .where(eq(communityMembers.communityId, communityId));
+  }
+
+  async getCommunityMembersByRole(communityId: number, role: string): Promise<CommunityMember[]> {
+    return await db
+      .select()
+      .from(communityMembers)
+      .where(
+        and(
+          eq(communityMembers.communityId, communityId),
+          eq(communityMembers.role, role)
+        )
+      );
+  }
+
+  async createCommunityMember(insertMember: InsertCommunityMember): Promise<CommunityMember> {
+    const memberData = {
+      ...insertMember,
+      joinedAt: new Date()
+    };
+    
+    const [member] = await db.insert(communityMembers).values(memberData).returning();
+    
+    // Update community member count
+    await db.execute(sql`
+      UPDATE communities
+      SET member_count = member_count + 1
+      WHERE id = ${memberData.communityId}
+    `);
+    
+    return member;
+  }
+
+  async updateCommunityMember(communityId: number, userId: number, updates: Partial<CommunityMember>): Promise<CommunityMember> {
+    const [updatedMember] = await db
+      .update(communityMembers)
+      .set(updates)
+      .where(
+        and(
+          eq(communityMembers.communityId, communityId),
+          eq(communityMembers.userId, userId)
+        )
+      )
+      .returning();
+    
+    if (!updatedMember) throw new Error("Community member not found");
+    
+    // If member is deactivated, update community member count
+    if (updates.isActive === false) {
+      await db.execute(sql`
+        UPDATE communities
+        SET member_count = member_count - 1
+        WHERE id = ${communityId}
+      `);
+    } else if (updates.isActive === true) {
+      // If member is reactivated, update community member count
+      await db.execute(sql`
+        UPDATE communities
+        SET member_count = member_count + 1
+        WHERE id = ${communityId}
+      `);
+    }
+    
+    return updatedMember;
+  }
+
+  // Community Post operations
+  async getCommunityPost(id: number): Promise<CommunityPost | undefined> {
+    const [post] = await db.select().from(communityPosts).where(eq(communityPosts.id, id));
+    return post || undefined;
+  }
+
+  async getCommunityPosts(communityId: number): Promise<CommunityPost[]> {
+    return await db
+      .select()
+      .from(communityPosts)
+      .where(eq(communityPosts.communityId, communityId))
+      .orderBy(desc(communityPosts.createdAt));
+  }
+
+  async getCommunityPostsByType(communityId: number, type: string): Promise<CommunityPost[]> {
+    return await db
+      .select()
+      .from(communityPosts)
+      .where(
+        and(
+          eq(communityPosts.communityId, communityId),
+          eq(communityPosts.type, type)
+        )
+      )
+      .orderBy(desc(communityPosts.createdAt));
+  }
+
+  async getFeaturedCommunityPosts(communityId: number): Promise<CommunityPost[]> {
+    return await db
+      .select()
+      .from(communityPosts)
+      .where(
+        and(
+          eq(communityPosts.communityId, communityId),
+          eq(communityPosts.isFeatured, true)
+        )
+      )
+      .orderBy(desc(communityPosts.createdAt));
+  }
+
+  async createCommunityPost(insertPost: InsertCommunityPost): Promise<CommunityPost> {
+    const postData = {
+      ...insertPost,
+      likes: 0,
+      views: 0,
+      comments: 0,
+      createdAt: new Date()
+    };
+    
+    const [post] = await db.insert(communityPosts).values(postData).returning();
+    return post;
+  }
+
+  async updateCommunityPost(id: number, updates: Partial<CommunityPost>): Promise<CommunityPost> {
+    const [updatedPost] = await db
+      .update(communityPosts)
+      .set(updates)
+      .where(eq(communityPosts.id, id))
+      .returning();
+    
+    if (!updatedPost) throw new Error("Community post not found");
+    return updatedPost;
+  }
+
+  // Community Post Comment operations
+  async getCommunityPostComment(id: number): Promise<CommunityPostComment | undefined> {
+    const [comment] = await db.select().from(communityPostComments).where(eq(communityPostComments.id, id));
+    return comment || undefined;
+  }
+
+  async getCommunityPostComments(postId: number): Promise<CommunityPostComment[]> {
+    return await db
+      .select()
+      .from(communityPostComments)
+      .where(eq(communityPostComments.postId, postId))
+      .orderBy(desc(communityPostComments.createdAt));
+  }
+
+  async createCommunityPostComment(insertComment: InsertCommunityPostComment): Promise<CommunityPostComment> {
+    const commentData = {
+      ...insertComment,
+      likes: 0,
+      createdAt: new Date()
+    };
+    
+    const [comment] = await db.insert(communityPostComments).values(commentData).returning();
+    
+    // Update post comment count
+    await db.execute(sql`
+      UPDATE community_posts
+      SET comments = comments + 1
+      WHERE id = ${commentData.postId}
+    `);
+    
+    return comment;
+  }
+
+  async updateCommunityPostComment(id: number, updates: Partial<CommunityPostComment>): Promise<CommunityPostComment> {
+    const [updatedComment] = await db
+      .update(communityPostComments)
+      .set(updates)
+      .where(eq(communityPostComments.id, id))
+      .returning();
+    
+    if (!updatedComment) throw new Error("Community post comment not found");
+    return updatedComment;
+  }
+
+  // Community Event operations
+  async getCommunityEvent(id: number): Promise<CommunityEvent | undefined> {
+    const [event] = await db.select().from(communityEvents).where(eq(communityEvents.id, id));
+    return event || undefined;
+  }
+
+  async getCommunityEvents(communityId: number): Promise<CommunityEvent[]> {
+    return await db
+      .select()
+      .from(communityEvents)
+      .where(eq(communityEvents.communityId, communityId))
+      .orderBy(desc(communityEvents.startDate));
+  }
+
+  async getUpcomingCommunityEvents(communityId: number): Promise<CommunityEvent[]> {
+    const now = new Date();
+    
+    return await db
+      .select()
+      .from(communityEvents)
+      .where(
+        and(
+          eq(communityEvents.communityId, communityId),
+          sql`${communityEvents.startDate} > ${now}`
+        )
+      )
+      .orderBy(communityEvents.startDate);
+  }
+
+  async createCommunityEvent(insertEvent: InsertCommunityEvent): Promise<CommunityEvent> {
+    const eventData = {
+      ...insertEvent,
+      createdAt: new Date()
+    };
+    
+    const [event] = await db.insert(communityEvents).values(eventData).returning();
+    return event;
+  }
+
+  async updateCommunityEvent(id: number, updates: Partial<CommunityEvent>): Promise<CommunityEvent> {
+    const [updatedEvent] = await db
+      .update(communityEvents)
+      .set(updates)
+      .where(eq(communityEvents.id, id))
+      .returning();
+    
+    if (!updatedEvent) throw new Error("Community event not found");
+    return updatedEvent;
+  }
+
+  // Community Event Attendee operations
+  async getCommunityEventAttendee(eventId: number, userId: number): Promise<CommunityEventAttendee | undefined> {
+    const [attendee] = await db
+      .select()
+      .from(communityEventAttendees)
+      .where(
+        and(
+          eq(communityEventAttendees.eventId, eventId),
+          eq(communityEventAttendees.userId, userId)
+        )
+      );
+    
+    return attendee || undefined;
+  }
+
+  async getCommunityEventAttendees(eventId: number): Promise<CommunityEventAttendee[]> {
+    return await db
+      .select()
+      .from(communityEventAttendees)
+      .where(eq(communityEventAttendees.eventId, eventId));
+  }
+
+  async createCommunityEventAttendee(insertAttendee: InsertCommunityEventAttendee): Promise<CommunityEventAttendee> {
+    const attendeeData = {
+      ...insertAttendee,
+      registeredAt: new Date()
+    };
+    
+    const [attendee] = await db.insert(communityEventAttendees).values(attendeeData).returning();
+    return attendee;
+  }
+
+  async updateCommunityEventAttendee(eventId: number, userId: number, updates: Partial<CommunityEventAttendee>): Promise<CommunityEventAttendee> {
+    const [updatedAttendee] = await db
+      .update(communityEventAttendees)
+      .set(updates)
+      .where(
+        and(
+          eq(communityEventAttendees.eventId, eventId),
+          eq(communityEventAttendees.userId, userId)
+        )
+      )
+      .returning();
+    
+    if (!updatedAttendee) throw new Error("Community event attendee not found");
+    return updatedAttendee;
+  }
+
+  // Poll operations
+  async getPoll(id: number): Promise<Poll | undefined> {
+    const [poll] = await db.select().from(polls).where(eq(polls.id, id));
+    return poll || undefined;
+  }
+
+  async getPollsByPost(postId: number): Promise<Poll[]> {
+    return await db
+      .select()
+      .from(polls)
+      .where(eq(polls.postId, postId));
+  }
+
+  async createPoll(insertPoll: InsertPoll): Promise<Poll> {
+    const pollData = {
+      ...insertPoll,
+      createdAt: new Date()
+    };
+    
+    const [poll] = await db.insert(polls).values(pollData).returning();
+    return poll;
+  }
+
+  // Poll Response operations
+  async getPollResponse(id: number): Promise<PollResponse | undefined> {
+    const [response] = await db.select().from(pollResponses).where(eq(pollResponses.id, id));
+    return response || undefined;
+  }
+
+  async getPollResponsesByPoll(pollId: number): Promise<PollResponse[]> {
+    return await db
+      .select()
+      .from(pollResponses)
+      .where(eq(pollResponses.pollId, pollId));
+  }
+
+  async getPollResponseByPollAndUser(pollId: number, userId: number): Promise<PollResponse | undefined> {
+    const [response] = await db
+      .select()
+      .from(pollResponses)
+      .where(
+        and(
+          eq(pollResponses.pollId, pollId),
+          eq(pollResponses.userId, userId)
+        )
+      );
+    
+    return response || undefined;
+  }
+
+  async createPollResponse(insertResponse: InsertPollResponse): Promise<PollResponse> {
+    const responseData = {
+      ...insertResponse,
+      submittedAt: new Date()
+    };
+    
+    const [response] = await db.insert(pollResponses).values(responseData).returning();
+    return response;
+  }
+
+  // Flagged Content operations
+  async getFlaggedContent(id: number): Promise<FlaggedContent | undefined> {
+    const [content] = await db.select().from(flaggedContent).where(eq(flaggedContent.id, id));
+    return content || undefined;
+  }
+
+  async getFlaggedContentByStatus(status: string): Promise<FlaggedContent[]> {
+    return await db
+      .select()
+      .from(flaggedContent)
+      .where(eq(flaggedContent.status, status))
+      .orderBy(desc(flaggedContent.reportedAt));
+  }
+
+  async createFlaggedContent(insertContent: InsertFlaggedContent): Promise<FlaggedContent> {
+    const contentData = {
+      ...insertContent,
+      status: 'pending',
+      reportedAt: new Date()
+    };
+    
+    const [content] = await db.insert(flaggedContent).values(contentData).returning();
+    return content;
+  }
+
+  async updateFlaggedContent(id: number, updates: Partial<FlaggedContent>): Promise<FlaggedContent> {
+    const updatedData = {
+      ...updates
+    };
+    
+    if (updates.status && updates.status !== 'pending') {
+      updatedData.reviewedAt = new Date();
+    }
+    
+    const [updatedContent] = await db
+      .update(flaggedContent)
+      .set(updatedData)
+      .where(eq(flaggedContent.id, id))
+      .returning();
+    
+    if (!updatedContent) throw new Error("Flagged content not found");
+    return updatedContent;
+  }
+
+  // Community Collaboration operations
+  async getCommunityCollaboration(id: number): Promise<CommunityCollaboration | undefined> {
+    const [collaboration] = await db.select().from(communityCollaborations).where(eq(communityCollaborations.id, id));
+    return collaboration || undefined;
+  }
+
+  async getCommunityCollaborations(communityId: number): Promise<CommunityCollaboration[]> {
+    return await db
+      .select()
+      .from(communityCollaborations)
+      .where(
+        or(
+          eq(communityCollaborations.community1Id, communityId),
+          eq(communityCollaborations.community2Id, communityId)
+        )
+      )
+      .orderBy(desc(communityCollaborations.createdAt));
+  }
+
+  async getCommunityCollaborationsByStatus(communityId: number, status: string): Promise<CommunityCollaboration[]> {
+    return await db
+      .select()
+      .from(communityCollaborations)
+      .where(
+        and(
+          or(
+            eq(communityCollaborations.community1Id, communityId),
+            eq(communityCollaborations.community2Id, communityId)
+          ),
+          eq(communityCollaborations.status, status)
+        )
+      )
+      .orderBy(desc(communityCollaborations.createdAt));
+  }
+
+  async createCommunityCollaboration(insertCollaboration: InsertCommunityCollaboration): Promise<CommunityCollaboration> {
+    const collaborationData = {
+      ...insertCollaboration,
+      createdAt: new Date()
+    };
+    
+    const [collaboration] = await db.insert(communityCollaborations).values(collaborationData).returning();
+    return collaboration;
+  }
+
+  async updateCommunityCollaboration(id: number, updates: Partial<CommunityCollaboration>): Promise<CommunityCollaboration> {
+    const [updatedCollaboration] = await db
+      .update(communityCollaborations)
+      .set(updates)
+      .where(eq(communityCollaborations.id, id))
+      .returning();
+    
+    if (!updatedCollaboration) throw new Error("Community collaboration not found");
+    return updatedCollaboration;
   }
 }
 

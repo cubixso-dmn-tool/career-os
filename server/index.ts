@@ -8,6 +8,9 @@ import { Strategy as LocalStrategy } from "passport-local";
 import { storage } from "./storage";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
+import { User as UserType } from "@shared/schema";
+
+// The User interface is now defined in server/types/express.d.ts
 
 const PgSession = connectPgSimple(session);
 

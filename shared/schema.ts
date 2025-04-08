@@ -1,6 +1,14 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// Role types
+export const UserRoleEnum = z.enum(['student', 'community_founder', 'admin']);
+export type UserRole = z.infer<typeof UserRoleEnum>;
+
+// Post types
+export const PostTypeEnum = z.enum(['announcement', 'job', 'event', 'blog', 'question', 'poll']);
+export type PostType = z.infer<typeof PostTypeEnum>;
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -10,6 +18,8 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   bio: text("bio"),
   avatar: text("avatar"),
+  role: text("role").default('student').notNull(),
+  isVerified: boolean("is_verified").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
@@ -162,6 +172,136 @@ export const userDailyBytes = pgTable("user_daily_bytes", {
   completedAt: timestamp("completed_at")
 });
 
+// Community-related tables
+export const communities = pgTable("communities", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description").notNull(),
+  logo: text("logo"),
+  banner: text("banner"),
+  website: text("website"),
+  founderId: integer("founder_id").notNull().references(() => users.id),
+  isVerified: boolean("is_verified").default(false).notNull(),
+  memberCount: integer("member_count").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  category: text("category").notNull(),
+  location: text("location")
+});
+
+export const communityMembers = pgTable("community_members", {
+  communityId: integer("community_id").notNull().references(() => communities.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  role: text("role").default('member').notNull(), // 'member', 'moderator', 'admin'
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.communityId, table.userId] })
+  };
+});
+
+export const communityPosts = pgTable("community_posts", {
+  id: serial("id").primaryKey(),
+  communityId: integer("community_id").notNull().references(() => communities.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  authorId: integer("author_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  type: text("type").notNull(), // announcement, job, event, blog, question, poll
+  attachments: text("attachments").array(),
+  likes: integer("likes").default(0).notNull(),
+  views: integer("views").default(0).notNull(),
+  comments: integer("comments").default(0).notNull(),
+  isPinned: boolean("is_pinned").default(false).notNull(),
+  isFeatured: boolean("is_featured").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  publishAt: timestamp("publish_at"),
+  expiresAt: timestamp("expires_at")
+});
+
+export const communityPostComments = pgTable("community_post_comments", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull().references(() => communityPosts.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  likes: integer("likes").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  isApproved: boolean("is_approved").default(true).notNull()
+});
+
+export const communityEvents = pgTable("community_events", {
+  id: serial("id").primaryKey(),
+  communityId: integer("community_id").notNull().references(() => communities.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  location: text("location"),
+  isVirtual: boolean("is_virtual").default(false).notNull(),
+  meetingLink: text("meeting_link"),
+  registrationLimit: integer("registration_limit"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  organizerId: integer("organizer_id").notNull().references(() => users.id)
+});
+
+export const communityEventAttendees = pgTable("community_event_attendees", {
+  eventId: integer("event_id").notNull().references(() => communityEvents.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  registeredAt: timestamp("registered_at").defaultNow().notNull(),
+  status: text("status").default('registered').notNull(), // registered, attended, cancelled
+  feedback: text("feedback")
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.eventId, table.userId] })
+  };
+});
+
+export const polls = pgTable("polls", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull().references(() => communityPosts.id),
+  question: text("question").notNull(),
+  options: text("options").array().notNull(),
+  expiresAt: timestamp("expires_at"),
+  isMultipleChoice: boolean("is_multiple_choice").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  creatorId: integer("creator_id").notNull().references(() => users.id)
+});
+
+export const pollResponses = pgTable("poll_responses", {
+  id: serial("id").primaryKey(),
+  pollId: integer("poll_id").notNull().references(() => polls.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  selectedOptions: integer("selected_options").array().notNull(),
+  submittedAt: timestamp("submitted_at").defaultNow().notNull()
+});
+
+export const flaggedContent = pgTable("flagged_content", {
+  id: serial("id").primaryKey(),
+  contentType: text("content_type").notNull(), // 'post', 'comment'
+  contentId: integer("content_id").notNull(),
+  reporterId: integer("reporter_id").notNull().references(() => users.id),
+  reason: text("reason").notNull(),
+  status: text("status").default('pending').notNull(), // 'pending', 'approved', 'rejected'
+  reportedAt: timestamp("reported_at").defaultNow().notNull(),
+  reviewerId: integer("reviewer_id").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at")
+});
+
+export const communityCollaborations = pgTable("community_collaborations", {
+  id: serial("id").primaryKey(),
+  community1Id: integer("community1_id").notNull().references(() => communities.id),
+  community2Id: integer("community2_id").notNull().references(() => communities.id),
+  status: text("status").default('pending').notNull(), // 'pending', 'active', 'rejected', 'completed'
+  type: text("type").notNull(), // 'event', 'project', 'content'
+  description: text("description").notNull(),
+  initiatedById: integer("initiated_by_id").notNull().references(() => users.id),
+  respondedById: integer("responded_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date")
+});
+
 // Insert schemas
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
@@ -181,6 +321,20 @@ export const insertEventSchema = createInsertSchema(events).omit({ id: true });
 export const insertUserEventSchema = createInsertSchema(userEvents).omit({ id: true, registeredAt: true });
 export const insertDailyByteSchema = createInsertSchema(dailyBytes).omit({ id: true, createdAt: true });
 export const insertUserDailyByteSchema = createInsertSchema(userDailyBytes).omit({ id: true, completedAt: true });
+
+// Community insert schemas
+export const insertCommunitySchema = createInsertSchema(communities).omit({ id: true, memberCount: true, createdAt: true });
+export const insertCommunityMemberSchema = createInsertSchema(communityMembers).omit({ joinedAt: true });
+export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({ 
+  id: true, likes: true, views: true, comments: true, createdAt: true 
+});
+export const insertCommunityPostCommentSchema = createInsertSchema(communityPostComments).omit({ id: true, likes: true, createdAt: true });
+export const insertCommunityEventSchema = createInsertSchema(communityEvents).omit({ id: true, createdAt: true });
+export const insertCommunityEventAttendeeSchema = createInsertSchema(communityEventAttendees).omit({ registeredAt: true });
+export const insertPollSchema = createInsertSchema(polls).omit({ id: true, createdAt: true });
+export const insertPollResponseSchema = createInsertSchema(pollResponses).omit({ id: true, submittedAt: true });
+export const insertFlaggedContentSchema = createInsertSchema(flaggedContent).omit({ id: true, status: true, reportedAt: true, reviewedAt: true });
+export const insertCommunityCollaborationSchema = createInsertSchema(communityCollaborations).omit({ id: true, createdAt: true });
 
 // Types
 
@@ -234,3 +388,34 @@ export type DailyByte = typeof dailyBytes.$inferSelect;
 
 export type InsertUserDailyByte = z.infer<typeof insertUserDailyByteSchema>;
 export type UserDailyByte = typeof userDailyBytes.$inferSelect;
+
+// Community types
+export type InsertCommunity = z.infer<typeof insertCommunitySchema>;
+export type Community = typeof communities.$inferSelect;
+
+export type InsertCommunityMember = z.infer<typeof insertCommunityMemberSchema>;
+export type CommunityMember = typeof communityMembers.$inferSelect;
+
+export type InsertCommunityPost = z.infer<typeof insertCommunityPostSchema>;
+export type CommunityPost = typeof communityPosts.$inferSelect;
+
+export type InsertCommunityPostComment = z.infer<typeof insertCommunityPostCommentSchema>;
+export type CommunityPostComment = typeof communityPostComments.$inferSelect;
+
+export type InsertCommunityEvent = z.infer<typeof insertCommunityEventSchema>;
+export type CommunityEvent = typeof communityEvents.$inferSelect;
+
+export type InsertCommunityEventAttendee = z.infer<typeof insertCommunityEventAttendeeSchema>;
+export type CommunityEventAttendee = typeof communityEventAttendees.$inferSelect;
+
+export type InsertPoll = z.infer<typeof insertPollSchema>;
+export type Poll = typeof polls.$inferSelect;
+
+export type InsertPollResponse = z.infer<typeof insertPollResponseSchema>;
+export type PollResponse = typeof pollResponses.$inferSelect;
+
+export type InsertFlaggedContent = z.infer<typeof insertFlaggedContentSchema>;
+export type FlaggedContent = typeof flaggedContent.$inferSelect;
+
+export type InsertCommunityCollaboration = z.infer<typeof insertCommunityCollaborationSchema>;
+export type CommunityCollaboration = typeof communityCollaborations.$inferSelect;
