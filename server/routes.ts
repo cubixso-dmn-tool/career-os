@@ -892,6 +892,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Get current user data
+  app.get("/api/auth/me", (req, res) => {
+    if (req.isAuthenticated()) {
+      // Don't send password to client
+      const { password, ...userWithoutPassword } = req.user as any;
+      res.json({ 
+        user: userWithoutPassword
+      });
+    } else {
+      res.status(401).json({ 
+        message: "Not authenticated" 
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

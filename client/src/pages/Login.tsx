@@ -35,12 +35,17 @@ export default function Login() {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       setError(null);
-      await login(data);
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
-      setLocation("/dashboard");
+      const result = await login(data.username, data.password);
+      
+      if (result.success) {
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+        });
+        // The redirect is handled in the auth context
+      } else {
+        setError(result.message || "Login failed. Please check your credentials and try again.");
+      }
     } catch (err: any) {
       setError(err.message || "Login failed. Please check your credentials and try again.");
     }
