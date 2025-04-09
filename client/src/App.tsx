@@ -11,6 +11,7 @@ import Community from "@/pages/Community";
 import ResumeBuilder from "@/pages/ResumeBuilder";
 import SoftSkills from "@/pages/SoftSkills";
 import Achievements from "@/pages/Achievements";
+import Settings from "@/pages/Settings";
 import HowItWorks from "@/pages/HowItWorks";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -60,6 +61,11 @@ function Router() {
       <Route path="/achievements">
         <ProtectedRoute>
           <Achievements />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/settings">
+        <ProtectedRoute>
+          <Settings />
         </ProtectedRoute>
       </Route>
       <Route path="/login" component={Login} />

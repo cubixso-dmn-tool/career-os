@@ -9,7 +9,8 @@ import {
   UserCheck,
   Trophy,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LogoutButton from "@/components/auth/LogoutButton";
@@ -38,7 +39,8 @@ export default function Sidebar({ user }: SidebarProps) {
     { path: "/community", icon: MessageSquare, label: "Community" },
     { path: "/resume-builder", icon: FileText, label: "Resume Builder" },
     { path: "/soft-skills", icon: UserCheck, label: "Soft Skills" },
-    { path: "/achievements", icon: Trophy, label: "Achievements" }
+    { path: "/achievements", icon: Trophy, label: "Achievements" },
+    { path: "/settings", icon: Settings, label: "Settings" }
   ];
 
   return (
