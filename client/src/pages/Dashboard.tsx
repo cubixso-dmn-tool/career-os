@@ -1,10 +1,7 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSidebar } from "@/hooks/use-sidebar";
-import Sidebar from "@/components/layout/Sidebar";
-import MobileHeader from "@/components/ui/mobile-header";
+import Layout from "@/components/layout/Layout";
 import MobileNavigation from "@/components/layout/MobileNavigation";
-import MobileSidebar from "@/components/layout/MobileSidebar";
 import Header from "@/components/ui/header";
 import ProgressSection from "@/components/dashboard/ProgressSection";
 import CareerRecommendationCard from "@/components/dashboard/CareerRecommendationCard";
@@ -22,8 +19,6 @@ import { Loader2 } from "lucide-react";
 const USER_ID = 1;
 
 export default function Dashboard() {
-  const { isSidebarOpen, closeSidebar } = useSidebar();
-
   // Add debugging
   useEffect(() => {
     const testFetch = async () => {
@@ -69,11 +64,6 @@ export default function Dashboard() {
     },
   });
 
-  // Close sidebar when navigating to this page
-  useEffect(() => {
-    closeSidebar();
-  }, [closeSidebar]);
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -111,79 +101,59 @@ export default function Dashboard() {
   } = dashboardData || {};
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Mobile Header */}
-      <MobileHeader user={user || { name: 'Ananya Singh', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6' }} />
-
-      {/* Sidebar */}
-      <Sidebar user={user || { name: 'Ananya Singh', email: 'ananya.s@example.com', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6' }} />
-
-      {/* Mobile Sidebar */}
-      {isSidebarOpen && (
-        <MobileSidebar 
-          isOpen={isSidebarOpen} 
-          onClose={closeSidebar} 
-          user={user || { name: 'Ananya Singh', email: 'ananya.s@example.com', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6' }}
-        />
-      )}
-
-      {/* Main Content */}
-      <main className="flex-1 relative">
-        <div className="px-4 py-6 md:px-8 pb-20 md:pb-6">
-          {/* Dashboard Header */}
-          <Header userName={user?.name?.split(' ')[0] || 'Ananya'} />
-          
-          {/* Progress Section */}
-          <ProgressSection progress={progress || { 
-            percentage: 70, 
-            careerAssessment: true, 
-            nicheSelection: true, 
-            coreCourses: { completed: 3, total: 5 }, 
-            projects: { completed: 0, total: 2 }
-          }} />
-          
-          {/* Dashboard Metrics Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            {/* Career Path */}
-            <CareerRecommendationCard careerPath={careerPath} />
-            
-            {/* Achievements */}
-            <AchievementsCard achievements={achievements || []} />
-          </div>
-          
-          {/* Recommended Courses */}
-          <RecommendedCourses courses={recommendedCourses || []} />
-          
-          {/* Daily Byte Section */}
-          {dailyByte && (
-            <div className="mb-6">
-              <DailyByte 
-                userId={USER_ID} 
-                dailyByte={dailyByte} 
-                streak={dailyByteStreak || 0} 
-              />
-            </div>
-          )}
-          
-          {/* Career Quiz + Project Showcase */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <CareerQuizCard />
-            <ProjectShowcaseCard project={recommendedProject} />
-          </div>
-          
-          {/* Community Section */}
-          <CommunitySection 
-            posts={communityPosts || []} 
-            currentUser={user || { id: 1, name: 'Ananya Singh', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6' }}
+    <Layout title="Dashboard">
+      {/* Dashboard Header */}
+      <Header userName={user?.name?.split(' ')[0] || 'Ananya'} />
+      
+      {/* Progress Section */}
+      <ProgressSection progress={progress || { 
+        percentage: 70, 
+        careerAssessment: true, 
+        nicheSelection: true, 
+        coreCourses: { completed: 3, total: 5 }, 
+        projects: { completed: 0, total: 2 }
+      }} />
+      
+      {/* Dashboard Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {/* Career Path */}
+        <CareerRecommendationCard careerPath={careerPath} />
+        
+        {/* Achievements */}
+        <AchievementsCard achievements={achievements || []} />
+      </div>
+      
+      {/* Recommended Courses */}
+      <RecommendedCourses courses={recommendedCourses || []} />
+      
+      {/* Daily Byte Section */}
+      {dailyByte && (
+        <div className="mb-6">
+          <DailyByte 
+            userId={USER_ID} 
+            dailyByte={dailyByte} 
+            streak={dailyByteStreak || 0} 
           />
-          
-          {/* Upcoming Events */}
-          <UpcomingEvents events={upcomingEvents || []} />
         </div>
-      </main>
-
+      )}
+      
+      {/* Career Quiz + Project Showcase */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <CareerQuizCard />
+        <ProjectShowcaseCard project={recommendedProject} />
+      </div>
+      
+      {/* Community Section */}
+      <CommunitySection 
+        posts={communityPosts || []} 
+        currentUser={user || { id: 1, name: 'Ananya Singh', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6' }}
+      />
+      
+      {/* Upcoming Events */}
+      <UpcomingEvents events={upcomingEvents || []} />
+      
       {/* Mobile Navigation */}
       <MobileNavigation />
-    </div>
+    </Layout>
   );
 }

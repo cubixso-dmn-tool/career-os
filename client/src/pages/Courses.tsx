@@ -1,10 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSidebar } from "@/hooks/use-sidebar";
-import Sidebar from "@/components/layout/Sidebar";
-import MobileHeader from "@/components/ui/mobile-header";
+import Layout from "@/components/layout/Layout";
 import MobileNavigation from "@/components/layout/MobileNavigation";
-import MobileSidebar from "@/components/layout/MobileSidebar";
 import CourseCard from "@/components/courses/CourseCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,10 +15,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 // Mock user ID until authentication is implemented
 const USER_ID = 1;
 
+interface Course {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  tags?: string[];
+  isFree?: boolean;
+}
+
 interface CoursesProps {}
 
 export default function Courses({}: CoursesProps) {
-  const { isSidebarOpen, closeSidebar } = useSidebar();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [priceFilter, setPriceFilter] = useState<string | null>(null);
@@ -29,7 +34,7 @@ export default function Courses({}: CoursesProps) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   // Fetch courses
-  const { data: courses = [], isLoading } = useQuery({
+  const { data: courses = [], isLoading } = useQuery<Course[]>({
     queryKey: ['/api/courses', { category: selectedCategory, isFree: priceFilter === 'free' ? true : (priceFilter === 'paid' ? false : undefined) }],
     queryFn: undefined, // Use default queryFn from queryClient
   });
@@ -40,13 +45,8 @@ export default function Courses({}: CoursesProps) {
     queryFn: undefined, // Use default queryFn from queryClient
   });
 
-  // Close sidebar when navigating to this page
-  useEffect(() => {
-    closeSidebar();
-  }, [closeSidebar]);
-
   // Filter courses based on search term, tags, category, and price
-  const filteredCourses = courses.filter((course: any) => {
+  const filteredCourses = courses.filter((course) => {
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          course.description.toLowerCase().includes(searchTerm.toLowerCase());
                          
@@ -63,11 +63,13 @@ export default function Courses({}: CoursesProps) {
   });
 
   // Get all available categories from courses
-  const categories = [...new Set(courses.map((course: any) => course.category))];
+  const categories = Array.from(new Set(
+    courses.map((course) => course.category)
+  ));
   
   // Get all available tags from courses
   const allTags = Array.from(new Set(
-    courses.flatMap((course: any) => course.tags || [])
+    courses.flatMap((course) => course.tags || [])
   ));
 
   // Toggle a tag in the selected tags array
@@ -86,25 +88,8 @@ export default function Courses({}: CoursesProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Mobile Header */}
-      <MobileHeader user={userData || { name: 'Ananya Singh', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6' }} />
-
-      {/* Sidebar */}
-      <Sidebar user={userData || { name: 'Ananya Singh', email: 'ananya.s@example.com', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6' }} />
-
-      {/* Mobile Sidebar */}
-      {isSidebarOpen && (
-        <MobileSidebar 
-          isOpen={isSidebarOpen} 
-          onClose={closeSidebar} 
-          user={userData || { name: 'Ananya Singh', email: 'ananya.s@example.com', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6' }}
-        />
-      )}
-
-      {/* Main Content */}
-      <main className="flex-1 relative">
-        <div className="px-4 py-6 md:px-8 pb-20 md:pb-6">
+    <Layout title="Courses">
+      <div className="px-4 py-6 md:px-8 pb-20 md:pb-6">
           <div className="flex items-center mb-6">
             <BookOpen className="h-6 w-6 mr-2 text-primary" />
             <h1 className="text-2xl font-bold text-gray-900">Courses</h1>
@@ -312,10 +297,9 @@ export default function Courses({}: CoursesProps) {
             )}
           </div>
         </div>
-      </main>
-
-      {/* Mobile Navigation */}
-      <MobileNavigation />
-    </div>
-  );
+        
+        {/* Mobile Navigation */}
+        <MobileNavigation />
+      </Layout>
+    );
 }
