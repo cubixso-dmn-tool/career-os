@@ -7,8 +7,7 @@ import {
   MessageSquare,
   FileText,
   UserCheck,
-  Trophy,
-  Users
+  Trophy
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LogoutButton from "@/components/auth/LogoutButton";

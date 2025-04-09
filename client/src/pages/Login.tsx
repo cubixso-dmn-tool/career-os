@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuthContext } from "@/hooks/use-auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,17 +19,10 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
-  const { loginMutation, isAuthenticated } = useAuth();
+  const { login, loading } = useAuthContext();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string | null>(null);
-  
-  // Redirect if already logged in
-  useEffect(() => {
-    if (isAuthenticated) {
-      setLocation('/dashboard');
-    }
-  }, [isAuthenticated, setLocation]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -40,15 +33,17 @@ export default function Login() {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    setError(null);
-    loginMutation.mutate(data, {
-      onSuccess: () => {
-        setLocation("/dashboard");
-      },
-      onError: (err: Error) => {
-        setError(err.message || "Login failed. Please check your credentials and try again.");
-      },
-    });
+    try {
+      setError(null);
+      await login(data);
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
+      setLocation("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Login failed. Please check your credentials and try again.");
+    }
   };
 
   return (
@@ -92,8 +87,8 @@ export default function Login() {
               {error && (
                 <div className="text-sm font-medium text-destructive mt-2">{error}</div>
               )}
-              <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
-                {loginMutation.isPending ? (
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Logging in...

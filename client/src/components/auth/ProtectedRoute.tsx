@@ -1,29 +1,23 @@
 import { ReactNode, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useAuthContext } from "@/hooks/use-auth-context";
 import { Loader2 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  requiredRole?: "student" | "community_founder" | "admin";
 }
 
-export default function ProtectedRoute({ 
-  children, 
-  requiredRole 
-}: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, user } = useAuth();
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { isAuthenticated, loading } = useAuthContext();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!loading && !isAuthenticated) {
       setLocation("/login");
-    } else if (!isLoading && isAuthenticated && requiredRole && user?.role !== requiredRole) {
-      setLocation("/dashboard");
     }
-  }, [isAuthenticated, isLoading, setLocation, requiredRole, user]);
+  }, [isAuthenticated, loading, setLocation]);
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -33,10 +27,6 @@ export default function ProtectedRoute({
   }
 
   if (!isAuthenticated) {
-    return null; // Will redirect in useEffect
-  }
-
-  if (requiredRole && user?.role !== requiredRole) {
     return null; // Will redirect in useEffect
   }
 

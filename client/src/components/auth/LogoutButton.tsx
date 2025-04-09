@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuthContext } from "@/hooks/use-auth-context";
+import { useToast } from "@/hooks/use-toast";
 import { LogOut } from "lucide-react";
 import { useLocation } from "wouter";
 
 interface LogoutButtonProps {
-  variant?: "default" | "outline" | "ghost" | "link" | "destructive" | "secondary";
+  variant?: "default" | "outline" | "ghost" | "link";
   size?: "default" | "sm" | "lg" | "icon";
   className?: string;
 }
@@ -14,15 +15,25 @@ export default function LogoutButton({
   size = "sm",
   className = "",
 }: LogoutButtonProps) {
-  const { logoutMutation } = useAuth();
+  const { logout } = useAuthContext();
+  const { toast } = useToast();
   const [, setLocation] = useLocation();
 
   const handleLogout = async () => {
-    logoutMutation.mutate(undefined, {
-      onSuccess: () => {
-        setLocation("/login");
-      }
-    });
+    try {
+      await logout();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
+      });
+      setLocation("/login");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

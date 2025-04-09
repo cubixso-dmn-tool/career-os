@@ -101,7 +101,6 @@ const LandingPage: React.FC = () => {
             <span className="text-xl font-bold">CareerOS</span>
           </div>
           <div className="space-x-2">
-            <Button variant="outline" onClick={() => navigate('/communities')}>Communities</Button>
             <Button variant="outline" onClick={() => navigate('/login')}>Login</Button>
             <Button onClick={() => navigate('/register')}>Sign Up</Button>
           </div>

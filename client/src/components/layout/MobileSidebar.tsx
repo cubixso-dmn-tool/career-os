@@ -8,8 +8,7 @@ import {
   FileText,
   UserCheck,
   Trophy,
-  X,
-  Users
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LogoutButton from "@/components/auth/LogoutButton";
@@ -30,7 +29,7 @@ export default function MobileSidebar({ isOpen, onClose, user }: MobileSidebarPr
   const [location] = useLocation();
 
   const navItems = [
-    { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { path: "/", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/career-guide", icon: Compass, label: "Career Guide" },
     { path: "/courses", icon: BookOpen, label: "Courses" },
     { path: "/projects", icon: GitBranch, label: "Projects" },
