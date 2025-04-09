@@ -346,59 +346,57 @@ const DashboardLayout: React.FC<{
   const isDashboardHome = !params && !courseParams && !projectParams && !skillParams;
   
   return (
-    <DashboardProvider>
-      <div className="min-h-screen bg-gray-50">
-        {/* Mobile header */}
-        <div className="md:hidden border-b bg-white p-4 sticky top-0 z-10">
-          <div className="flex justify-between items-center">
-            <h1 className="font-bold">CareerOS</h1>
-            <div className="flex items-center space-x-2">
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile header */}
+      <div className="md:hidden border-b bg-white p-4 sticky top-0 z-10">
+        <div className="flex justify-between items-center">
+          <h1 className="font-bold">CareerOS</h1>
+          <div className="flex items-center space-x-2">
+            <NotificationsPanel 
+              onNotificationAction={(id, type, entityId) => {
+                // Handle notification action
+              }}
+            />
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => setIsMobileMenuOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+      
+      {/* Mobile sidebar */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 bg-background">
+          <Sidebar mobile onClose={() => setIsMobileMenuOpen(false)} />
+        </div>
+      )}
+      
+      <div className="container mx-auto px-4 md:px-6 py-6 md:py-8">
+        <div className="grid md:grid-cols-[240px_1fr] gap-8">
+          {/* Desktop sidebar */}
+          <div className="hidden md:block sticky top-8 h-[calc(100vh-4rem)] overflow-auto border rounded-lg p-4 bg-white">
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="font-bold text-lg">CareerOS</h1>
               <NotificationsPanel 
                 onNotificationAction={(id, type, entityId) => {
                   // Handle notification action
                 }}
               />
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => setIsMobileMenuOpen(true)}
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
             </div>
+            <Sidebar />
           </div>
-        </div>
-        
-        {/* Mobile sidebar */}
-        {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-50 bg-background">
-            <Sidebar mobile onClose={() => setIsMobileMenuOpen(false)} />
-          </div>
-        )}
-        
-        <div className="container mx-auto px-4 md:px-6 py-6 md:py-8">
-          <div className="grid md:grid-cols-[240px_1fr] gap-8">
-            {/* Desktop sidebar */}
-            <div className="hidden md:block sticky top-8 h-[calc(100vh-4rem)] overflow-auto border rounded-lg p-4 bg-white">
-              <div className="flex items-center justify-between mb-8">
-                <h1 className="font-bold text-lg">CareerOS</h1>
-                <NotificationsPanel 
-                  onNotificationAction={(id, type, entityId) => {
-                    // Handle notification action
-                  }}
-                />
-              </div>
-              <Sidebar />
-            </div>
-            
-            {/* Main content */}
-            <div>
-              {isDashboardHome ? <DashboardOverview /> : children}
-            </div>
+          
+          {/* Main content */}
+          <div>
+            {isDashboardHome ? <DashboardOverview /> : children}
           </div>
         </div>
       </div>
-    </DashboardProvider>
+    </div>
   );
 };
 

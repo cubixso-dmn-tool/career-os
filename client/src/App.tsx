@@ -23,6 +23,7 @@ import { SidebarProvider } from "@/hooks/use-sidebar";
 import { AuthProvider } from "@/hooks/use-auth";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { DashboardProvider } from "@/hooks/useDashboardContext";
 
 function Router() {
   return (
@@ -160,8 +161,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <SidebarProvider>
-          <Router />
-          <Toaster />
+          <DashboardProvider>
+            <Router />
+            <Toaster />
+          </DashboardProvider>
         </SidebarProvider>
       </AuthProvider>
     </QueryClientProvider>
