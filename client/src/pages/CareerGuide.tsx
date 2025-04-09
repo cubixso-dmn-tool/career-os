@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import Layout from "@/components/layout/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -623,7 +624,7 @@ export default function CareerGuide() {
   };
 
   return (
-    <div className="w-full p-6 pb-16">
+    <Layout title="Career Guide">
       <header className="mb-8">
         <h1 className="text-3xl font-bold">Career Guide</h1>
         <p className="text-gray-600 mt-2">
@@ -887,6 +888,6 @@ export default function CareerGuide() {
           </div>
         </div>
       </div>
-    </div>
+    </Layout>
   );
 }

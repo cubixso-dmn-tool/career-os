@@ -1,37 +1,19 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { create } from "zustand";
 
-interface SidebarContextType {
+interface SidebarState {
   isSidebarOpen: boolean;
+  isCollapsed: boolean;
   toggleSidebar: () => void;
+  toggleCollapse: () => void;
+  openSidebar: () => void;
   closeSidebar: () => void;
 }
 
-const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
-
-export function SidebarProvider({ children }: { children: ReactNode }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen((prev) => !prev);
-  };
-
-  const closeSidebar = () => {
-    setIsSidebarOpen(false);
-  };
-
-  return (
-    <SidebarContext.Provider
-      value={{ isSidebarOpen, toggleSidebar, closeSidebar }}
-    >
-      {children}
-    </SidebarContext.Provider>
-  );
-}
-
-export function useSidebar() {
-  const context = useContext(SidebarContext);
-  if (context === undefined) {
-    throw new Error("useSidebar must be used within a SidebarProvider");
-  }
-  return context;
-}
+export const useSidebar = create<SidebarState>((set) => ({
+  isSidebarOpen: false,
+  isCollapsed: false,
+  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+  toggleCollapse: () => set((state) => ({ isCollapsed: !state.isCollapsed })),
+  openSidebar: () => set({ isSidebarOpen: true }),
+  closeSidebar: () => set({ isSidebarOpen: false }),
+}));

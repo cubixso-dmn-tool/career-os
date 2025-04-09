@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LogoutButton from "@/components/auth/LogoutButton";
+import { useSidebar } from "@/hooks/use-sidebar";
+import { Button } from "@/components/ui/button";
 
 interface User {
   name: string;
@@ -20,16 +22,17 @@ interface User {
 }
 
 interface MobileSidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
   user: User;
 }
 
-export default function MobileSidebar({ isOpen, onClose, user }: MobileSidebarProps) {
+export default function MobileSidebar({ user }: MobileSidebarProps) {
   const [location] = useLocation();
+  const { isSidebarOpen, closeSidebar } = useSidebar();
+
+  if (!isSidebarOpen) return null;
 
   const navItems = [
-    { path: "/", icon: LayoutDashboard, label: "Dashboard" },
+    { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/career-guide", icon: Compass, label: "Career Guide" },
     { path: "/courses", icon: BookOpen, label: "Courses" },
     { path: "/projects", icon: GitBranch, label: "Projects" },
@@ -39,40 +42,43 @@ export default function MobileSidebar({ isOpen, onClose, user }: MobileSidebarPr
     { path: "/achievements", icon: Trophy, label: "Achievements" }
   ];
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50">
-      <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={onClose}></div>
-      <div className="relative bg-white w-64 h-full overflow-y-auto">
-        <div className="p-4 flex items-center justify-between border-b border-gray-200">
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black/50 z-40 md:hidden" 
+        onClick={closeSidebar}
+      />
+      
+      {/* Sidebar */}
+      <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl flex flex-col md:hidden">
+        <div className="p-4 flex items-center justify-between border-b">
           <div className="flex items-center space-x-2">
             <div className="h-8 w-8 bg-primary rounded-md flex items-center justify-center text-white font-bold">
               CP
             </div>
-            <h1 className="text-xl font-bold text-primary">CareerPath</h1>
+            <h1 className="text-xl font-bold text-primary">CareerOS</h1>
           </div>
-          <button 
-            onClick={onClose}
-            className="text-gray-500"
-            aria-label="Close sidebar"
+          
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={closeSidebar}
+            className="h-8 w-8 rounded-md"
           >
-            <X size={20} />
-          </button>
+            <X className="h-4 w-4" />
+          </Button>
         </div>
         
-        <nav className="flex-1 px-2 py-4 space-y-1">
+        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
-            <Link key={item.path} href={item.path}>
-              <a 
-                className={cn(
-                  "flex items-center px-4 py-2 rounded-md group transition-colors",
-                  location === item.path
-                    ? "text-primary bg-indigo-50"
-                    : "text-gray-600 hover:bg-indigo-50 hover:text-primary"
-                )}
-                onClick={onClose}
-              >
+            <Link key={item.path} href={item.path} onClick={closeSidebar}>
+              <a className={cn(
+                "flex items-center px-4 py-2 rounded-md group transition-colors",
+                location === item.path
+                  ? "text-primary bg-indigo-50"
+                  : "text-gray-600 hover:bg-indigo-50 hover:text-primary"
+              )}>
                 <item.icon 
                   className={cn(
                     "mr-3",
@@ -107,7 +113,7 @@ export default function MobileSidebar({ isOpen, onClose, user }: MobileSidebarPr
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </aside>
+    </>
   );
 }

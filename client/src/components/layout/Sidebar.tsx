@@ -7,10 +7,14 @@ import {
   MessageSquare,
   FileText,
   UserCheck,
-  Trophy
+  Trophy,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LogoutButton from "@/components/auth/LogoutButton";
+import { useSidebar } from "@/hooks/use-sidebar";
+import { Button } from "@/components/ui/button";
 
 interface User {
   name: string;
@@ -24,6 +28,7 @@ interface SidebarProps {
 
 export default function Sidebar({ user }: SidebarProps) {
   const [location] = useLocation();
+  const { isCollapsed, toggleCollapse } = useSidebar();
 
   const navItems = [
     { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -37,56 +42,92 @@ export default function Sidebar({ user }: SidebarProps) {
   ];
 
   return (
-    <aside className="hidden md:flex md:flex-col bg-white w-64 border-r border-gray-200 h-screen sticky top-0">
-      <div className="p-4 flex items-center space-x-2">
-        <div className="h-8 w-8 bg-primary rounded-md flex items-center justify-center text-white font-bold">
-          CP
+    <aside className={cn(
+      "hidden md:flex md:flex-col h-screen sticky top-0 overflow-y-auto bg-white border-r transition-all duration-300",
+      isCollapsed ? "w-20" : "w-64"
+    )}>
+      <div className={cn(
+        "flex items-center h-16 px-4 border-b",
+        isCollapsed ? "justify-center" : "justify-between"
+      )}>
+        <div className={cn("flex items-center", isCollapsed ? "justify-center" : "space-x-2")}>
+          <div className="h-8 w-8 bg-primary rounded-md flex items-center justify-center text-white font-bold">
+            CP
+          </div>
+          {!isCollapsed && <h1 className="text-xl font-bold text-primary">CareerOS</h1>}
         </div>
-        <h1 className="text-xl font-bold text-primary">CareerPath</h1>
+        
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleCollapse}
+          className={cn("h-8 w-8 rounded-md", isCollapsed ? "absolute left-[76px]" : "")}
+        >
+          {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </Button>
       </div>
       
-      <nav className="flex-1 px-2 py-4 space-y-1">
-        {navItems.map((item) => (
-          <Link key={item.path} href={item.path}>
-            <a className={cn(
-              "flex items-center px-4 py-2 rounded-md group transition-colors",
-              location === item.path
-                ? "text-primary bg-indigo-50"
-                : "text-gray-600 hover:bg-indigo-50 hover:text-primary"
-            )}>
-              <item.icon 
-                className={cn(
-                  "mr-3",
+      <nav className="flex-1 py-4">
+        <ul className="space-y-1 px-2">
+          {navItems.map((item) => (
+            <li key={item.path}>
+              <Link href={item.path}>
+                <a className={cn(
+                  "flex items-center rounded-md py-2 px-3 text-sm font-medium transition-colors",
+                  isCollapsed ? "justify-center" : "",
                   location === item.path
-                    ? "text-primary"
-                    : "text-gray-500 group-hover:text-primary"
-                )}
-                size={18} 
-              />
-              <span className="font-medium">{item.label}</span>
-            </a>
-          </Link>
-        ))}
+                    ? "text-primary bg-indigo-50"
+                    : "text-gray-600 hover:bg-indigo-50 hover:text-primary"
+                )}>
+                  <item.icon 
+                    className={cn(
+                      isCollapsed ? "h-5 w-5" : "h-5 w-5 mr-3",
+                      location === item.path
+                        ? "text-primary"
+                        : "text-gray-500 group-hover:text-primary"
+                    )}
+                  />
+                  {!isCollapsed && <span>{item.label}</span>}
+                </a>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </nav>
       
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex flex-col space-y-4">
-          <div className="flex items-center space-x-3">
-            <img 
-              src={user.avatar} 
-              alt="Profile picture" 
-              className="h-8 w-8 rounded-full object-cover"
-            />
+      <div className={cn(
+        "border-t p-4",
+        isCollapsed ? "flex flex-col items-center" : ""
+      )}>
+        <div className={cn(
+          "mb-4",
+          isCollapsed ? "flex flex-col items-center" : "flex items-center space-x-3"
+        )}>
+          <img 
+            src={user.avatar}
+            alt="User avatar" 
+            className="h-8 w-8 rounded-full object-cover"
+          />
+          
+          {!isCollapsed && (
             <div>
               <p className="text-sm font-medium text-gray-700">{user.name}</p>
               <p className="text-xs text-gray-500">{user.email}</p>
             </div>
-          </div>
-          
-          <div className="pt-2">
-            <LogoutButton className="w-full" />
-          </div>
+          )}
         </div>
+        
+        {!isCollapsed ? (
+          <LogoutButton className="w-full" />
+        ) : (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-gray-600 h-9 w-9"
+          >
+            <LogoutButton />
+          </Button>
+        )}
       </div>
     </aside>
   );
