@@ -13,8 +13,7 @@ import ResumeBuilder from "@/pages/ResumeBuilder";
 import SoftSkills from "@/pages/SoftSkills";
 import Achievements from "@/pages/Achievements";
 import HowItWorks from "@/pages/HowItWorks";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
+import AuthPage from "@/pages/auth-page";
 import LandingPage from "@/pages/LandingPage";
 import Communities from "@/pages/Communities";
 import CommunityDetail from "@/pages/CommunityDetail";
@@ -28,14 +27,13 @@ import { DashboardProvider } from "@/hooks/useDashboardContext";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={LandingPage} />
+      {/* Authentication Routes - Should come first since they're public */}
+      <Route path="/login" component={AuthPage} />
+      <Route path="/register" component={AuthPage} />
+      <Route path="/auth" component={AuthPage} />
+      <Route path="/how-it-works" component={HowItWorks} />
       
-      {/* New integrated dashboard routes */}
-      <Route path="/dashboard">
-        <ProtectedRoute>
-          <DashboardLayout />
-        </ProtectedRoute>
-      </Route>
+      {/* Specific Dashboard Routes - More specific routes first */}
       <Route path="/dashboard/courses/:id">
         <ProtectedRoute>
           <CourseDetailPage />
@@ -101,6 +99,22 @@ function Router() {
         </ProtectedRoute>
       </Route>
       
+      {/* Main Dashboard Route */}
+      <Route path="/dashboard">
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      </Route>
+      
+      {/* Community Routes */}
+      <Route path="/communities/:id/manage">
+        <ProtectedRoute requiredRole="community_founder">
+          <CommunityManagement />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/communities/:id" component={CommunityDetail} />
+      <Route path="/communities" component={Communities} />
+      
       {/* Legacy routes */}
       <Route path="/career-guide">
         <ProtectedRoute>
@@ -138,19 +152,8 @@ function Router() {
         </ProtectedRoute>
       </Route>
       
-      {/* Community Routes */}
-      <Route path="/communities" component={Communities} />
-      <Route path="/communities/:id" component={CommunityDetail} />
-      <Route path="/communities/:id/manage">
-        <ProtectedRoute requiredRole="community_founder">
-          <CommunityManagement />
-        </ProtectedRoute>
-      </Route>
-      
-      {/* Auth Routes */}
-      <Route path="/login" component={Login} />
-      <Route path="/register" component={Register} />
-      <Route path="/how-it-works" component={HowItWorks} />
+      {/* Landing page and fallback route */}
+      <Route path="/" component={LandingPage} />
       <Route component={NotFound} />
     </Switch>
   );
