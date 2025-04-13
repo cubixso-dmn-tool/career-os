@@ -440,6 +440,7 @@ export default function PathFinder() {
 
   // Start the analysis animation
   const startAnalysis = () => {
+    console.log("Starting analysis with questionnaire data:", questionnaire);
     setCurrentStage(4);
     setAnalyzing(true);
     
@@ -452,6 +453,7 @@ export default function PathFinder() {
       
       // Simulate analysis
       setTimeout(() => {
+        console.log("Analysis complete, moving to results stage");
         setAnalyzing(false);
         setCurrentStage(5);
         
@@ -828,44 +830,40 @@ export default function PathFinder() {
         // Set the top recommended career path
         setCareerPath(topMatches[0].title);
         
-        // Display the results
+        console.log("Top matches to display:", topMatches);
+        
+        // First message - introduce the results
         addMessage({
           id: Date.now().toString(),
-          content: (
-            <div className="space-y-4">
-              <div>
-                <p className="text-lg font-medium text-primary flex items-center">
-                  <Sparkles className="h-5 w-5 mr-2 text-yellow-400" strokeWidth={2.5} />
-                  Your Top Career Match: {topMatches[0].title}
-                </p>
-                <p className="text-gray-600 mt-1">
-                  Based on your interests and questionnaire responses, here are your personalized career matches:
-                </p>
-              </div>
-              
-              {topMatches.map((career, index) => (
-                <div 
-                  key={index}
-                  className={`p-3 rounded-lg border ${index === 0 ? 'border-primary bg-primary/5' : 'border-gray-200'}`}
-                >
-                  <div className="flex justify-between items-center mb-1">
-                    <h4 className="font-bold">{career.title}</h4>
-                    <span className="text-sm bg-primary text-white px-2 py-0.5 rounded-full">
-                      {career.match}% Match
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-1">{career.category} • {career.salary}</p>
-                  <p className="text-xs text-gray-500">{career.description}</p>
-                </div>
-              ))}
-              
-              <p className="text-sm text-gray-600">
-                Let's continue your journey toward becoming a {topMatches[0].title}!
-              </p>
-            </div>
-          ),
+          content: `🎯 Your Top Career Match: ${topMatches[0].title}`,
           sender: 'bot'
         });
+        
+        // Second message - show all matches
+        setTimeout(() => {
+          let matchesContent = "Based on your interests and questionnaire responses, here are your personalized career matches:\n\n";
+          
+          topMatches.forEach((career, index) => {
+            matchesContent += `${index + 1}. ${career.title} - ${career.match}% Match\n`;
+            matchesContent += `   ${career.category} • ${career.salary}\n`;
+            matchesContent += `   ${career.description}\n\n`;
+          });
+          
+          addMessage({
+            id: Date.now().toString(),
+            content: matchesContent,
+            sender: 'bot'
+          });
+          
+          // Final message - call to action
+          setTimeout(() => {
+            addMessage({
+              id: Date.now().toString(),
+              content: `Let's continue your journey toward becoming a ${topMatches[0].title}!`,
+              sender: 'bot'
+            });
+          }, 1000);
+        }, 1000);
       }, 3000);
     }, 1000);
   };
