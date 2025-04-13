@@ -94,7 +94,7 @@ export default function PathFinder() {
   
   const [analyzing, setAnalyzing] = useState(false);
   const [careerPath, setCareerPath] = useState('');
-  const [careerMatches, setCareerMatches] = useState<{career: string, match: number}[]>([]);
+  const [careerMatches, setCareerMatches] = useState<{title: string, match: number, category: string, skills: string[], salary: string, growth: string, description: string, dailyTasks: string, learningPath: string, certifications: string[]}[]>([]);
   const [progress, setProgress] = useState(0);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -909,177 +909,184 @@ export default function PathFinder() {
     </div>
   );
 
+  // Questions data for the enhanced questionnaire
+  const questionnaireData = [
+    {
+      id: 1,
+      category: 'Basic Info',
+      question: '🎓 What is your current education level?',
+      field: 'educationLevel',
+      options: [
+        { value: '10th', label: '10th Standard' },
+        { value: '12th', label: '12th Standard' },
+        { value: 'diploma', label: 'Diploma' },
+        { value: 'bachelors', label: 'Bachelor\'s Degree' },
+        { value: 'masters', label: 'Master\'s Degree' },
+      ]
+    },
+    {
+      id: 2,
+      category: 'Basic Info',
+      question: '🌍 Are you looking for opportunities in India or globally?',
+      field: 'location',
+      options: [
+        { value: 'india', label: 'India 🇮🇳' },
+        { value: 'global', label: 'Global 🌎' },
+      ]
+    },
+    {
+      id: 3,
+      category: 'Technical Background',
+      question: '💻 How much programming experience do you have?',
+      field: 'programmingExperience',
+      options: [
+        { value: 'none', label: 'No Experience' },
+        { value: 'beginner', label: 'Beginner (< 1 year)' },
+        { value: 'intermediate', label: 'Intermediate (1-3 years)' },
+        { value: 'advanced', label: 'Advanced (3+ years)' },
+      ]
+    },
+    {
+      id: 4,
+      category: 'Technical Background',
+      question: '🛠️ Which technical skills are you most comfortable with? (Select up to 3)',
+      field: 'techSkills',
+      multiSelect: true,
+      options: [
+        { value: 'frontend', label: 'Frontend Development' },
+        { value: 'backend', label: 'Backend Development' },
+        { value: 'mobile', label: 'Mobile Development' },
+        { value: 'design', label: 'UI/UX Design' },
+        { value: 'data', label: 'Data Analysis' },
+        { value: 'ai', label: 'AI/Machine Learning' },
+        { value: 'devops', label: 'DevOps/Cloud' },
+        { value: 'none', label: 'None Yet' },
+      ]
+    },
+    {
+      id: 5,
+      category: 'Work Style',
+      question: '👥 Do you prefer working independently or in a team?',
+      field: 'workStyle',
+      options: [
+        { value: 'independent', label: 'Independently' },
+        { value: 'team', label: 'In a Team' },
+        { value: 'mix', label: 'A Mix of Both' },
+      ]
+    },
+    {
+      id: 6,
+      category: 'Work Environment',
+      question: '🏢 What size of company would you prefer to work in?',
+      field: 'teamSize',
+      options: [
+        { value: 'startup', label: 'Startup (< 50 people)' },
+        { value: 'midsize', label: 'Mid-size (50-500 people)' },
+        { value: 'large', label: 'Large (500+ people)' },
+        { value: 'any', label: 'No Preference' },
+      ]
+    },
+    {
+      id: 7,
+      category: 'Work Environment',
+      question: '🏠 What is your preferred work environment?',
+      field: 'workEnvironment',
+      options: [
+        { value: 'office', label: 'Office-based' },
+        { value: 'remote', label: 'Fully Remote' },
+        { value: 'hybrid', label: 'Hybrid' },
+      ]
+    },
+    {
+      id: 8,
+      category: 'Learning & Growth',
+      question: '📚 How do you prefer to learn new skills?',
+      field: 'learningStyle',
+      options: [
+        { value: 'structured', label: 'Structured Courses' },
+        { value: 'practical', label: 'Hands-on Projects' },
+        { value: 'mentorship', label: 'With a Mentor' },
+        { value: 'self', label: 'Self-paced Learning' },
+      ]
+    },
+    {
+      id: 9,
+      category: 'Career Priorities',
+      question: '💰 How important is a high starting salary to you?',
+      field: 'salaryImportance',
+      options: [
+        { value: 'essential', label: 'Essential' },
+        { value: 'important', label: 'Important but Not Critical' },
+        { value: 'secondary', label: 'Secondary to Growth' },
+        { value: 'notImportant', label: 'Not Important Now' },
+      ]
+    },
+    {
+      id: 10,
+      category: 'Career Priorities',
+      question: '⚖️ How do you view work-life balance?',
+      field: 'workLifeBalance',
+      options: [
+        { value: 'flexible', label: 'Flexible Hours Important' },
+        { value: 'strict', label: 'Prefer Regular Hours' },
+        { value: 'resultsFocused', label: 'Focus on Results, Not Hours' },
+      ]
+    },
+    {
+      id: 11,
+      category: 'Goals & Values',
+      question: '🚀 What is your main short-term career goal?',
+      field: 'shortTermGoal',
+      options: [
+        { value: 'skills', label: 'Develop Technical Skills' },
+        { value: 'salary', label: 'Maximize Earning Potential' },
+        { value: 'experience', label: 'Gain Diverse Experience' },
+        { value: 'impact', label: 'Create Impact' },
+        { value: 'startup', label: 'Build Own Startup' },
+      ]
+    },
+    {
+      id: 12,
+      category: 'Growth Priorities',
+      question: '🌱 Which aspects of professional growth do you value most? (Select up to 3)',
+      field: 'growthPriorities',
+      multiSelect: true,
+      options: [
+        { value: 'technicalDepth', label: 'Technical Depth' },
+        { value: 'leadershipSkills', label: 'Leadership Skills' },
+        { value: 'mentorship', label: 'Mentoring Others' },
+        { value: 'industryRecognition', label: 'Industry Recognition' },
+        { value: 'workLifeBalance', label: 'Work-Life Balance' },
+        { value: 'innovation', label: 'Innovation & Creativity' },
+        { value: 'jobSecurity', label: 'Job Security' },
+        { value: 'networking', label: 'Professional Network' },
+      ]
+    },
+  ];
+  
+  // For multi-select questions
+  const [multiSelectOptions, setMultiSelectOptions] = useState<string[]>([]);
+  
   // Render the Enhanced Questionnaire component
   const renderEnhancedQuestionnaire = () => {
-    // Questions with their options
-    const questions = [
-      {
-        id: 1,
-        category: 'Basic Info',
-        question: '🎓 What is your current education level?',
-        field: 'educationLevel',
-        options: [
-          { value: '10th', label: '10th Standard' },
-          { value: '12th', label: '12th Standard' },
-          { value: 'diploma', label: 'Diploma' },
-          { value: 'bachelors', label: 'Bachelor\'s Degree' },
-          { value: 'masters', label: 'Master\'s Degree' },
-        ]
-      },
-      {
-        id: 2,
-        category: 'Basic Info',
-        question: '🌍 Are you looking for opportunities in India or globally?',
-        field: 'location',
-        options: [
-          { value: 'india', label: 'India 🇮🇳' },
-          { value: 'global', label: 'Global 🌎' },
-        ]
-      },
-      {
-        id: 3,
-        category: 'Technical Background',
-        question: '💻 How much programming experience do you have?',
-        field: 'programmingExperience',
-        options: [
-          { value: 'none', label: 'No Experience' },
-          { value: 'beginner', label: 'Beginner (< 1 year)' },
-          { value: 'intermediate', label: 'Intermediate (1-3 years)' },
-          { value: 'advanced', label: 'Advanced (3+ years)' },
-        ]
-      },
-      {
-        id: 4,
-        category: 'Technical Background',
-        question: '🛠️ Which technical skills are you most comfortable with? (Select up to 3)',
-        field: 'techSkills',
-        multiSelect: true,
-        options: [
-          { value: 'frontend', label: 'Frontend Development' },
-          { value: 'backend', label: 'Backend Development' },
-          { value: 'mobile', label: 'Mobile Development' },
-          { value: 'design', label: 'UI/UX Design' },
-          { value: 'data', label: 'Data Analysis' },
-          { value: 'ai', label: 'AI/Machine Learning' },
-          { value: 'devops', label: 'DevOps/Cloud' },
-          { value: 'none', label: 'None Yet' },
-        ]
-      },
-      {
-        id: 5,
-        category: 'Work Style',
-        question: '👥 Do you prefer working independently or in a team?',
-        field: 'workStyle',
-        options: [
-          { value: 'independent', label: 'Independently' },
-          { value: 'team', label: 'In a Team' },
-          { value: 'mix', label: 'A Mix of Both' },
-        ]
-      },
-      {
-        id: 6,
-        category: 'Work Environment',
-        question: '🏢 What size of company would you prefer to work in?',
-        field: 'teamSize',
-        options: [
-          { value: 'startup', label: 'Startup (< 50 people)' },
-          { value: 'midsize', label: 'Mid-size (50-500 people)' },
-          { value: 'large', label: 'Large (500+ people)' },
-          { value: 'any', label: 'No Preference' },
-        ]
-      },
-      {
-        id: 7,
-        category: 'Work Environment',
-        question: '🏠 What is your preferred work environment?',
-        field: 'workEnvironment',
-        options: [
-          { value: 'office', label: 'Office-based' },
-          { value: 'remote', label: 'Fully Remote' },
-          { value: 'hybrid', label: 'Hybrid' },
-        ]
-      },
-      {
-        id: 8,
-        category: 'Learning & Growth',
-        question: '📚 How do you prefer to learn new skills?',
-        field: 'learningStyle',
-        options: [
-          { value: 'structured', label: 'Structured Courses' },
-          { value: 'practical', label: 'Hands-on Projects' },
-          { value: 'mentorship', label: 'With a Mentor' },
-          { value: 'self', label: 'Self-paced Learning' },
-        ]
-      },
-      {
-        id: 9,
-        category: 'Career Priorities',
-        question: '💰 How important is a high starting salary to you?',
-        field: 'salaryImportance',
-        options: [
-          { value: 'essential', label: 'Essential' },
-          { value: 'important', label: 'Important but Not Critical' },
-          { value: 'secondary', label: 'Secondary to Growth' },
-          { value: 'notImportant', label: 'Not Important Now' },
-        ]
-      },
-      {
-        id: 10,
-        category: 'Career Priorities',
-        question: '⚖️ How do you view work-life balance?',
-        field: 'workLifeBalance',
-        options: [
-          { value: 'flexible', label: 'Flexible Hours Important' },
-          { value: 'strict', label: 'Prefer Regular Hours' },
-          { value: 'resultsFocused', label: 'Focus on Results, Not Hours' },
-        ]
-      },
-      {
-        id: 11,
-        category: 'Goals & Values',
-        question: '🚀 What is your main short-term career goal?',
-        field: 'shortTermGoal',
-        options: [
-          { value: 'skills', label: 'Develop Technical Skills' },
-          { value: 'salary', label: 'Maximize Earning Potential' },
-          { value: 'experience', label: 'Gain Diverse Experience' },
-          { value: 'impact', label: 'Create Impact' },
-          { value: 'startup', label: 'Build Own Startup' },
-        ]
-      },
-      {
-        id: 12,
-        category: 'Growth Priorities',
-        question: '🌱 Which aspects of professional growth do you value most? (Select up to 3)',
-        field: 'growthPriorities',
-        multiSelect: true,
-        options: [
-          { value: 'technicalDepth', label: 'Technical Depth' },
-          { value: 'leadershipSkills', label: 'Leadership Skills' },
-          { value: 'mentorship', label: 'Mentoring Others' },
-          { value: 'industryRecognition', label: 'Industry Recognition' },
-          { value: 'workLifeBalance', label: 'Work-Life Balance' },
-          { value: 'innovation', label: 'Innovation & Creativity' },
-          { value: 'jobSecurity', label: 'Job Security' },
-          { value: 'networking', label: 'Professional Network' },
-        ]
-      },
-    ];
-    
     // Find the current question
-    const currentQuestionData = questions.find(q => q.id === currentQuestion);
+    const currentQuestionData = questionnaireData.find(q => q.id === currentQuestion);
     
     if (!currentQuestionData) {
       return null;
     }
     
     const isMultiSelect = currentQuestionData.multiSelect;
-    const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+    
+    // Reset multi-select options when question changes
+    useEffect(() => {
+      setMultiSelectOptions([]);
+    }, [currentQuestion]);
     
     // Handle option selection for multi-select questions
     const handleOptionSelect = (value: string) => {
       if (isMultiSelect) {
-        setSelectedOptions(prev => {
+        setMultiSelectOptions(prev => {
           if (prev.includes(value)) {
             return prev.filter(v => v !== value);
           } else {
@@ -1100,10 +1107,10 @@ export default function PathFinder() {
     
     // Handle continue button click for multi-select questions
     const handleMultiSelectContinue = () => {
-      if (selectedOptions.length > 0) {
+      if (multiSelectOptions.length > 0) {
         handleQuestionnaireSelection(
           currentQuestionData.field,
-          selectedOptions,
+          multiSelectOptions,
           true
         );
       }
@@ -1139,19 +1146,19 @@ export default function PathFinder() {
                   key={option.value}
                   variant={
                     isMultiSelect
-                      ? selectedOptions.includes(option.value) ? "default" : "outline"
+                      ? multiSelectOptions.includes(option.value) ? "default" : "outline"
                       : questionnaire[currentQuestionData.field as keyof typeof questionnaire] === option.value
                         ? "default"
                         : "outline"
                   }
                   onClick={() => handleOptionSelect(option.value)}
                   className={`h-auto py-3 justify-start ${
-                    isMultiSelect && selectedOptions.length >= 3 && !selectedOptions.includes(option.value)
+                    isMultiSelect && multiSelectOptions.length >= 3 && !multiSelectOptions.includes(option.value)
                       ? "opacity-50"
                       : ""
                   }`}
                   disabled={
-                    isMultiSelect && selectedOptions.length >= 3 && !selectedOptions.includes(option.value)
+                    isMultiSelect && multiSelectOptions.length >= 3 && !multiSelectOptions.includes(option.value)
                   }
                 >
                   <span className="text-left">{option.label}</span>
@@ -1162,11 +1169,11 @@ export default function PathFinder() {
             {isMultiSelect && (
               <div className="flex justify-between mt-4">
                 <p className="text-xs text-gray-500 self-center">
-                  {selectedOptions.length === 0 
+                  {multiSelectOptions.length === 0 
                     ? "Select up to 3 options" 
-                    : `Selected ${selectedOptions.length} of 3`}
+                    : `Selected ${multiSelectOptions.length} of 3`}
                 </p>
-                {selectedOptions.length > 0 && (
+                {multiSelectOptions.length > 0 && (
                   <Button 
                     onClick={handleMultiSelectContinue}
                     size="sm"
