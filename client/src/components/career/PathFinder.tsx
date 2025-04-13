@@ -58,14 +58,43 @@ export default function PathFinder() {
     { id: '8', emoji: '⚙️', label: 'Tech Explorations', selected: false },
   ]);
   const [selectedInterestsCount, setSelectedInterestsCount] = useState(0);
-  const [infoOptions, setInfoOptions] = useState({
-    level: '',
+  
+  // Enhanced questionnaire state - we'll use an object to store all answers
+  const [questionnaire, setQuestionnaire] = useState({
+    // Basic info
+    educationLevel: '',
     location: '',
-    background: ''
+    background: '',
+    
+    // Technical skills
+    programmingExperience: '',
+    techSkills: [] as string[],
+    
+    // Work preferences
+    workStyle: '',
+    teamSize: '',
+    workEnvironment: '',
+    
+    // Learning & Growth
+    learningStyle: '',
+    growthPriorities: [] as string[],
+    
+    // Career priorities
+    salaryImportance: '',
+    workLifeBalance: '',
+    
+    // Goals & Values
+    shortTermGoal: '',
+    values: [] as string[],
   });
-  const [currentInfoStep, setCurrentInfoStep] = useState(1);
+  
+  // Track current question in the enhanced questionnaire
+  const [currentQuestion, setCurrentQuestion] = useState(1);
+  const totalQuestions = 12; // Total number of questions in the enhanced questionnaire
+  
   const [analyzing, setAnalyzing] = useState(false);
   const [careerPath, setCareerPath] = useState('');
+  const [careerMatches, setCareerMatches] = useState<{career: string, match: number}[]>([]);
   const [progress, setProgress] = useState(0);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -154,8 +183,8 @@ export default function PathFinder() {
     setInterests(updatedInterests);
   };
 
-  // Continue to personal info after selecting interests
-  const continueToPersonalInfo = () => {
+  // Continue to enhanced questionnaire after selecting interests
+  const continueToEnhancedQuestionnaire = () => {
     const selectedLabels = interests
       .filter(interest => interest.selected)
       .map(interest => interest.emoji + " " + interest.label)
@@ -171,36 +200,235 @@ export default function PathFinder() {
       setCurrentStage(3);
       addMessage({
         id: Date.now().toString(),
-        content: "Great choices! Now, let's get a bit more information to tailor your career path recommendations...",
+        content: "Great choices! Now, let's get to know you better with a few more questions to provide a highly personalized career recommendation tailored specifically for you...",
         sender: 'bot'
       });
+      
+      // Start the questionnaire
+      setTimeout(() => {
+        askNextQuestion();
+      }, 1500);
     }, 1000);
   };
 
-  // Handle personal info selection
-  const handleInfoSelection = (field: 'level' | 'location' | 'background', value: string) => {
-    setInfoOptions(prev => ({ ...prev, [field]: value }));
+  // Ask the next question in the enhanced questionnaire
+  const askNextQuestion = () => {
+    // Questions with their options
+    const questions = [
+      {
+        id: 1,
+        category: 'Basic Info',
+        question: '🎓 What is your current education level?',
+        field: 'educationLevel',
+        options: [
+          { value: '10th', label: '10th Standard' },
+          { value: '12th', label: '12th Standard' },
+          { value: 'diploma', label: 'Diploma' },
+          { value: 'bachelors', label: 'Bachelor\'s Degree' },
+          { value: 'masters', label: 'Master\'s Degree' },
+        ]
+      },
+      {
+        id: 2,
+        category: 'Basic Info',
+        question: '🌍 Are you looking for opportunities in India or globally?',
+        field: 'location',
+        options: [
+          { value: 'india', label: 'India 🇮🇳' },
+          { value: 'global', label: 'Global 🌎' },
+        ]
+      },
+      {
+        id: 3,
+        category: 'Technical Background',
+        question: '💻 How much programming experience do you have?',
+        field: 'programmingExperience',
+        options: [
+          { value: 'none', label: 'No Experience' },
+          { value: 'beginner', label: 'Beginner (< 1 year)' },
+          { value: 'intermediate', label: 'Intermediate (1-3 years)' },
+          { value: 'advanced', label: 'Advanced (3+ years)' },
+        ]
+      },
+      {
+        id: 4,
+        category: 'Technical Background',
+        question: '🛠️ Which technical skills are you most comfortable with? (Select up to 3)',
+        field: 'techSkills',
+        multiSelect: true,
+        options: [
+          { value: 'frontend', label: 'Frontend Development' },
+          { value: 'backend', label: 'Backend Development' },
+          { value: 'mobile', label: 'Mobile Development' },
+          { value: 'design', label: 'UI/UX Design' },
+          { value: 'data', label: 'Data Analysis' },
+          { value: 'ai', label: 'AI/Machine Learning' },
+          { value: 'devops', label: 'DevOps/Cloud' },
+          { value: 'none', label: 'None Yet' },
+        ]
+      },
+      {
+        id: 5,
+        category: 'Work Style',
+        question: '👥 Do you prefer working independently or in a team?',
+        field: 'workStyle',
+        options: [
+          { value: 'independent', label: 'Independently' },
+          { value: 'team', label: 'In a Team' },
+          { value: 'mix', label: 'A Mix of Both' },
+        ]
+      },
+      {
+        id: 6,
+        category: 'Work Environment',
+        question: '🏢 What size of company would you prefer to work in?',
+        field: 'teamSize',
+        options: [
+          { value: 'startup', label: 'Startup (< 50 people)' },
+          { value: 'midsize', label: 'Mid-size (50-500 people)' },
+          { value: 'large', label: 'Large (500+ people)' },
+          { value: 'any', label: 'No Preference' },
+        ]
+      },
+      {
+        id: 7,
+        category: 'Work Environment',
+        question: '🏠 What is your preferred work environment?',
+        field: 'workEnvironment',
+        options: [
+          { value: 'office', label: 'Office-based' },
+          { value: 'remote', label: 'Fully Remote' },
+          { value: 'hybrid', label: 'Hybrid' },
+        ]
+      },
+      {
+        id: 8,
+        category: 'Learning & Growth',
+        question: '📚 How do you prefer to learn new skills?',
+        field: 'learningStyle',
+        options: [
+          { value: 'structured', label: 'Structured Courses' },
+          { value: 'practical', label: 'Hands-on Projects' },
+          { value: 'mentorship', label: 'With a Mentor' },
+          { value: 'self', label: 'Self-paced Learning' },
+        ]
+      },
+      {
+        id: 9,
+        category: 'Career Priorities',
+        question: '💰 How important is a high starting salary to you?',
+        field: 'salaryImportance',
+        options: [
+          { value: 'essential', label: 'Essential' },
+          { value: 'important', label: 'Important but Not Critical' },
+          { value: 'secondary', label: 'Secondary to Growth' },
+          { value: 'notImportant', label: 'Not Important Now' },
+        ]
+      },
+      {
+        id: 10,
+        category: 'Career Priorities',
+        question: '⚖️ How do you view work-life balance?',
+        field: 'workLifeBalance',
+        options: [
+          { value: 'flexible', label: 'Flexible Hours Important' },
+          { value: 'strict', label: 'Prefer Regular Hours' },
+          { value: 'resultsFocused', label: 'Focus on Results, Not Hours' },
+        ]
+      },
+      {
+        id: 11,
+        category: 'Goals & Values',
+        question: '🚀 What is your main short-term career goal?',
+        field: 'shortTermGoal',
+        options: [
+          { value: 'skills', label: 'Develop Technical Skills' },
+          { value: 'salary', label: 'Maximize Earning Potential' },
+          { value: 'experience', label: 'Gain Diverse Experience' },
+          { value: 'impact', label: 'Create Impact' },
+          { value: 'startup', label: 'Build Own Startup' },
+        ]
+      },
+      {
+        id: 12,
+        category: 'Growth Priorities',
+        question: '🌱 Which aspects of professional growth do you value most? (Select up to 3)',
+        field: 'growthPriorities',
+        multiSelect: true,
+        options: [
+          { value: 'technicalDepth', label: 'Technical Depth' },
+          { value: 'leadershipSkills', label: 'Leadership Skills' },
+          { value: 'mentorship', label: 'Mentoring Others' },
+          { value: 'industryRecognition', label: 'Industry Recognition' },
+          { value: 'workLifeBalance', label: 'Work-Life Balance' },
+          { value: 'innovation', label: 'Innovation & Creativity' },
+          { value: 'jobSecurity', label: 'Job Security' },
+          { value: 'networking', label: 'Professional Network' },
+        ]
+      },
+    ];
     
-    if (field === 'level' && currentInfoStep === 1) {
-      setCurrentInfoStep(2);
-    } else if (field === 'location' && currentInfoStep === 2) {
-      setCurrentInfoStep(3);
-    } else if (field === 'background' && currentInfoStep === 3) {
-      // Prepare to finish the quiz
-      const infoSummary = `Education: ${value === 'tech' ? '💻 Technical' : '📚 Non-Technical'} background, ${infoOptions.level} level, interested in ${infoOptions.location === 'india' ? '🇮🇳 Indian' : '🌎 Global'} opportunities`;
-      
-      addMessage({
-        id: Date.now().toString(),
-        content: infoSummary,
-        sender: 'user'
-      });
-      
+    // Find the current question
+    const currentQuestionData = questions.find(q => q.id === currentQuestion);
+    
+    if (!currentQuestionData) {
+      // If we've gone through all questions, proceed to analysis
       startAnalysis();
+      return;
     }
+    
+    // Ask the question
+    addMessage({
+      id: Date.now().toString(),
+      content: (
+        <div>
+          <p className="text-xs text-gray-500">{currentQuestionData.category}</p>
+          <p className="font-medium">{currentQuestionData.question}</p>
+        </div>
+      ),
+      sender: 'bot'
+    });
+    
+    // Update the progress
+    setProgress((currentQuestion / totalQuestions) * 100);
   };
 
-  // Skip personal info
-  const skipPersonalInfo = () => {
+  // Handle answer selection in the enhanced questionnaire
+  const handleQuestionnaireSelection = (field: string, value: string | string[], multiSelect = false) => {
+    // Update the questionnaire state
+    setQuestionnaire(prev => {
+      if (multiSelect && Array.isArray(value)) {
+        return { ...prev, [field]: value };
+      }
+      return { ...prev, [field]: value };
+    });
+    
+    // Add user's response to chat
+    let responseText = '';
+    
+    if (Array.isArray(value)) {
+      responseText = value.join(', ');
+    } else {
+      responseText = value.toString();
+    }
+    
+    addMessage({
+      id: Date.now().toString(),
+      content: responseText,
+      sender: 'user'
+    });
+    
+    // Move to the next question
+    setCurrentQuestion(prev => prev + 1);
+    
+    // Ask the next question after a short delay
+    setTimeout(() => {
+      askNextQuestion();
+    }, 1000);
+  };
+
+  // Skip the questionnaire
+  const skipQuestionnaire = () => {
     addMessage({
       id: Date.now().toString(),
       content: "I'd like to skip the additional questions for now.",
@@ -227,38 +455,412 @@ export default function PathFinder() {
         setAnalyzing(false);
         setCurrentStage(5);
         
-        // Determine a career path based on selected interests
-        let recommendedPath = "";
-        const selectedInterests = interests.filter(i => i.selected).map(i => i.label);
+        // Career options with their skill profiles 
+        const careerOptions = [
+          {
+            title: "Frontend Developer",
+            match: 0,
+            category: "Web Development",
+            skills: ["HTML/CSS", "JavaScript", "React", "TypeScript", "Figma", "UX/UI Fundamentals"],
+            salary: "₹5-25 LPA",
+            growth: "24% growth over next 10 years",
+            description: "Frontend developers build the visible parts of websites and web applications, bringing designs to life with code.",
+            dailyTasks: "Writing clean code, collaborating with designers, optimizing applications, debugging, and staying current with technologies",
+            learningPath: "HTML/CSS/JS fundamentals, frontend frameworks, state management, responsive design, browser DevTools",
+            certifications: ["Meta Frontend Developer", "freeCodeCamp Responsive Web Design", "JavaScript Algorithms and Data Structures"]
+          },
+          {
+            title: "Backend Developer",
+            match: 0,
+            category: "Web Development",
+            skills: ["Node.js", "Express", "Databases", "API Design", "Authentication", "Performance"],
+            salary: "₹6-28 LPA",
+            growth: "22% growth over next 10 years",
+            description: "Backend developers build and maintain the server-side of applications, handling business logic, database operations, and APIs.",
+            dailyTasks: "Designing APIs, optimizing database queries, implementing authentication, monitoring systems, working with infrastructure",
+            learningPath: "Server-side languages, database fundamentals, API design, authentication, deployment basics",
+            certifications: ["IBM Back-End Development", "Node.js Services Development", "MongoDB Certified Developer"]
+          },
+          {
+            title: "Full-Stack Developer",
+            match: 0,
+            category: "Web Development",
+            skills: ["JavaScript", "React", "Node.js", "PostgreSQL", "AWS/Azure", "Git"],
+            salary: "₹7-35 LPA",
+            growth: "23% growth over next 10 years",
+            description: "Full-stack developers work on both frontend and backend, handling entire web applications end-to-end.",
+            dailyTasks: "End-to-end feature development, database and API design, debugging, collaboration, code reviews",
+            learningPath: "Frontend fundamentals, backend framework, databases, API development, CI/CD",
+            certifications: ["Meta Full-Stack Engineer", "freeCodeCamp Full Stack", "AWS Developer Associate"]
+          },
+          {
+            title: "Data Analyst",
+            match: 0,
+            category: "Data Science",
+            skills: ["SQL", "Excel", "Python", "Data Visualization", "Statistics", "Power BI/Tableau"],
+            salary: "₹5-18 LPA",
+            growth: "20% growth over next 10 years",
+            description: "Data analysts collect, clean, and interpret data sets to solve business problems and help make data-driven decisions.",
+            dailyTasks: "Data cleaning, dashboard creation, report generation, stakeholder collaboration, pipeline maintenance",
+            learningPath: "SQL/Excel analysis, Python fundamentals, visualization, statistics, BI tools",
+            certifications: ["Google Data Analytics", "Microsoft Power BI Data Analyst", "IBM Data Analyst"]
+          },
+          {
+            title: "Data Scientist",
+            match: 0,
+            category: "Data Science",
+            skills: ["Python", "R", "Machine Learning", "Statistical Analysis", "SQL", "Data Visualization"],
+            salary: "₹8-30 LPA",
+            growth: "28% growth over next 10 years",
+            description: "Data scientists utilize statistical methods and machine learning to analyze data and derive actionable insights.",
+            dailyTasks: "Building ML models, experiment design, data analysis, stakeholder communication, research",
+            learningPath: "Programming for data science, statistics, ML fundamentals, deep learning, experimental design",
+            certifications: ["IBM Data Science", "Microsoft Azure Data Scientist", "Google Machine Learning Engineer"]
+          },
+          {
+            title: "Data Engineer",
+            match: 0,
+            category: "Data Science",
+            skills: ["Python", "SQL", "Apache Spark", "ETL Pipelines", "Cloud Platforms", "Big Data Tools"],
+            salary: "₹8-35 LPA",
+            growth: "25% growth over next 10 years",
+            description: "Data engineers design and implement systems to collect, store, and analyze large volumes of data.",
+            dailyTasks: "Building data pipelines, maintaining data warehouses, performance optimization, security management, collaboration",
+            learningPath: "Database fundamentals, ETL tools, big data technologies, cloud data services, data warehousing",
+            certifications: ["Google Cloud Professional Data Engineer", "AWS Certified Data Engineer", "Cloudera Certified Data Engineer"]
+          },
+          {
+            title: "Android Developer",
+            match: 0,
+            category: "Mobile Development",
+            skills: ["Kotlin", "Java", "Android SDK", "Material Design", "SQLite", "Jetpack Compose"],
+            salary: "₹6-25 LPA",
+            growth: "22% growth over next 10 years",
+            description: "Android developers build mobile applications for the world's most popular mobile platform.",
+            dailyTasks: "App development and maintenance, UI implementation, performance optimization, debugging, platform updates",
+            learningPath: "Java/Kotlin, Android Studio, Material Design, database integration, app publishing",
+            certifications: ["Google Associate Android Developer", "Android Certified Application Developer", "Meta Android Developer"]
+          },
+          {
+            title: "iOS Developer",
+            match: 0,
+            category: "Mobile Development",
+            skills: ["Swift", "Objective-C", "iOS SDK", "UIKit", "SwiftUI", "Core Data"],
+            salary: "₹7-30 LPA",
+            growth: "22% growth over next 10 years",
+            description: "iOS developers create applications for Apple's ecosystem including iPhone, iPad, and other Apple devices.",
+            dailyTasks: "App development, feature design, performance optimization, bug fixing, cross-functional collaboration",
+            learningPath: "Swift, iOS SDK, UIKit/SwiftUI, architecture patterns, App Store submission",
+            certifications: ["App Development with Swift", "iOS App Development Professional", "Certified iOS Developer"]
+          },
+          {
+            title: "Cross-Platform Developer",
+            match: 0,
+            category: "Mobile Development",
+            skills: ["React Native", "Flutter", "JavaScript", "Dart", "Mobile UI Design", "Native APIs"],
+            salary: "₹6-28 LPA",
+            growth: "24% growth over next 10 years",
+            description: "Cross-platform developers build mobile applications that run on multiple platforms using a single codebase.",
+            dailyTasks: "Cross-platform app development, code optimization, native feature integration, troubleshooting, UI/UX consistency",
+            learningPath: "JavaScript/Dart, React Native/Flutter, mobile UI/UX, native integration, cross-platform testing",
+            certifications: ["Meta React Native Specialization", "Flutter Developer", "Certified Cross-Platform App Developer"]
+          },
+          {
+            title: "UI Designer",
+            match: 0,
+            category: "Design & UX",
+            skills: ["Figma", "Adobe XD", "Visual Design", "Typography", "Color Theory", "Prototyping"],
+            salary: "₹4-20 LPA",
+            growth: "15% growth over next 10 years",
+            description: "UI designers create the visual elements of digital products focusing on look and style.",
+            dailyTasks: "Interface design, visual element creation, prototyping, developer collaboration, design system maintenance",
+            learningPath: "Visual design fundamentals, UI tools, design systems, prototyping, responsive design",
+            certifications: ["Google UX Design Professional", "Certified UI Designer", "Adobe XD Certification"]
+          },
+          {
+            title: "UX Designer",
+            match: 0,
+            category: "Design & UX",
+            skills: ["User Research", "Wireframing", "Prototyping", "Usability Testing", "Information Architecture", "Figma"],
+            salary: "₹5-25 LPA",
+            growth: "18% growth over next 10 years",
+            description: "UX designers focus on optimizing user satisfaction by improving the usability and accessibility of products.",
+            dailyTasks: "User research, flow/wireframe creation, prototyping, usability testing, requirement definition",
+            learningPath: "User research methods, wireframing, information architecture, usability testing, interaction design",
+            certifications: ["Nielsen Norman Group UX", "Meta UX Designer Professional", "Certified Usability Analyst"]
+          },
+          {
+            title: "Product Designer",
+            match: 0,
+            category: "Design & UX",
+            skills: ["UI Design", "UX Research", "Product Thinking", "Prototyping", "Design Systems", "User Testing"],
+            salary: "₹8-35 LPA",
+            growth: "19% growth over next 10 years",
+            description: "Product designers combine UX and UI design with product thinking to create holistic product experiences.",
+            dailyTasks: "Product/user needs definition, end-to-end design, feedback iteration, collaboration, design system maintenance",
+            learningPath: "UI/UX fundamentals, product strategy, design leadership, design systems, data-informed design",
+            certifications: ["Professional Certificate in Product Design", "Certified Digital Product Designer", "Strategic Product Design"]
+          },
+          {
+            title: "DevOps Engineer",
+            match: 0,
+            category: "DevOps & Cloud",
+            skills: ["Linux", "Docker", "Kubernetes", "CI/CD", "Infrastructure as Code", "Monitoring Tools"],
+            salary: "₹8-30 LPA",
+            growth: "22% growth over next 10 years",
+            description: "DevOps engineers bridge development and operations, automating and optimizing deployment pipelines.",
+            dailyTasks: "CI/CD implementation, automation, monitoring, cloud resource management, infrastructure maintenance",
+            learningPath: "Linux fundamentals, containerization, orchestration, CI/CD pipelines, infrastructure as code",
+            certifications: ["AWS Certified DevOps Engineer", "Azure DevOps Engineer", "Google Professional DevOps Engineer"]
+          },
+          {
+            title: "Cloud Architect",
+            match: 0,
+            category: "DevOps & Cloud",
+            skills: ["AWS/Azure/GCP", "Infrastructure as Code", "Security", "Networking", "Cost Optimization"],
+            salary: "₹12-40 LPA",
+            growth: "25% growth over next 10 years",
+            description: "Cloud architects design, implement, and manage cloud computing strategies for organizations.",
+            dailyTasks: "Architecture design, security implementation, cost management, performance monitoring, cloud strategy development",
+            learningPath: "Cloud fundamentals, architecture patterns, security best practices, networking, cost optimization",
+            certifications: ["AWS Solutions Architect", "Microsoft Azure Architect", "Google Cloud Architect"]
+          },
+          {
+            title: "Site Reliability Engineer (SRE)",
+            match: 0,
+            category: "DevOps & Cloud",
+            skills: ["Programming", "Systems Engineering", "Automation", "Monitoring", "Incident Response"],
+            salary: "₹10-35 LPA",
+            growth: "22% growth over next 10 years",
+            description: "SREs ensure that systems are reliable, scalable, and performing optimally, bridging software engineering and operations.",
+            dailyTasks: "System reliability engineering, automation, monitoring, incident response, performance optimization",
+            learningPath: "Programming fundamentals, systems engineering, monitoring tools, automation, incident management",
+            certifications: ["Google SRE", "Azure Reliability Engineering", "AWS Operations Professional"]
+          },
+        ];
         
-        if (selectedInterests.includes("Building Code") || selectedInterests.includes("Tech Explorations")) {
-          recommendedPath = "Software Development";
-        } else if (selectedInterests.includes("Design & Creativity")) {
-          recommendedPath = "UI/UX Design";
-        } else if (selectedInterests.includes("Money & Business")) {
-          recommendedPath = "Product Management";
-        } else if (selectedInterests.includes("Logic & Puzzles")) {
-          recommendedPath = "Data Science";
-        } else if (selectedInterests.includes("Teaching") || selectedInterests.includes("Writing")) {
-          recommendedPath = "Technical Content Creation";
-        } else if (selectedInterests.includes("Team Leadership")) {
-          recommendedPath = "Technical Project Management";
-        } else {
-          recommendedPath = "Full-Stack Development";
-        }
+        // Calculate match scores for each career
+        let calculatedMatches = careerOptions.map(career => {
+          let matchScore = 0;
+          const selectedInterests = interests.filter(i => i.selected).map(i => i.label);
+          
+          // Match based on interests (max 30 points)
+          if (selectedInterests.includes("Building Code") && 
+              (career.title.includes("Developer") || career.category === "Web Development")) {
+            matchScore += 10;
+          }
+          
+          if (selectedInterests.includes("Design & Creativity") && 
+              (career.category === "Design & UX" || career.title.includes("Frontend"))) {
+            matchScore += 10;
+          }
+          
+          if (selectedInterests.includes("Logic & Puzzles") && 
+              (career.category === "Data Science" || career.title.includes("Backend"))) {
+            matchScore += 10;
+          }
+          
+          if (selectedInterests.includes("Team Leadership") && 
+              (career.title.includes("Product") || career.title.includes("DevOps"))) {
+            matchScore += 10;
+          }
+          
+          if (selectedInterests.includes("Money & Business") && 
+              (career.salary.includes("30") || career.salary.includes("40"))) {
+            matchScore += 7;
+          }
+          
+          if (selectedInterests.includes("Tech Explorations") && 
+              (career.category === "DevOps & Cloud" || career.category === "Mobile Development")) {
+            matchScore += 10;
+          }
+          
+          // Match based on questionnaire answers (max 70 points)
+          
+          // Technical background matches
+          if (questionnaire.programmingExperience) {
+            if (questionnaire.programmingExperience === "none" && 
+                (career.category === "Design & UX" || career.title.includes("Analyst"))) {
+              matchScore += 10;
+            } else if (questionnaire.programmingExperience === "beginner" && 
+                (career.title.includes("Frontend") || career.title.includes("UI"))) {
+              matchScore += 10;
+            } else if (questionnaire.programmingExperience === "intermediate" && 
+                (career.title.includes("Full-Stack") || career.title.includes("Android"))) {
+              matchScore += 10;
+            } else if (questionnaire.programmingExperience === "advanced" && 
+                (career.title.includes("Backend") || career.title.includes("Data Engineer") || 
+                 career.title.includes("DevOps"))) {
+              matchScore += 10;
+            }
+          }
+          
+          // Technical skills matches
+          if (questionnaire.techSkills && questionnaire.techSkills.length > 0) {
+            if (questionnaire.techSkills.includes("frontend") && 
+                (career.title.includes("Frontend") || career.title.includes("UI"))) {
+              matchScore += 8;
+            }
+            
+            if (questionnaire.techSkills.includes("backend") && 
+                (career.title.includes("Backend") || career.title.includes("Full-Stack"))) {
+              matchScore += 8;
+            }
+            
+            if (questionnaire.techSkills.includes("mobile") && 
+                career.category === "Mobile Development") {
+              matchScore += 10;
+            }
+            
+            if (questionnaire.techSkills.includes("design") && 
+                career.category === "Design & UX") {
+              matchScore += 10;
+            }
+            
+            if (questionnaire.techSkills.includes("data") && 
+                career.category === "Data Science") {
+              matchScore += 10;
+            }
+            
+            if (questionnaire.techSkills.includes("devops") && 
+                career.category === "DevOps & Cloud") {
+              matchScore += 10;
+            }
+            
+            if (questionnaire.techSkills.includes("ai") && 
+                career.title.includes("Data Scientist")) {
+              matchScore += 10;
+            }
+          }
+          
+          // Work style preferences
+          if (questionnaire.workStyle) {
+            if (questionnaire.workStyle === "independent" && 
+                (career.title.includes("Designer") || career.title.includes("Developer"))) {
+              matchScore += 7;
+            }
+            
+            if (questionnaire.workStyle === "team" && 
+                (career.title.includes("Product") || career.title.includes("DevOps"))) {
+              matchScore += 7;
+            }
+          }
+          
+          // Company size preferences
+          if (questionnaire.teamSize) {
+            if (questionnaire.teamSize === "startup" && 
+                (career.title.includes("Full-Stack") || career.title.includes("Product"))) {
+              matchScore += 5;
+            }
+            
+            if (questionnaire.teamSize === "large" && 
+                (career.title.includes("Cloud") || career.title.includes("Data"))) {
+              matchScore += 5;
+            }
+          }
+          
+          // Work environment preferences
+          if (questionnaire.workEnvironment) {
+            if (questionnaire.workEnvironment === "remote" && 
+                (career.category === "Web Development" || career.category === "Design & UX")) {
+              matchScore += 5;
+            }
+          }
+          
+          // Learning style
+          if (questionnaire.learningStyle) {
+            if (questionnaire.learningStyle === "practical" && 
+                (career.title.includes("Developer") || career.title.includes("Engineer"))) {
+              matchScore += 5;
+            }
+            
+            if (questionnaire.learningStyle === "structured" && 
+                (career.title.includes("Data") || career.title.includes("Cloud"))) {
+              matchScore += 5;
+            }
+          }
+          
+          // Career priorities
+          if (questionnaire.salaryImportance === "essential" && 
+              (career.salary.includes("35") || career.salary.includes("40"))) {
+            matchScore += 5;
+          }
+          
+          if (questionnaire.workLifeBalance === "flexible" && 
+              (career.category === "Design & UX" || career.title.includes("Developer"))) {
+            matchScore += 5;
+          }
+          
+          // Short-term goals
+          if (questionnaire.shortTermGoal) {
+            if (questionnaire.shortTermGoal === "skills" && 
+                (career.title.includes("Frontend") || career.title.includes("Data Analyst"))) {
+              matchScore += 5;
+            }
+            
+            if (questionnaire.shortTermGoal === "salary" && 
+                (career.title.includes("Cloud") || career.title.includes("Data Scientist"))) {
+              matchScore += 5;
+            }
+            
+            if (questionnaire.shortTermGoal === "impact" && 
+                (career.title.includes("Product") || career.title.includes("SRE"))) {
+              matchScore += 5;
+            }
+          }
+          
+          // Normalize score to 0-100%
+          const normalizedScore = Math.min(Math.round(matchScore), 100);
+          
+          return {
+            ...career,
+            match: normalizedScore
+          };
+        });
         
-        setCareerPath(recommendedPath);
+        // Sort by match score and get top matches
+        calculatedMatches.sort((a, b) => b.match - a.match);
+        const topMatches = calculatedMatches.slice(0, 3);
         
+        // Set career matches
+        setCareerMatches(topMatches);
+        
+        // Set the top recommended career path
+        setCareerPath(topMatches[0].title);
+        
+        // Display the results
         addMessage({
           id: Date.now().toString(),
           content: (
-            <div className="space-y-2">
-              <p className="text-lg font-medium text-primary flex items-center">
-                <Sparkles className="h-5 w-5 mr-2 text-yellow-400" strokeWidth={2.5} />
-                Your Recommended Career Path: {recommendedPath}
-              </p>
-              <p className="text-gray-600">
-                Based on your interests and preferences, I think this would be an excellent direction for you!
+            <div className="space-y-4">
+              <div>
+                <p className="text-lg font-medium text-primary flex items-center">
+                  <Sparkles className="h-5 w-5 mr-2 text-yellow-400" strokeWidth={2.5} />
+                  Your Top Career Match: {topMatches[0].title}
+                </p>
+                <p className="text-gray-600 mt-1">
+                  Based on your interests and questionnaire responses, here are your personalized career matches:
+                </p>
+              </div>
+              
+              {topMatches.map((career, index) => (
+                <div 
+                  key={index}
+                  className={`p-3 rounded-lg border ${index === 0 ? 'border-primary bg-primary/5' : 'border-gray-200'}`}
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <h4 className="font-bold">{career.title}</h4>
+                    <span className="text-sm bg-primary text-white px-2 py-0.5 rounded-full">
+                      {career.match}% Match
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-1">{career.category} • {career.salary}</p>
+                  <p className="text-xs text-gray-500">{career.description}</p>
+                </div>
+              ))}
+              
+              <p className="text-sm text-gray-600">
+                Let's continue your journey toward becoming a {topMatches[0].title}!
               </p>
             </div>
           ),
@@ -296,7 +898,7 @@ export default function PathFinder() {
       {selectedInterestsCount > 0 && (
         <div className="mt-4 flex justify-end">
           <Button 
-            onClick={continueToPersonalInfo}
+            onClick={continueToEnhancedQuestionnaire}
             className="space-x-2"
           >
             <span>Continue</span>
@@ -307,110 +909,289 @@ export default function PathFinder() {
     </div>
   );
 
-  // Render the Personal Info component
-  const renderPersonalInfo = () => (
-    <div className="mt-4 mb-6 w-full max-w-md mx-auto">
-      <div className="flex justify-center mb-6">
-        <div className="h-2 w-full max-w-xs bg-gray-200 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-primary rounded-full transition-all duration-300" 
-            style={{ width: `${(currentInfoStep / 3) * 100}%` }}
-          />
+  // Render the Enhanced Questionnaire component
+  const renderEnhancedQuestionnaire = () => {
+    // Questions with their options
+    const questions = [
+      {
+        id: 1,
+        category: 'Basic Info',
+        question: '🎓 What is your current education level?',
+        field: 'educationLevel',
+        options: [
+          { value: '10th', label: '10th Standard' },
+          { value: '12th', label: '12th Standard' },
+          { value: 'diploma', label: 'Diploma' },
+          { value: 'bachelors', label: 'Bachelor\'s Degree' },
+          { value: 'masters', label: 'Master\'s Degree' },
+        ]
+      },
+      {
+        id: 2,
+        category: 'Basic Info',
+        question: '🌍 Are you looking for opportunities in India or globally?',
+        field: 'location',
+        options: [
+          { value: 'india', label: 'India 🇮🇳' },
+          { value: 'global', label: 'Global 🌎' },
+        ]
+      },
+      {
+        id: 3,
+        category: 'Technical Background',
+        question: '💻 How much programming experience do you have?',
+        field: 'programmingExperience',
+        options: [
+          { value: 'none', label: 'No Experience' },
+          { value: 'beginner', label: 'Beginner (< 1 year)' },
+          { value: 'intermediate', label: 'Intermediate (1-3 years)' },
+          { value: 'advanced', label: 'Advanced (3+ years)' },
+        ]
+      },
+      {
+        id: 4,
+        category: 'Technical Background',
+        question: '🛠️ Which technical skills are you most comfortable with? (Select up to 3)',
+        field: 'techSkills',
+        multiSelect: true,
+        options: [
+          { value: 'frontend', label: 'Frontend Development' },
+          { value: 'backend', label: 'Backend Development' },
+          { value: 'mobile', label: 'Mobile Development' },
+          { value: 'design', label: 'UI/UX Design' },
+          { value: 'data', label: 'Data Analysis' },
+          { value: 'ai', label: 'AI/Machine Learning' },
+          { value: 'devops', label: 'DevOps/Cloud' },
+          { value: 'none', label: 'None Yet' },
+        ]
+      },
+      {
+        id: 5,
+        category: 'Work Style',
+        question: '👥 Do you prefer working independently or in a team?',
+        field: 'workStyle',
+        options: [
+          { value: 'independent', label: 'Independently' },
+          { value: 'team', label: 'In a Team' },
+          { value: 'mix', label: 'A Mix of Both' },
+        ]
+      },
+      {
+        id: 6,
+        category: 'Work Environment',
+        question: '🏢 What size of company would you prefer to work in?',
+        field: 'teamSize',
+        options: [
+          { value: 'startup', label: 'Startup (< 50 people)' },
+          { value: 'midsize', label: 'Mid-size (50-500 people)' },
+          { value: 'large', label: 'Large (500+ people)' },
+          { value: 'any', label: 'No Preference' },
+        ]
+      },
+      {
+        id: 7,
+        category: 'Work Environment',
+        question: '🏠 What is your preferred work environment?',
+        field: 'workEnvironment',
+        options: [
+          { value: 'office', label: 'Office-based' },
+          { value: 'remote', label: 'Fully Remote' },
+          { value: 'hybrid', label: 'Hybrid' },
+        ]
+      },
+      {
+        id: 8,
+        category: 'Learning & Growth',
+        question: '📚 How do you prefer to learn new skills?',
+        field: 'learningStyle',
+        options: [
+          { value: 'structured', label: 'Structured Courses' },
+          { value: 'practical', label: 'Hands-on Projects' },
+          { value: 'mentorship', label: 'With a Mentor' },
+          { value: 'self', label: 'Self-paced Learning' },
+        ]
+      },
+      {
+        id: 9,
+        category: 'Career Priorities',
+        question: '💰 How important is a high starting salary to you?',
+        field: 'salaryImportance',
+        options: [
+          { value: 'essential', label: 'Essential' },
+          { value: 'important', label: 'Important but Not Critical' },
+          { value: 'secondary', label: 'Secondary to Growth' },
+          { value: 'notImportant', label: 'Not Important Now' },
+        ]
+      },
+      {
+        id: 10,
+        category: 'Career Priorities',
+        question: '⚖️ How do you view work-life balance?',
+        field: 'workLifeBalance',
+        options: [
+          { value: 'flexible', label: 'Flexible Hours Important' },
+          { value: 'strict', label: 'Prefer Regular Hours' },
+          { value: 'resultsFocused', label: 'Focus on Results, Not Hours' },
+        ]
+      },
+      {
+        id: 11,
+        category: 'Goals & Values',
+        question: '🚀 What is your main short-term career goal?',
+        field: 'shortTermGoal',
+        options: [
+          { value: 'skills', label: 'Develop Technical Skills' },
+          { value: 'salary', label: 'Maximize Earning Potential' },
+          { value: 'experience', label: 'Gain Diverse Experience' },
+          { value: 'impact', label: 'Create Impact' },
+          { value: 'startup', label: 'Build Own Startup' },
+        ]
+      },
+      {
+        id: 12,
+        category: 'Growth Priorities',
+        question: '🌱 Which aspects of professional growth do you value most? (Select up to 3)',
+        field: 'growthPriorities',
+        multiSelect: true,
+        options: [
+          { value: 'technicalDepth', label: 'Technical Depth' },
+          { value: 'leadershipSkills', label: 'Leadership Skills' },
+          { value: 'mentorship', label: 'Mentoring Others' },
+          { value: 'industryRecognition', label: 'Industry Recognition' },
+          { value: 'workLifeBalance', label: 'Work-Life Balance' },
+          { value: 'innovation', label: 'Innovation & Creativity' },
+          { value: 'jobSecurity', label: 'Job Security' },
+          { value: 'networking', label: 'Professional Network' },
+        ]
+      },
+    ];
+    
+    // Find the current question
+    const currentQuestionData = questions.find(q => q.id === currentQuestion);
+    
+    if (!currentQuestionData) {
+      return null;
+    }
+    
+    const isMultiSelect = currentQuestionData.multiSelect;
+    const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+    
+    // Handle option selection for multi-select questions
+    const handleOptionSelect = (value: string) => {
+      if (isMultiSelect) {
+        setSelectedOptions(prev => {
+          if (prev.includes(value)) {
+            return prev.filter(v => v !== value);
+          } else {
+            if (prev.length < 3) { // Limit to 3 selections
+              return [...prev, value];
+            }
+            return prev;
+          }
+        });
+      } else {
+        // For single-select questions, immediately proceed to the next question
+        handleQuestionnaireSelection(
+          currentQuestionData.field, 
+          value
+        );
+      }
+    };
+    
+    // Handle continue button click for multi-select questions
+    const handleMultiSelectContinue = () => {
+      if (selectedOptions.length > 0) {
+        handleQuestionnaireSelection(
+          currentQuestionData.field,
+          selectedOptions,
+          true
+        );
+      }
+    };
+    
+    return (
+      <div className="mt-4 mb-6 w-full max-w-md mx-auto">
+        <div className="flex justify-center mb-6">
+          <div className="h-2 w-full max-w-xs bg-gray-200 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-primary rounded-full transition-all duration-300" 
+              style={{ width: `${(currentQuestion / totalQuestions) * 100}%` }}
+            />
+          </div>
         </div>
-      </div>
-      
-      <AnimatePresence mode="wait">
-        {currentInfoStep === 1 && (
+        
+        <AnimatePresence mode="wait">
           <motion.div
-            key="edu-level"
+            key={currentQuestionData.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             className="space-y-3"
           >
-            <p className="font-medium text-gray-700 mb-3">🎓 What's your current education level?</p>
-            <div className="grid grid-cols-2 gap-3">
-              {['10th', '12th', 'College', 'Graduate'].map(option => (
+            <div className="mb-4">
+              <p className="text-xs text-gray-500">{currentQuestionData.category}</p>
+              <p className="font-medium text-gray-700 mb-3">{currentQuestionData.question}</p>
+            </div>
+            
+            <div className={`grid ${currentQuestionData.options.length > 4 ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+              {currentQuestionData.options.map(option => (
                 <Button
-                  key={option}
-                  variant={infoOptions.level === option.toLowerCase() ? "default" : "outline"}
-                  onClick={() => handleInfoSelection('level', option.toLowerCase())}
-                  className="h-12"
+                  key={option.value}
+                  variant={
+                    isMultiSelect
+                      ? selectedOptions.includes(option.value) ? "default" : "outline"
+                      : questionnaire[currentQuestionData.field as keyof typeof questionnaire] === option.value
+                        ? "default"
+                        : "outline"
+                  }
+                  onClick={() => handleOptionSelect(option.value)}
+                  className={`h-auto py-3 justify-start ${
+                    isMultiSelect && selectedOptions.length >= 3 && !selectedOptions.includes(option.value)
+                      ? "opacity-50"
+                      : ""
+                  }`}
+                  disabled={
+                    isMultiSelect && selectedOptions.length >= 3 && !selectedOptions.includes(option.value)
+                  }
                 >
-                  {option}
+                  <span className="text-left">{option.label}</span>
                 </Button>
               ))}
             </div>
+            
+            {isMultiSelect && (
+              <div className="flex justify-between mt-4">
+                <p className="text-xs text-gray-500 self-center">
+                  {selectedOptions.length === 0 
+                    ? "Select up to 3 options" 
+                    : `Selected ${selectedOptions.length} of 3`}
+                </p>
+                {selectedOptions.length > 0 && (
+                  <Button 
+                    onClick={handleMultiSelectContinue}
+                    size="sm"
+                    className="space-x-2"
+                  >
+                    <span>Continue</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            )}
           </motion.div>
-        )}
+        </AnimatePresence>
         
-        {currentInfoStep === 2 && (
-          <motion.div
-            key="location"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-3"
+        <div className="mt-8 text-center">
+          <button 
+            onClick={skipQuestionnaire}
+            className="text-gray-500 text-sm hover:text-primary hover:underline transition-colors"
           >
-            <p className="font-medium text-gray-700 mb-3">🌍 Where are you aiming to work?</p>
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant={infoOptions.location === 'india' ? "default" : "outline"}
-                onClick={() => handleInfoSelection('location', 'india')}
-                className="h-12"
-              >
-                India 🇮🇳
-              </Button>
-              <Button
-                variant={infoOptions.location === 'global' ? "default" : "outline"}
-                onClick={() => handleInfoSelection('location', 'global')}
-                className="h-12"
-              >
-                Global 🌎
-              </Button>
-            </div>
-          </motion.div>
-        )}
-        
-        {currentInfoStep === 3 && (
-          <motion.div
-            key="background"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-3"
-          >
-            <p className="font-medium text-gray-700 mb-3">🧑‍💻 What's your background?</p>
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant={infoOptions.background === 'tech' ? "default" : "outline"}
-                onClick={() => handleInfoSelection('background', 'tech')}
-                className="h-12"
-              >
-                Technical
-              </Button>
-              <Button
-                variant={infoOptions.background === 'non-tech' ? "default" : "outline"}
-                onClick={() => handleInfoSelection('background', 'non-tech')}
-                className="h-12"
-              >
-                Non-Technical
-              </Button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      <div className="mt-8 text-center">
-        <button 
-          onClick={skipPersonalInfo}
-          className="text-gray-500 text-sm hover:text-primary hover:underline transition-colors"
-        >
-          Skip this for now
-        </button>
+            Skip remaining questions
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Render the Analysis Animation
   const renderAnalysisAnimation = () => (
@@ -571,7 +1352,7 @@ export default function PathFinder() {
             {/* Interactive Input Areas based on current stage */}
             <div className="mt-4 border-t pt-4">
               {currentStage === 2 && renderInterestPicker()}
-              {currentStage === 3 && renderPersonalInfo()}
+              {currentStage === 3 && renderEnhancedQuestionnaire()}
               {currentStage === 4 && analyzing && renderAnalysisAnimation()}
               {currentStage === 5 && renderRoadmap()}
             </div>
