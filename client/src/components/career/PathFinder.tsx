@@ -1067,6 +1067,11 @@ export default function PathFinder() {
   // For multi-select questions
   const [multiSelectOptions, setMultiSelectOptions] = useState<string[]>([]);
   
+  // Reset multi-select options when question changes
+  useEffect(() => {
+    setMultiSelectOptions([]);
+  }, [currentQuestion]);
+  
   // Render the Enhanced Questionnaire component
   const renderEnhancedQuestionnaire = () => {
     // Find the current question
@@ -1077,11 +1082,6 @@ export default function PathFinder() {
     }
     
     const isMultiSelect = currentQuestionData.multiSelect;
-    
-    // Reset multi-select options when question changes
-    useEffect(() => {
-      setMultiSelectOptions([]);
-    }, [currentQuestion]);
     
     // Handle option selection for multi-select questions
     const handleOptionSelect = (value: string) => {
