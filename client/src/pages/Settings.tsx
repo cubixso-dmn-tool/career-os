@@ -1372,17 +1372,26 @@ export default function Settings() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form className="space-y-4">
+                    <form className="space-y-4" onSubmit={handleCourseSubmit}>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="course-title">Course Title</Label>
-                          <Input id="course-title" placeholder="Enter course title" />
+                          <Input 
+                            id="course-title" 
+                            placeholder="Enter course title" 
+                            value={courseForm.title}
+                            onChange={(e) => setCourseForm({...courseForm, title: e.target.value})}
+                            required
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="course-category">Category</Label>
                           <select
                             id="course-category"
                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            value={courseForm.category}
+                            onChange={(e) => setCourseForm({...courseForm, category: e.target.value})}
+                            required
                           >
                             <option value="">Select category...</option>
                             <option value="web-development">Web Development</option>
@@ -1398,6 +1407,9 @@ export default function Settings() {
                       <div className="space-y-2">
                         <Label htmlFor="course-description">Description</Label>
                         <Textarea 
+                          value={courseForm.description}
+                          onChange={(e) => setCourseForm({...courseForm, description: e.target.value})}
+                          required
                           id="course-description" 
                           placeholder="Enter detailed course description" 
                           rows={4}
@@ -1407,7 +1419,21 @@ export default function Settings() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="course-thumbnail">Thumbnail Image</Label>
-                          <Input id="course-thumbnail" type="file" accept="image/*" />
+                          <Input 
+                            id="course-thumbnail" 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={handleCourseThumbnailChange} 
+                          />
+                          {courseForm.thumbnailPreview && (
+                            <div className="mt-2">
+                              <img 
+                                src={courseForm.thumbnailPreview} 
+                                alt="Thumbnail preview" 
+                                className="h-24 w-auto object-cover rounded-md" 
+                              />
+                            </div>
+                          )}
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="course-price">Price (₹)</Label>
@@ -1416,6 +1442,12 @@ export default function Settings() {
                             type="number" 
                             placeholder="0 for free courses" 
                             min="0"
+                            value={courseForm.price}
+                            onChange={(e) => setCourseForm({
+                              ...courseForm, 
+                              price: parseFloat(e.target.value)
+                            })}
+                            disabled={courseForm.isFree}
                           />
                         </div>
                       </div>
@@ -1425,6 +1457,12 @@ export default function Settings() {
                           type="checkbox" 
                           id="is-free" 
                           className="h-4 w-4 text-primary"
+                          checked={courseForm.isFree}
+                          onChange={(e) => setCourseForm({
+                            ...courseForm, 
+                            isFree: e.target.checked,
+                            price: e.target.checked ? 0 : courseForm.price
+                          })}
                         />
                         <Label htmlFor="is-free">This is a free course</Label>
                       </div>
@@ -1434,14 +1472,44 @@ export default function Settings() {
                         <Input 
                           id="course-tags" 
                           placeholder="e.g. javascript, react, beginner"
+                          value={courseForm.tags}
+                          onChange={(e) => setCourseForm({...courseForm, tags: e.target.value})}
                         />
                       </div>
                       
                       <div className="flex justify-end space-x-2">
-                        <Button variant="outline">Reset</Button>
-                        <Button className="flex items-center">
-                          <Upload className="w-4 h-4 mr-2" />
-                          Upload Course
+                        <Button 
+                          type="button"
+                          variant="outline"
+                          onClick={() => setCourseForm({
+                            title: "",
+                            description: "",
+                            category: "",
+                            price: 0,
+                            isFree: true,
+                            tags: "",
+                            thumbnail: null,
+                            thumbnailPreview: ""
+                          })}
+                        >
+                          Reset
+                        </Button>
+                        <Button 
+                          type="submit" 
+                          className="flex items-center"
+                          disabled={uploadCourseMutation.isPending}
+                        >
+                          {uploadCourseMutation.isPending ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4 mr-2" />
+                              Upload Course
+                            </>
+                          )}
                         </Button>
                       </div>
                     </form>
@@ -1460,17 +1528,26 @@ export default function Settings() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form className="space-y-4">
+                    <form className="space-y-4" onSubmit={handleProjectSubmit}>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="project-title">Project Title</Label>
-                          <Input id="project-title" placeholder="Enter project title" />
+                          <Input 
+                            id="project-title" 
+                            placeholder="Enter project title" 
+                            value={projectForm.title}
+                            onChange={(e) => setProjectForm({...projectForm, title: e.target.value})}
+                            required
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="project-category">Category</Label>
                           <select
                             id="project-category"
                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            value={projectForm.category}
+                            onChange={(e) => setProjectForm({...projectForm, category: e.target.value})}
+                            required
                           >
                             <option value="">Select category...</option>
                             <option value="web-development">Web Development</option>
@@ -1488,6 +1565,9 @@ export default function Settings() {
                           id="project-description" 
                           placeholder="Enter detailed project description" 
                           rows={4}
+                          value={projectForm.description}
+                          onChange={(e) => setProjectForm({...projectForm, description: e.target.value})}
+                          required
                         />
                       </div>
                       
@@ -1497,6 +1577,9 @@ export default function Settings() {
                           <select
                             id="project-difficulty"
                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            value={projectForm.difficulty}
+                            onChange={(e) => setProjectForm({...projectForm, difficulty: e.target.value})}
+                            required
                           >
                             <option value="">Select difficulty...</option>
                             <option value="beginner">Beginner</option>
@@ -1509,6 +1592,9 @@ export default function Settings() {
                           <Input 
                             id="project-duration" 
                             placeholder="e.g. 2-3 weeks" 
+                            value={projectForm.duration}
+                            onChange={(e) => setProjectForm({...projectForm, duration: e.target.value})}
+                            required
                           />
                         </div>
                       </div>
@@ -1518,14 +1604,43 @@ export default function Settings() {
                         <Input 
                           id="project-skills" 
                           placeholder="e.g. JavaScript, React, Node.js"
+                          value={projectForm.skills}
+                          onChange={(e) => setProjectForm({...projectForm, skills: e.target.value})}
+                          required
                         />
                       </div>
                       
                       <div className="flex justify-end space-x-2">
-                        <Button variant="outline">Reset</Button>
-                        <Button className="flex items-center">
-                          <Upload className="w-4 h-4 mr-2" />
-                          Add Project
+                        <Button 
+                          type="button"
+                          variant="outline"
+                          onClick={() => setProjectForm({
+                            title: "",
+                            description: "",
+                            category: "",
+                            difficulty: "",
+                            duration: "",
+                            skills: ""
+                          })}
+                        >
+                          Reset
+                        </Button>
+                        <Button 
+                          type="submit" 
+                          className="flex items-center"
+                          disabled={uploadProjectMutation.isPending}
+                        >
+                          {uploadProjectMutation.isPending ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4 mr-2" />
+                              Add Project
+                            </>
+                          )}
                         </Button>
                       </div>
                     </form>

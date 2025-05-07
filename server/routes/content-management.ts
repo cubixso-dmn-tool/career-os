@@ -91,10 +91,11 @@ router.post("/projects", requireContentPermissions, async (req: Request, res: Re
       skills = projectData.skills.split(',').map((skill: string) => skill.trim());
     }
     
-    // Create the project object
+    // Create the project object with authenticated user as creator
     const newProject = {
       ...projectData,
-      skills
+      skills,
+      createdBy: req.user!.id // Add the logged-in user's ID as the creator
     };
     
     // Validate with Zod schema
