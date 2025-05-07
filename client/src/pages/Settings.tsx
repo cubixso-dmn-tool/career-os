@@ -19,6 +19,8 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import PermissionGate from "@/components/auth/PermissionGate";
 import {
   BellRing,
   UserCircle,
@@ -33,6 +35,8 @@ import {
   ArrowRight,
   Save,
   Cloud,
+  Users,
+  BadgeCheck,
 } from "lucide-react";
 
 // Mock user ID until authentication is implemented
@@ -272,7 +276,7 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid grid-cols-5 w-full mb-4">
+          <TabsList className="grid grid-cols-6 w-full mb-4">
             <TabsTrigger value="profile" className="flex items-center">
               <UserCircle className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Profile</span>
@@ -293,6 +297,14 @@ export default function Settings() {
               <Languages className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Language</span>
             </TabsTrigger>
+            
+            {/* Show admin tab only to users with specific permissions */}
+            <PermissionGate permissions={["admin:roles"]}>
+              <TabsTrigger value="roles" className="flex items-center">
+                <BadgeCheck className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Roles</span>
+              </TabsTrigger>
+            </PermissionGate>
           </TabsList>
 
           {/* Profile Settings */}
