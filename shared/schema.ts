@@ -1,6 +1,7 @@
 import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -162,6 +163,93 @@ export const userDailyBytes = pgTable("user_daily_bytes", {
   completedAt: timestamp("completed_at")
 });
 
+// Role-based access control tables
+
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const permissions = pgTable("permissions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  resource: text("resource").notNull(), // e.g., "community", "course", etc.
+  action: text("action").notNull(), // e.g., "create", "read", "update", "delete", "moderate"
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const rolePermissions = pgTable("role_permissions", {
+  id: serial("id").primaryKey(),
+  roleId: integer("role_id").notNull().references(() => roles.id),
+  permissionId: integer("permission_id").notNull().references(() => permissions.id),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const userRoles = pgTable("user_roles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  roleId: integer("role_id").notNull().references(() => roles.id),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  assignedBy: integer("assigned_by").references(() => users.id) // optional field to track who assigned the role
+});
+
+// Communities tables for role-based moderation
+
+export const communities = pgTable("communities", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  rules: text("rules"),
+  banner: text("banner"),
+  icon: text("icon"),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  isPrivate: boolean("is_private").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const communityMembers = pgTable("community_members", {
+  id: serial("id").primaryKey(),
+  communityId: integer("community_id").notNull().references(() => communities.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  roleId: integer("role_id").references(() => roles.id), // Optional role specific to this community
+  joinedAt: timestamp("joined_at").defaultNow().notNull()
+});
+
+export const communityPosts = pgTable("community_posts", {
+  id: serial("id").primaryKey(),
+  communityId: integer("community_id").notNull().references(() => communities.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  likes: integer("likes").default(0).notNull(),
+  isPinned: boolean("is_pinned").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+});
+
+export const communityPostComments = pgTable("community_post_comments", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull().references(() => communityPosts.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+});
+
+export const moderationActions = pgTable("moderation_actions", {
+  id: serial("id").primaryKey(),
+  communityId: integer("community_id").notNull().references(() => communities.id),
+  targetType: text("target_type").notNull(), // "post", "comment", "user"
+  targetId: integer("target_id").notNull(), // ID of the post, comment, or user
+  action: text("action").notNull(), // "remove", "warn", "ban", etc.
+  reason: text("reason"),
+  moderatorId: integer("moderator_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
 // Insert schemas
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
@@ -181,6 +269,19 @@ export const insertEventSchema = createInsertSchema(events).omit({ id: true });
 export const insertUserEventSchema = createInsertSchema(userEvents).omit({ id: true, registeredAt: true });
 export const insertDailyByteSchema = createInsertSchema(dailyBytes).omit({ id: true, createdAt: true });
 export const insertUserDailyByteSchema = createInsertSchema(userDailyBytes).omit({ id: true, completedAt: true });
+
+// RBAC schemas
+export const insertRoleSchema = createInsertSchema(roles).omit({ id: true, createdAt: true });
+export const insertPermissionSchema = createInsertSchema(permissions).omit({ id: true, createdAt: true });
+export const insertRolePermissionSchema = createInsertSchema(rolePermissions).omit({ id: true, createdAt: true });
+export const insertUserRoleSchema = createInsertSchema(userRoles).omit({ id: true, assignedAt: true });
+
+// Community schemas
+export const insertCommunitySchema = createInsertSchema(communities).omit({ id: true, createdAt: true });
+export const insertCommunityMemberSchema = createInsertSchema(communityMembers).omit({ id: true, joinedAt: true });
+export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({ id: true, likes: true, createdAt: true, updatedAt: true });
+export const insertCommunityPostCommentSchema = createInsertSchema(communityPostComments).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertModerationActionSchema = createInsertSchema(moderationActions).omit({ id: true, createdAt: true });
 
 // Types
 
@@ -234,3 +335,32 @@ export type DailyByte = typeof dailyBytes.$inferSelect;
 
 export type InsertUserDailyByte = z.infer<typeof insertUserDailyByteSchema>;
 export type UserDailyByte = typeof userDailyBytes.$inferSelect;
+
+// RBAC types
+export type InsertRole = z.infer<typeof insertRoleSchema>;
+export type Role = typeof roles.$inferSelect;
+
+export type InsertPermission = z.infer<typeof insertPermissionSchema>;
+export type Permission = typeof permissions.$inferSelect;
+
+export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
+export type RolePermission = typeof rolePermissions.$inferSelect;
+
+export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
+export type UserRole = typeof userRoles.$inferSelect;
+
+// Community types
+export type InsertCommunity = z.infer<typeof insertCommunitySchema>;
+export type Community = typeof communities.$inferSelect;
+
+export type InsertCommunityMember = z.infer<typeof insertCommunityMemberSchema>;
+export type CommunityMember = typeof communityMembers.$inferSelect;
+
+export type InsertCommunityPost = z.infer<typeof insertCommunityPostSchema>;
+export type CommunityPost = typeof communityPosts.$inferSelect;
+
+export type InsertCommunityPostComment = z.infer<typeof insertCommunityPostCommentSchema>;
+export type CommunityPostComment = typeof communityPostComments.$inferSelect;
+
+export type InsertModerationAction = z.infer<typeof insertModerationActionSchema>;
+export type ModerationAction = typeof moderationActions.$inferSelect;
