@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, getQueryFn, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import PermissionGate from "@/components/auth/PermissionGate";
@@ -290,13 +290,13 @@ export default function Settings() {
   // Fetch existing courses for management
   const { data: courses, isLoading: isCoursesLoading } = useQuery({
     queryKey: ['/api/content-management/courses'],
-    queryFn: getQueryFn()
+    queryFn: getQueryFn({ on401: "throw" })
   });
   
   // Fetch existing projects for management
   const { data: projects, isLoading: isProjectsLoading } = useQuery({
     queryKey: ['/api/content-management/projects'],
-    queryFn: getQueryFn()
+    queryFn: getQueryFn({ on401: "throw" })
   });
   
   const [projectForm, setProjectForm] = useState({
@@ -311,7 +311,7 @@ export default function Settings() {
   // Fetch existing communities for management
   const { data: communities, isLoading: isCommunitiesLoading } = useQuery({
     queryKey: ['/api/content-management/communities'],
-    queryFn: getQueryFn()
+    queryFn: getQueryFn({ on401: "throw" })
   });
   
   const [communityForm, setCommunityForm] = useState({
@@ -416,6 +416,9 @@ export default function Settings() {
         duration: "",
         skills: ""
       });
+      
+      // Refresh projects list
+      queryClient.invalidateQueries({ queryKey: ['/api/content-management/projects'] });
     },
     onError: (error: Error) => {
       toast({
@@ -476,6 +479,9 @@ export default function Settings() {
         icon: null,
         iconPreview: ""
       });
+      
+      // Refresh communities list
+      queryClient.invalidateQueries({ queryKey: ['/api/content-management/communities'] });
     },
     onError: (error: Error) => {
       toast({
