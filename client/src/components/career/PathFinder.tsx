@@ -100,7 +100,14 @@ export default function PathFinder() {
   const [careerMatches, setCareerMatches] = useState<{title: string, match: number, category: string, skills: string[], salary: string, growth: string, description: string, dailyTasks: string, learningPath: string, certifications: string[]}[]>([]);
   const [progress, setProgress] = useState(0);
   
+  // New state for AI chat mode
+  const [chatMode, setChatMode] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [chatHistory, setChatHistory] = useState<{role: 'user' | 'assistant', content: string}[]>([]);
+  const [isAiThinking, setIsAiThinking] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
@@ -439,6 +446,78 @@ export default function PathFinder() {
     });
     
     startAnalysis();
+  };
+  
+  // Functions for AI-powered chat
+  const handleChatSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!chatInput.trim() || isAiThinking) return;
+    
+    // Add user message to UI
+    const userMessage = chatInput.trim();
+    setChatInput('');
+    
+    addMessage({
+      id: Date.now().toString(),
+      content: userMessage,
+      sender: 'user'
+    });
+    
+    // Update chat history for context
+    const updatedHistory = [...chatHistory, { role: 'user' as const, content: userMessage }];
+    setChatHistory(updatedHistory);
+    
+    // Show thinking state
+    setIsAiThinking(true);
+    
+    try {
+      // Call the API
+      const response = await fetch('/api/career/pathfinder/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          chatHistory: updatedHistory
+        }),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to get response from PathFinder');
+      }
+      
+      const data = await response.json();
+      
+      // Add AI response to chat
+      addMessage({
+        id: Date.now().toString(),
+        content: data.response,
+        sender: 'bot'
+      });
+      
+      // Update chat history
+      setChatHistory([...updatedHistory, { role: 'assistant', content: data.response }]);
+    } catch (error) {
+      console.error('Error in AI chat:', error);
+      toast({
+        title: "Chat Error",
+        description: "Sorry, I couldn't process your message. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAiThinking(false);
+    }
+  };
+  
+  // Function to start AI chat mode after completing the questionnaire
+  const startAiChatMode = () => {
+    setChatMode(true);
+    addMessage({
+      id: Date.now().toString(),
+      content: `Great! Now that I understand your interests and preferences, let's chat more specifically about your career path as a ${careerPath}. Feel free to ask me anything about this career, required skills, learning resources, or next steps!`,
+      sender: 'bot'
+    });
   };
 
   // Start the analysis animation
@@ -1230,7 +1309,7 @@ export default function PathFinder() {
         <p className="text-sm text-gray-600 mt-1">Progress: 1/6 checkpoints completed</p>
       </div>
       
-      <div className="relative pl-8 border-l-2 border-dashed border-gray-300">
+      <div className="relative pl-8 border-l-2 border-dashed border-gray-300 mb-6">
         {['Introduction', 'Skills', 'Courses', 'Projects', 'Resume', 'Network'].map((checkpoint, index) => (
           <div key={checkpoint} className="mb-10 relative">
             <div className={cn(
@@ -1261,6 +1340,52 @@ export default function PathFinder() {
           </div>
         ))}
       </div>
+      
+      {!chatMode ? (
+        <div className="p-4 rounded-lg border border-gray-200 bg-white shadow-sm">
+          <h4 className="font-bold text-lg flex items-center">
+            <Sparkles className="mr-2 h-5 w-5 text-primary" />
+            Want personalized guidance?
+          </h4>
+          <p className="text-gray-600 text-sm mb-3">
+            Chat with our AI-powered PathFinder assistant to get tailored advice and answers about your {careerPath} career path.
+          </p>
+          <Button onClick={startAiChatMode} className="mt-2">
+            Start AI Conversation <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <div className="p-4 rounded-lg border border-primary/20 bg-white shadow-sm">
+          <h4 className="font-bold text-lg flex items-center">
+            <Sparkles className="mr-2 h-5 w-5 text-primary" />
+            PathFinder AI Assistant
+          </h4>
+          <p className="text-gray-600 text-sm mb-4">
+            Ask anything about your career path, skills, learning resources, or next steps.
+          </p>
+          
+          <form onSubmit={handleChatSubmit} className="flex items-center gap-2">
+            <Input
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder="Your question about the career path..."
+              disabled={isAiThinking}
+              className="flex-1"
+            />
+            <Button 
+              type="submit"
+              size="icon"
+              disabled={isAiThinking || !chatInput.trim()}
+            >
+              {isAiThinking ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </form>
+        </div>
+      )}
     </div>
   );
 
