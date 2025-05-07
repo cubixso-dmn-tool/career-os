@@ -35,6 +35,32 @@ const careerTips: CareerTip[] = [
     category: "general",
     contexts: ["pathfinder", "results"]
   },
+  
+  // Roadmap related tips
+  {
+    id: "roadmap-overview",
+    tip: "Your personalized roadmap is designed to guide you through learning, projects, and networking - all tailored specifically to your chosen career path.",
+    category: "roadmap",
+    contexts: ["pathfinder", "roadmap"]
+  },
+  {
+    id: "roadmap-skills-section",
+    tip: "Focus on mastering both core and adjacent skills to stand out in India's competitive job market. Start with fundamentals before moving to advanced topics.",
+    category: "roadmap",
+    contexts: ["pathfinder", "roadmap", "skills"]
+  },
+  {
+    id: "roadmap-projects-section",
+    tip: "Building real-world projects is crucial for Indian tech roles. Employers value practical experience that demonstrates your ability to apply skills.",
+    category: "roadmap",
+    contexts: ["pathfinder", "roadmap", "projects"]
+  },
+  {
+    id: "roadmap-courses-section",
+    tip: "For Indian students, combining online courses with local networking events or workshops can maximize both skills and connections.",
+    category: "roadmap",
+    contexts: ["pathfinder", "roadmap", "courses"]
+  },
 
   // Resume related tips
   {

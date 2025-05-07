@@ -16,6 +16,7 @@ export type TipCategory =
   | "course" 
   | "salary" 
   | "industry" 
+  | "roadmap"
   | "general";
 
 interface CareerTipTooltipProps {
@@ -48,6 +49,8 @@ export function CareerTipTooltip({
         return "bg-emerald-50 border-emerald-200 text-emerald-700";
       case "industry":
         return "bg-indigo-50 border-indigo-200 text-indigo-700";
+      case "roadmap":
+        return "bg-teal-50 border-teal-200 text-teal-700";
       case "general":
       default:
         return "bg-gray-50 border-gray-200 text-gray-700";

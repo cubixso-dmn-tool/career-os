@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sparkles, X, Send, Loader2, LightbulbIcon } from "lucide-react";
+import { ArrowRight, Sparkles, X, Send, Loader2, LightbulbIcon, Info as InfoIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -1369,6 +1370,15 @@ export default function PathFinder() {
           You're on the path to becoming a {careerPath} expert!
         </h3>
         <p className="text-sm text-gray-600 mt-1">Progress: 1/6 checkpoints completed</p>
+        <CareerTipTooltip
+          tip="Your personalized career roadmap will guide you through all the steps needed to establish yourself in your chosen field"
+          category="roadmap"
+          className="mt-2 inline-block"
+        >
+          <Badge variant="outline" className="mt-2 border-primary/50 text-primary bg-white cursor-help">
+            What's this roadmap?
+          </Badge>
+        </CareerTipTooltip>
       </div>
       
       <TipCard 
@@ -1393,7 +1403,30 @@ export default function PathFinder() {
               "p-4 rounded-lg border bg-white",
               index === 0 ? "border-primary shadow-sm" : "border-gray-200"
             )}>
-              <h4 className="font-bold text-lg">{checkpoint}</h4>
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-lg">{checkpoint}</h4>
+                {index <= 1 && (
+                  <CareerTipTooltip
+                    tip={
+                      index === 0 
+                        ? "You've completed this milestone! The introduction helps you understand the basics of your chosen career path."
+                        : checkpoint === "Skills" 
+                          ? "This section will guide you through acquiring the essential skills needed for a " + careerPath + " role."
+                          : checkpoint === "Courses" 
+                          ? "Recommended learning resources to master the required skills for your career path."
+                          : checkpoint === "Projects" 
+                          ? "Hands-on projects to build your portfolio and demonstrate your capabilities."
+                          : checkpoint === "Resume" 
+                          ? "Create a tailored resume for your chosen career path with our guided builder."
+                          : "Connect with mentors and peers to expand your professional network."
+                    }
+                    category={index === 0 ? "roadmap" : "skill"}
+                    showIcon={true}
+                  >
+                    <InfoIcon className="h-4 w-4 text-gray-400 hover:text-primary cursor-help" />
+                  </CareerTipTooltip>
+                )}
+              </div>
               <p className="text-gray-600 text-sm">
                 {index === 0 
                   ? 'Completed! You\'ve started your journey toward a career in ' + careerPath + '.'
