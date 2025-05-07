@@ -98,13 +98,13 @@ export default function PathFinder() {
   const [analyzing, setAnalyzing] = useState(false);
   const [careerPath, setCareerPath] = useState('');
   const [careerMatches, setCareerMatches] = useState<{title: string, match: number, category: string, skills: string[], salary: string, growth: string, description: string, dailyTasks: string, learningPath: string, certifications: string[]}[]>([]);
-  const [progress, setProgress] = useState(0);
   
-  // New state for AI chat mode
+  // AI chat related state
   const [chatMode, setChatMode] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [chatHistory, setChatHistory] = useState<{role: 'user' | 'assistant', content: string}[]>([]);
   const [isAiThinking, setIsAiThinking] = useState(false);
+  const [progress, setProgress] = useState(0);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
