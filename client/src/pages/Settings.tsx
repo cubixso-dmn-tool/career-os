@@ -40,7 +40,9 @@ import {
   Upload,
   BookOpen,
   GitBranch,
-  Layers
+  Layers,
+  Loader2,
+  Bell
 } from "lucide-react";
 
 // Mock user ID until authentication is implemented
@@ -271,6 +273,8 @@ export default function Settings() {
     });
   };
   
+  // These are defined further down in the component
+  
   // Content Management form states
   const [courseForm, setCourseForm] = useState({
     title: "",
@@ -468,7 +472,7 @@ export default function Settings() {
       const reader = new FileReader();
       
       reader.onload = (event) => {
-        if (event.target) {
+        if (event.target && event.target.result) {
           setCourseForm({
             ...courseForm,
             thumbnail: file,
@@ -488,7 +492,7 @@ export default function Settings() {
       const reader = new FileReader();
       
       reader.onload = (event) => {
-        if (event.target) {
+        if (event.target && event.target.result) {
           if (fileType === 'banner') {
             setCommunityForm({
               ...communityForm,
@@ -1659,17 +1663,26 @@ export default function Settings() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form className="space-y-4">
+                    <form className="space-y-4" onSubmit={handleCommunitySubmit}>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="community-name">Community Name</Label>
-                          <Input id="community-name" placeholder="Enter community name" />
+                          <Input 
+                            id="community-name" 
+                            placeholder="Enter community name" 
+                            value={communityForm.name}
+                            onChange={(e) => setCommunityForm({...communityForm, name: e.target.value})}
+                            required
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="community-type">Type</Label>
                           <select
                             id="community-type"
                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            value={communityForm.type}
+                            onChange={(e) => setCommunityForm({...communityForm, type: e.target.value})}
+                            required
                           >
                             <option value="">Select type...</option>
                             <option value="topic">Topic-based</option>
@@ -1686,17 +1699,48 @@ export default function Settings() {
                           id="community-description" 
                           placeholder="Describe what this community is about" 
                           rows={4}
+                          value={communityForm.description}
+                          onChange={(e) => setCommunityForm({...communityForm, description: e.target.value})}
+                          required
                         />
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="community-banner">Banner Image</Label>
-                          <Input id="community-banner" type="file" accept="image/*" />
+                          <Input 
+                            id="community-banner" 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={(e) => handleCommunityFileChange(e, 'banner')}
+                          />
+                          {communityForm.bannerPreview && (
+                            <div className="mt-2">
+                              <img 
+                                src={communityForm.bannerPreview} 
+                                alt="Banner preview" 
+                                className="h-24 w-auto object-cover rounded-md" 
+                              />
+                            </div>
+                          )}
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="community-icon">Icon</Label>
-                          <Input id="community-icon" type="file" accept="image/*" />
+                          <Input 
+                            id="community-icon" 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={(e) => handleCommunityFileChange(e, 'icon')}
+                          />
+                          {communityForm.iconPreview && (
+                            <div className="mt-2">
+                              <img 
+                                src={communityForm.iconPreview} 
+                                alt="Icon preview" 
+                                className="h-16 w-16 object-cover rounded-full" 
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                       
@@ -1706,6 +1750,8 @@ export default function Settings() {
                           id="community-rules" 
                           placeholder="Enter community guidelines and rules" 
                           rows={4}
+                          value={communityForm.rules}
+                          onChange={(e) => setCommunityForm({...communityForm, rules: e.target.value})}
                         />
                       </div>
                       
@@ -1714,15 +1760,46 @@ export default function Settings() {
                           type="checkbox" 
                           id="is-private" 
                           className="h-4 w-4 text-primary"
+                          checked={communityForm.isPrivate}
+                          onChange={(e) => setCommunityForm({...communityForm, isPrivate: e.target.checked})}
                         />
                         <Label htmlFor="is-private">Make this community private (invite only)</Label>
                       </div>
                       
                       <div className="flex justify-end space-x-2">
-                        <Button variant="outline">Reset</Button>
-                        <Button className="flex items-center">
-                          <Upload className="w-4 h-4 mr-2" />
-                          Create Community
+                        <Button 
+                          type="button"
+                          variant="outline"
+                          onClick={() => setCommunityForm({
+                            name: "",
+                            description: "",
+                            type: "",
+                            rules: "",
+                            isPrivate: false,
+                            banner: null,
+                            bannerPreview: "",
+                            icon: null,
+                            iconPreview: ""
+                          })}
+                        >
+                          Reset
+                        </Button>
+                        <Button 
+                          type="submit" 
+                          className="flex items-center"
+                          disabled={uploadCommunityMutation.isPending}
+                        >
+                          {uploadCommunityMutation.isPending ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Creating...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4 mr-2" />
+                              Create Community
+                            </>
+                          )}
                         </Button>
                       </div>
                     </form>
