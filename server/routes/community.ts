@@ -296,7 +296,7 @@ router.post("/:communityId/posts", requirePermission("content:create"), async (r
 });
 
 // Update a post
-router.patch("/:communityId/posts/:postId", async (req, res) => {
+router.patch("/:communityId/posts/:postId", requirePermission("content:edit"), async (req, res) => {
   try {
     if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Authentication required" });
@@ -330,7 +330,7 @@ router.patch("/:communityId/posts/:postId", async (req, res) => {
 });
 
 // Delete a post
-router.delete("/:communityId/posts/:postId", async (req, res) => {
+router.delete("/:communityId/posts/:postId", requirePermission("content:delete"), async (req, res) => {
   try {
     if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Authentication required" });
@@ -442,7 +442,7 @@ router.post("/:communityId/posts/:postId/comments", requirePermission("content:c
 });
 
 // Update a comment
-router.patch("/:communityId/posts/:postId/comments/:commentId", async (req, res) => {
+router.patch("/:communityId/posts/:postId/comments/:commentId", requirePermission("content:edit"), async (req, res) => {
   try {
     if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Authentication required" });
@@ -484,7 +484,7 @@ router.patch("/:communityId/posts/:postId/comments/:commentId", async (req, res)
 });
 
 // Delete a comment
-router.delete("/:communityId/posts/:postId/comments/:commentId", async (req, res) => {
+router.delete("/:communityId/posts/:postId/comments/:commentId", requirePermission("content:delete"), async (req, res) => {
   try {
     if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Authentication required" });
