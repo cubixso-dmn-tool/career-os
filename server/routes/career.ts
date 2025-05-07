@@ -128,7 +128,8 @@ router.post('/pathfinder/chat', async (req, res) => {
         validatedData.chatHistory || [],
         userProfile
       );
-    } catch (aiError) {
+    } catch (error) {
+      const aiError = error as Error;
       console.log('Using fallback response due to OpenAI error:', aiError.message);
       
       // Fallback: Generate a response based on the message content

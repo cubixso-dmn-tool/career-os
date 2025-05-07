@@ -2,10 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sparkles, X, Send, Loader2 } from "lucide-react";
+import { ArrowRight, Sparkles, X, Send, Loader2, LightbulbIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { CareerTipTooltip } from "@/components/ui/career-tip-tooltip";
+import { TipCard } from "@/components/ui/tip-card";
 
 // PathFinder Avatar Component
 const PathFinderAvatar = () => (
