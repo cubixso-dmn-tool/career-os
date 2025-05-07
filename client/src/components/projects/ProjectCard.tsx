@@ -10,7 +10,7 @@ interface Project {
   description: string;
   difficulty: string;
   duration: string;
-  skills: string[];
+  skills: string[] | string;
   category: string;
 }
 
@@ -19,11 +19,16 @@ interface ProjectCardProps {
 }
 
 export default function ProjectCard({ project }: ProjectCardProps) {
+  // Handle skills that might be a string or array
+  const skillsArray = Array.isArray(project.skills) 
+    ? project.skills 
+    : (typeof project.skills === 'string' ? project.skills.split(',').map((s: string) => s.trim()) : []);
+  
   const difficultyColor = {
-    'Beginner': 'bg-green-500',
-    'Intermediate': 'bg-amber-500',
-    'Advanced': 'bg-red-500'
-  }[project.difficulty] || 'bg-green-500';
+    'beginner': 'bg-green-500',
+    'intermediate': 'bg-amber-500',
+    'advanced': 'bg-red-500'
+  }[project.difficulty?.toLowerCase()] || 'bg-green-500';
 
   return (
     <Card className="overflow-hidden border border-gray-100 hover:shadow-md transition-shadow">
@@ -43,7 +48,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         </div>
         
         <div className="flex flex-wrap gap-2 mb-1">
-          {project.skills.map((skill, index) => (
+          {skillsArray.map((skill: string, index: number) => (
             <Badge key={index} variant="secondary" className="bg-gray-200 text-gray-700 border-none">
               {skill}
             </Badge>

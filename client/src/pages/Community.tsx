@@ -30,9 +30,9 @@ export default function Community() {
   const [searchTerm, setSearchTerm] = useState("");
   const queryClient = useQueryClient();
 
-  // Fetch posts
+  // Fetch posts from content management API
   const { data: posts = [], isLoading: loadingPosts } = useQuery({
-    queryKey: ['/api/posts'],
+    queryKey: ['/api/content-management/communities/posts'],
     queryFn: undefined, // Use default queryFn from queryClient
   });
 
@@ -58,14 +58,14 @@ export default function Community() {
   // Create post mutation
   const createPostMutation = useMutation({
     mutationFn: async (values: z.infer<typeof postSchema>) => {
-      const response = await apiRequest("POST", "/api/posts", {
+      const response = await apiRequest("POST", "/api/content-management/communities/posts", {
         userId: USER_ID,
         content: values.content
       });
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/posts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/content-management/communities/posts'] });
       form.reset();
     }
   });
