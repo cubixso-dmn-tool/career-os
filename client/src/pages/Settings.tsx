@@ -290,13 +290,13 @@ export default function Settings() {
   // Fetch existing courses for management
   const { data: courses, isLoading: isCoursesLoading } = useQuery({
     queryKey: ['/api/content-management/courses'],
-    queryFn: undefined, // Use default queryFn from queryClient
+    queryFn: getQueryFn()
   });
   
   // Fetch existing projects for management
   const { data: projects, isLoading: isProjectsLoading } = useQuery({
     queryKey: ['/api/content-management/projects'],
-    queryFn: undefined, // Use default queryFn from queryClient
+    queryFn: getQueryFn()
   });
   
   const [projectForm, setProjectForm] = useState({
@@ -311,7 +311,7 @@ export default function Settings() {
   // Fetch existing communities for management
   const { data: communities, isLoading: isCommunitiesLoading } = useQuery({
     queryKey: ['/api/content-management/communities'],
-    queryFn: undefined, // Use default queryFn from queryClient
+    queryFn: getQueryFn()
   });
   
   const [communityForm, setCommunityForm] = useState({
@@ -371,6 +371,9 @@ export default function Settings() {
         thumbnail: null,
         thumbnailPreview: ""
       });
+      
+      // Refresh courses list
+      queryClient.invalidateQueries({ queryKey: ['/api/content-management/courses'] });
     },
     onError: (error: Error) => {
       toast({
@@ -1638,121 +1641,121 @@ export default function Settings() {
                       
                       <TabsContent value="upload">
                         <form className="space-y-4" onSubmit={handleProjectSubmit}>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="project-title">Project Title</Label>
-                          <Input 
-                            id="project-title" 
-                            placeholder="Enter project title" 
-                            value={projectForm.title}
-                            onChange={(e) => setProjectForm({...projectForm, title: e.target.value})}
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="project-category">Category</Label>
-                          <select
-                            id="project-category"
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            value={projectForm.category}
-                            onChange={(e) => setProjectForm({...projectForm, category: e.target.value})}
-                            required
-                          >
-                            <option value="">Select category...</option>
-                            <option value="web-development">Web Development</option>
-                            <option value="mobile-development">Mobile Development</option>
-                            <option value="data-science">Data Science</option>
-                            <option value="design">UI/UX Design</option>
-                            <option value="devops">DevOps</option>
-                          </select>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="project-description">Description</Label>
-                        <Textarea 
-                          id="project-description" 
-                          placeholder="Enter detailed project description" 
-                          rows={4}
-                          value={projectForm.description}
-                          onChange={(e) => setProjectForm({...projectForm, description: e.target.value})}
-                          required
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="project-difficulty">Difficulty Level</Label>
-                          <select
-                            id="project-difficulty"
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            value={projectForm.difficulty}
-                            onChange={(e) => setProjectForm({...projectForm, difficulty: e.target.value})}
-                            required
-                          >
-                            <option value="">Select difficulty...</option>
-                            <option value="beginner">Beginner</option>
-                            <option value="intermediate">Intermediate</option>
-                            <option value="advanced">Advanced</option>
-                          </select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="project-duration">Estimated Duration</Label>
-                          <Input 
-                            id="project-duration" 
-                            placeholder="e.g. 2-3 weeks" 
-                            value={projectForm.duration}
-                            onChange={(e) => setProjectForm({...projectForm, duration: e.target.value})}
-                            required
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="project-skills">Required Skills (comma separated)</Label>
-                        <Input 
-                          id="project-skills" 
-                          placeholder="e.g. JavaScript, React, Node.js"
-                          value={projectForm.skills}
-                          onChange={(e) => setProjectForm({...projectForm, skills: e.target.value})}
-                          required
-                        />
-                      </div>
-                      
-                      <div className="flex justify-end space-x-2">
-                        <Button 
-                          type="button"
-                          variant="outline"
-                          onClick={() => setProjectForm({
-                            title: "",
-                            description: "",
-                            category: "",
-                            difficulty: "",
-                            duration: "",
-                            skills: ""
-                          })}
-                        >
-                          Reset
-                        </Button>
-                        <Button 
-                          type="submit" 
-                          className="flex items-center"
-                          disabled={uploadProjectMutation.isPending}
-                        >
-                          {uploadProjectMutation.isPending ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Uploading...
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="w-4 h-4 mr-2" />
-                              Add Project
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </form>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="project-title">Project Title</Label>
+                              <Input 
+                                id="project-title" 
+                                placeholder="Enter project title" 
+                                value={projectForm.title}
+                                onChange={(e) => setProjectForm({...projectForm, title: e.target.value})}
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="project-category">Category</Label>
+                              <select
+                                id="project-category"
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                value={projectForm.category}
+                                onChange={(e) => setProjectForm({...projectForm, category: e.target.value})}
+                                required
+                              >
+                                <option value="">Select category...</option>
+                                <option value="web-development">Web Development</option>
+                                <option value="mobile-development">Mobile Development</option>
+                                <option value="data-science">Data Science</option>
+                                <option value="design">UI/UX Design</option>
+                                <option value="devops">DevOps</option>
+                              </select>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="project-description">Description</Label>
+                            <Textarea 
+                              id="project-description" 
+                              placeholder="Enter detailed project description" 
+                              rows={4}
+                              value={projectForm.description}
+                              onChange={(e) => setProjectForm({...projectForm, description: e.target.value})}
+                              required
+                            />
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="project-difficulty">Difficulty Level</Label>
+                              <select
+                                id="project-difficulty"
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                value={projectForm.difficulty}
+                                onChange={(e) => setProjectForm({...projectForm, difficulty: e.target.value})}
+                                required
+                              >
+                                <option value="">Select difficulty...</option>
+                                <option value="beginner">Beginner</option>
+                                <option value="intermediate">Intermediate</option>
+                                <option value="advanced">Advanced</option>
+                              </select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="project-duration">Estimated Duration</Label>
+                              <Input 
+                                id="project-duration" 
+                                placeholder="e.g. 2-3 weeks" 
+                                value={projectForm.duration}
+                                onChange={(e) => setProjectForm({...projectForm, duration: e.target.value})}
+                                required
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="project-skills">Required Skills (comma separated)</Label>
+                            <Input 
+                              id="project-skills" 
+                              placeholder="e.g. JavaScript, React, Node.js"
+                              value={projectForm.skills}
+                              onChange={(e) => setProjectForm({...projectForm, skills: e.target.value})}
+                              required
+                            />
+                          </div>
+                          
+                          <div className="flex justify-end space-x-2">
+                            <Button 
+                              type="button"
+                              variant="outline"
+                              onClick={() => setProjectForm({
+                                title: "",
+                                description: "",
+                                category: "",
+                                difficulty: "",
+                                duration: "",
+                                skills: ""
+                              })}
+                            >
+                              Reset
+                            </Button>
+                            <Button 
+                              type="submit" 
+                              className="flex items-center"
+                              disabled={uploadProjectMutation.isPending}
+                            >
+                              {uploadProjectMutation.isPending ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  Uploading...
+                                </>
+                              ) : (
+                                <>
+                                  <Upload className="w-4 h-4 mr-2" />
+                                  Add Project
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </form>
                       </TabsContent>
                       
                       <TabsContent value="manage">
@@ -1838,144 +1841,144 @@ export default function Settings() {
                       
                       <TabsContent value="upload">
                         <form className="space-y-4" onSubmit={handleCommunitySubmit}>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="community-name">Community Name</Label>
-                          <Input 
-                            id="community-name" 
-                            placeholder="Enter community name" 
-                            value={communityForm.name}
-                            onChange={(e) => setCommunityForm({...communityForm, name: e.target.value})}
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="community-type">Type</Label>
-                          <select
-                            id="community-type"
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            value={communityForm.type}
-                            onChange={(e) => setCommunityForm({...communityForm, type: e.target.value})}
-                            required
-                          >
-                            <option value="">Select type...</option>
-                            <option value="topic">Topic-based</option>
-                            <option value="career">Career-specific</option>
-                            <option value="regional">Regional</option>
-                            <option value="industry">Industry</option>
-                          </select>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="community-description">Description</Label>
-                        <Textarea 
-                          id="community-description" 
-                          placeholder="Describe what this community is about" 
-                          rows={4}
-                          value={communityForm.description}
-                          onChange={(e) => setCommunityForm({...communityForm, description: e.target.value})}
-                          required
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="community-banner">Banner Image</Label>
-                          <Input 
-                            id="community-banner" 
-                            type="file" 
-                            accept="image/*" 
-                            onChange={(e) => handleCommunityFileChange(e, 'banner')}
-                          />
-                          {communityForm.bannerPreview && (
-                            <div className="mt-2">
-                              <img 
-                                src={communityForm.bannerPreview} 
-                                alt="Banner preview" 
-                                className="h-24 w-auto object-cover rounded-md" 
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="community-name">Community Name</Label>
+                              <Input 
+                                id="community-name" 
+                                placeholder="Enter community name" 
+                                value={communityForm.name}
+                                onChange={(e) => setCommunityForm({...communityForm, name: e.target.value})}
+                                required
                               />
                             </div>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="community-icon">Icon</Label>
-                          <Input 
-                            id="community-icon" 
-                            type="file" 
-                            accept="image/*" 
-                            onChange={(e) => handleCommunityFileChange(e, 'icon')}
-                          />
-                          {communityForm.iconPreview && (
-                            <div className="mt-2">
-                              <img 
-                                src={communityForm.iconPreview} 
-                                alt="Icon preview" 
-                                className="h-16 w-16 object-cover rounded-full" 
-                              />
+                            <div className="space-y-2">
+                              <Label htmlFor="community-type">Type</Label>
+                              <select
+                                id="community-type"
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                value={communityForm.type}
+                                onChange={(e) => setCommunityForm({...communityForm, type: e.target.value})}
+                                required
+                              >
+                                <option value="">Select type...</option>
+                                <option value="topic">Topic-based</option>
+                                <option value="career">Career-specific</option>
+                                <option value="regional">Regional</option>
+                                <option value="industry">Industry</option>
+                              </select>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="community-rules">Community Rules</Label>
-                        <Textarea 
-                          id="community-rules" 
-                          placeholder="Enter community guidelines and rules" 
-                          rows={4}
-                          value={communityForm.rules}
-                          onChange={(e) => setCommunityForm({...communityForm, rules: e.target.value})}
-                        />
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <input 
-                          type="checkbox" 
-                          id="is-private" 
-                          className="h-4 w-4 text-primary"
-                          checked={communityForm.isPrivate}
-                          onChange={(e) => setCommunityForm({...communityForm, isPrivate: e.target.checked})}
-                        />
-                        <Label htmlFor="is-private">Make this community private (invite only)</Label>
-                      </div>
-                      
-                      <div className="flex justify-end space-x-2">
-                        <Button 
-                          type="button"
-                          variant="outline"
-                          onClick={() => setCommunityForm({
-                            name: "",
-                            description: "",
-                            type: "",
-                            rules: "",
-                            isPrivate: false,
-                            banner: null,
-                            bannerPreview: "",
-                            icon: null,
-                            iconPreview: ""
-                          })}
-                        >
-                          Reset
-                        </Button>
-                        <Button 
-                          type="submit" 
-                          className="flex items-center"
-                          disabled={uploadCommunityMutation.isPending}
-                        >
-                          {uploadCommunityMutation.isPending ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Creating...
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="w-4 h-4 mr-2" />
-                              Create Community
-                            </>
-                          )}
-                        </Button>
-                      </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="community-description">Description</Label>
+                            <Textarea 
+                              id="community-description" 
+                              placeholder="Describe what this community is about" 
+                              rows={4}
+                              value={communityForm.description}
+                              onChange={(e) => setCommunityForm({...communityForm, description: e.target.value})}
+                              required
+                            />
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="community-banner">Banner Image</Label>
+                              <Input 
+                                id="community-banner" 
+                                type="file" 
+                                accept="image/*" 
+                                onChange={(e) => handleCommunityFileChange(e, 'banner')}
+                              />
+                              {communityForm.bannerPreview && (
+                                <div className="mt-2">
+                                  <img 
+                                    src={communityForm.bannerPreview} 
+                                    alt="Banner preview" 
+                                    className="h-24 w-auto object-cover rounded-md" 
+                                  />
+                                </div>
+                              )}
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="community-icon">Icon</Label>
+                              <Input 
+                                id="community-icon" 
+                                type="file" 
+                                accept="image/*" 
+                                onChange={(e) => handleCommunityFileChange(e, 'icon')}
+                              />
+                              {communityForm.iconPreview && (
+                                <div className="mt-2">
+                                  <img 
+                                    src={communityForm.iconPreview} 
+                                    alt="Icon preview" 
+                                    className="h-16 w-16 object-cover rounded-full" 
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="community-rules">Community Rules</Label>
+                            <Textarea 
+                              id="community-rules" 
+                              placeholder="Enter community guidelines and rules" 
+                              rows={4}
+                              value={communityForm.rules}
+                              onChange={(e) => setCommunityForm({...communityForm, rules: e.target.value})}
+                            />
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <input 
+                              type="checkbox" 
+                              id="is-private" 
+                              className="h-4 w-4 text-primary"
+                              checked={communityForm.isPrivate}
+                              onChange={(e) => setCommunityForm({...communityForm, isPrivate: e.target.checked})}
+                            />
+                            <Label htmlFor="is-private">Make this community private (invite only)</Label>
+                          </div>
+                          
+                          <div className="flex justify-end space-x-2">
+                            <Button 
+                              type="button"
+                              variant="outline"
+                              onClick={() => setCommunityForm({
+                                name: "",
+                                description: "",
+                                type: "",
+                                rules: "",
+                                isPrivate: false,
+                                banner: null,
+                                bannerPreview: "",
+                                icon: null,
+                                iconPreview: ""
+                              })}
+                            >
+                              Reset
+                            </Button>
+                            <Button 
+                              type="submit" 
+                              className="flex items-center"
+                              disabled={uploadCommunityMutation.isPending}
+                            >
+                              {uploadCommunityMutation.isPending ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  Creating...
+                                </>
+                              ) : (
+                                <>
+                                  <Upload className="w-4 h-4 mr-2" />
+                                  Create Community
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </form>
                       </TabsContent>
                       
