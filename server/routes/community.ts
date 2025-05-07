@@ -560,4 +560,101 @@ router.get("/:communityId/moderation-actions", requireCommunityModerator(), asyn
   }
 });
 
+// Create a moderation action (moderators only)
+router.post("/:communityId/moderation", requireCommunityModerator(), async (req, res) => {
+  try {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const communityId = parseInt(req.params.communityId);
+    if (isNaN(communityId)) {
+      return res.status(400).json({ message: "Invalid community ID" });
+    }
+    
+    const { targetType, targetId, action, reason } = req.body;
+    
+    if (!targetType || !targetId || !action || !reason) {
+      return res.status(400).json({ 
+        message: "Required fields missing: targetType, targetId, action, and reason are required"
+      });
+    }
+    
+    if (!["post", "comment", "user"].includes(targetType)) {
+      return res.status(400).json({
+        message: "Invalid targetType. Must be 'post', 'comment', or 'user'"
+      });
+    }
+    
+    const parsedTargetId = parseInt(targetId);
+    if (isNaN(parsedTargetId)) {
+      return res.status(400).json({ message: "Invalid targetId. Must be a number." });
+    }
+    
+    // Perform the moderation action based on targetType and action
+    switch (targetType) {
+      case "post":
+        if (action === "pin") {
+          const post = await storage.getCommunityPost(parsedTargetId);
+          if (!post) {
+            return res.status(404).json({ message: "Post not found" });
+          }
+          
+          await storage.updateCommunityPost(parsedTargetId, { isPinned: true });
+        } else if (action === "unpin") {
+          const post = await storage.getCommunityPost(parsedTargetId);
+          if (!post) {
+            return res.status(404).json({ message: "Post not found" });
+          }
+          
+          await storage.updateCommunityPost(parsedTargetId, { isPinned: false });
+        } else if (action === "delete") {
+          await storage.deleteCommunityPost(parsedTargetId);
+        } else {
+          return res.status(400).json({ message: "Invalid action for post type" });
+        }
+        break;
+        
+      case "comment":
+        if (action === "delete") {
+          await storage.deleteCommunityPostComment(parsedTargetId);
+        } else {
+          return res.status(400).json({ message: "Invalid action for comment type" });
+        }
+        break;
+        
+      case "user":
+        // For user actions like warn, mute, ban (we'd need additional implementation)
+        if (!["warn", "mute", "ban", "unban"].includes(action)) {
+          return res.status(400).json({ message: "Invalid action for user type" });
+        }
+        // Implement user moderation logic here
+        break;
+    }
+    
+    // Log the moderation action
+    const moderationAction = await storage.createModerationAction({
+      moderatorId: req.user.id,
+      targetId: parsedTargetId,
+      targetType: targetType,
+      communityId: communityId,
+      action: action,
+      reason: reason
+    });
+    
+    // Set the Content-Type explicitly to ensure we get JSON back
+    res.setHeader('Content-Type', 'application/json');
+    
+    return res.status(200).json({ 
+      message: "Moderation action completed successfully",
+      action: moderationAction
+    });
+  } catch (error) {
+    console.error("Error performing moderation action:", error);
+    // Set the Content-Type explicitly to ensure we get JSON back
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(500).json({ message: "Failed to perform moderation action" });
+  }
+});
+
 export default router;
