@@ -23,6 +23,7 @@ import {
 } from "./lib/openai";
 import communityRoutes from "./routes/community";
 import rbacRoutes from "./routes/rbac";
+import careerRoutes from "./routes/career";
 import { loadUserRolesMiddleware } from "./middleware/rbac";
 
 function handleZodError(error: ZodError, res: Response) {
