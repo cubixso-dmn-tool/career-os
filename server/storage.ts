@@ -15,7 +15,18 @@ import {
   events, Event, InsertEvent,
   userEvents, UserEvent, InsertUserEvent,
   dailyBytes, DailyByte, InsertDailyByte,
-  userDailyBytes, UserDailyByte, InsertUserDailyByte
+  userDailyBytes, UserDailyByte, InsertUserDailyByte,
+  // RBAC imports
+  roles, Role, InsertRole,
+  permissions, Permission, InsertPermission,
+  rolePermissions, RolePermission, InsertRolePermission,
+  userRoles, UserRole, InsertUserRole,
+  // Community imports
+  communities, Community, InsertCommunity,
+  communityMembers, CommunityMember, InsertCommunityMember,
+  communityPosts, CommunityPost, InsertCommunityPost,
+  communityPostComments, CommunityPostComment, InsertCommunityPostComment,
+  moderationActions, ModerationAction, InsertModerationAction
 } from "@shared/schema";
 
 export interface IStorage {
@@ -120,6 +131,62 @@ export interface IStorage {
   getUserDailyByteByDailyByteAndUser(dailyByteId: number, userId: number): Promise<UserDailyByte | undefined>;
   createUserDailyByte(userDailyByte: InsertUserDailyByte): Promise<UserDailyByte>;
   updateUserDailyByte(id: number, updates: Partial<UserDailyByte>): Promise<UserDailyByte>;
+  
+  // Role operations
+  getRole(id: number): Promise<Role | undefined>;
+  getAllRoles(): Promise<Role[]>;
+  createRole(role: InsertRole): Promise<Role>;
+  
+  // Permission operations
+  getPermission(id: number): Promise<Permission | undefined>;
+  getAllPermissions(): Promise<Permission[]>;
+  createPermission(permission: InsertPermission): Promise<Permission>;
+  
+  // RolePermission operations
+  getRolePermission(id: number): Promise<RolePermission | undefined>;
+  getRolePermissions(roleId: number): Promise<Permission[]>;
+  assignPermissionToRole(rolePermission: InsertRolePermission): Promise<RolePermission>;
+  removePermissionFromRole(roleId: number, permissionId: number): Promise<void>;
+  
+  // UserRole operations
+  getUserRole(id: number): Promise<UserRole | undefined>;
+  getUserRoles(userId: number): Promise<UserRole[]>;
+  assignRoleToUser(userRole: InsertUserRole): Promise<UserRole>;
+  removeRoleFromUser(userId: number, roleId: number): Promise<void>;
+  
+  // Community operations
+  getCommunity(id: number): Promise<Community | undefined>;
+  getAllCommunities(): Promise<Community[]>;
+  createCommunity(community: InsertCommunity): Promise<Community>;
+  
+  // CommunityMember operations
+  getCommunityMember(id: number): Promise<CommunityMember | undefined>;
+  getCommunityMembers(communityId: number): Promise<CommunityMember[]>;
+  isCommunityMember(userId: number, communityId: number): Promise<boolean>;
+  isCommunityModerator(userId: number, communityId: number): Promise<boolean>;
+  joinCommunity(communityMember: InsertCommunityMember): Promise<CommunityMember>;
+  leaveCommunity(userId: number, communityId: number): Promise<void>;
+  updateCommunityMemberRole(userId: number, communityId: number, role: string): Promise<CommunityMember>;
+  
+  // CommunityPost operations
+  getCommunityPost(id: number): Promise<CommunityPost | undefined>;
+  getCommunityPosts(communityId: number): Promise<CommunityPost[]>;
+  createCommunityPost(post: InsertCommunityPost): Promise<CommunityPost>;
+  updateCommunityPost(id: number, updates: Partial<CommunityPost>): Promise<CommunityPost>;
+  deleteCommunityPost(id: number): Promise<void>;
+  
+  // CommunityPostComment operations
+  getCommunityPostComment(id: number): Promise<CommunityPostComment | undefined>;
+  getCommunityPostComments(postId: number): Promise<CommunityPostComment[]>;
+  createCommunityPostComment(comment: InsertCommunityPostComment): Promise<CommunityPostComment>;
+  updateCommunityPostComment(id: number, updates: Partial<CommunityPostComment>): Promise<CommunityPostComment>;
+  deleteCommunityPostComment(id: number): Promise<void>;
+  
+  // ModerationAction operations
+  getModerationAction(id: number): Promise<ModerationAction | undefined>;
+  getModerationActionsByModerator(userId: number): Promise<ModerationAction[]>;
+  getModerationActionsByCommunity(communityId: number): Promise<ModerationAction[]>;
+  createModerationAction(action: InsertModerationAction): Promise<ModerationAction>;
 }
 
 import { eq, desc, and, or, sql, like } from "drizzle-orm";
