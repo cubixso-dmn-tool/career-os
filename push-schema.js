@@ -1,6 +1,6 @@
-// Run with: node --loader ts-node/esm push-schema.js
-import { db } from './server/db.js';
-import { pool } from './server/db.js';
+// Run with: npx tsx push-schema.js
+import { db } from './server/db.ts';
+import { pool } from './server/db.ts';
 
 console.log('Pushing schema to database...');
 
@@ -54,9 +54,11 @@ async function main() {
       CREATE TABLE IF NOT EXISTS communities (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
-        description TEXT,
-        logo TEXT,
+        description TEXT NOT NULL,
+        rules TEXT,
         banner TEXT,
+        icon TEXT,
+        created_by INTEGER NOT NULL REFERENCES users(id),
         is_private BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMP NOT NULL DEFAULT NOW()
       );
