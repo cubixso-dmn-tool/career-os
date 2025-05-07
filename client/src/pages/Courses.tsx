@@ -33,9 +33,9 @@ export default function Courses({}: CoursesProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-  // Fetch courses
+  // Fetch courses from content management API
   const { data: courses = [], isLoading } = useQuery<Course[]>({
-    queryKey: ['/api/courses', { category: selectedCategory, isFree: priceFilter === 'free' ? true : (priceFilter === 'paid' ? false : undefined) }],
+    queryKey: ['/api/content-management/courses', { category: selectedCategory, isFree: priceFilter === 'free' ? true : (priceFilter === 'paid' ? false : undefined) }],
     queryFn: undefined, // Use default queryFn from queryClient
   });
 

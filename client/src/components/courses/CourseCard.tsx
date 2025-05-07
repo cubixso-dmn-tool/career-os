@@ -24,22 +24,25 @@ interface CourseCardProps {
 
 export default function CourseCard({ course }: CourseCardProps) {
   // Format rating to display as X.Y out of 5
-  const formatRating = (rating: number) => (rating / 10).toFixed(1);
+  const formatRating = (rating: number = 0) => (rating / 10).toFixed(1);
   
   // Format enrolled count
-  const formatEnrolledCount = (count: number) => {
+  const formatEnrolledCount = (count: number = 0) => {
     if (count >= 1000) {
       return `${Math.floor(count / 1000)}K+`;
     }
     return count.toString();
   };
+  
+  // Default thumbnail image if none provided
+  const thumbnailUrl = course.thumbnail || "https://placehold.co/600x400/e2e8f0/64748b?text=Course+Image";
 
   return (
     <Card className="overflow-hidden border border-gray-100 hover:shadow-md transition-shadow">
       <div className="relative">
         <img 
           className="w-full h-40 object-cover" 
-          src={course.thumbnail} 
+          src={thumbnailUrl} 
           alt={course.title} 
         />
         {course.isFeatured && (
@@ -52,10 +55,12 @@ export default function CourseCard({ course }: CourseCardProps) {
       <CardContent className="p-4">
         <div className="flex justify-between items-start">
           <h3 className="font-medium text-gray-900 mb-1">{course.title}</h3>
-          <span className="flex items-center text-sm">
-            <Star className="text-amber-400 mr-1" size={14} />
-            {formatRating(course.rating)}
-          </span>
+          {course.rating !== undefined && (
+            <span className="flex items-center text-sm">
+              <Star className="text-amber-400 mr-1" size={14} />
+              {formatRating(course.rating)}
+            </span>
+          )}
         </div>
         
         <p className="text-sm text-gray-600 mb-3 line-clamp-2">{course.description}</p>
@@ -72,10 +77,12 @@ export default function CourseCard({ course }: CourseCardProps) {
           <span className="text-primary font-semibold">
             {course.isFree ? "Free" : `₹${course.price}`}
           </span>
-          <div className="flex items-center text-sm text-gray-500">
-            <Users className="mr-1" size={14} />
-            {formatEnrolledCount(course.enrolledCount)} enrolled
-          </div>
+          {course.enrolledCount !== undefined && (
+            <div className="flex items-center text-sm text-gray-500">
+              <Users className="mr-1" size={14} />
+              {formatEnrolledCount(course.enrolledCount)} enrolled
+            </div>
+          )}
         </div>
         
         <Link href={`/courses/${course.id}`}>

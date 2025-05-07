@@ -24,9 +24,9 @@ export default function Projects({}: ProjectsProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [difficultyFilter, setDifficultyFilter] = useState<string | null>(null);
 
-  // Fetch projects
+  // Fetch projects from content management API
   const { data: projects = [], isLoading } = useQuery({
-    queryKey: ['/api/projects', { category: selectedCategory, difficulty: difficultyFilter }],
+    queryKey: ['/api/content-management/projects', { category: selectedCategory, difficulty: difficultyFilter }],
     queryFn: undefined, // Use default queryFn from queryClient
   });
 
