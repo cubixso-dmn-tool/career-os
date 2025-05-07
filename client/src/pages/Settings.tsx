@@ -1598,11 +1598,60 @@ export default function Settings() {
                                   </div>
                                 </div>
                                 <div className="flex space-x-2">
-                                  <Button variant="outline" size="sm">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => {
+                                      // Set the course form data to the selected course for editing
+                                      setCourseForm({
+                                        ...course,
+                                        thumbnail: null,
+                                        thumbnailPreview: course.thumbnail || ""
+                                      });
+                                      // Switch to upload tab for editing
+                                      const courseTabs = document.querySelector('[role="tablist"]');
+                                      if (courseTabs) {
+                                        const uploadTab = courseTabs.querySelector('[value="upload"]') as HTMLButtonElement;
+                                        if (uploadTab) uploadTab.click();
+                                      }
+                                    }}
+                                  >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                     Edit
                                   </Button>
-                                  <Button variant="outline" size="sm" className="text-red-500 hover:text-red-700">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="text-red-500 hover:text-red-700"
+                                    onClick={() => {
+                                      // Confirm before deleting
+                                      if (window.confirm(`Are you sure you want to delete the course "${course.title}"?`)) {
+                                        // Delete course API call would go here
+                                        fetch(`/api/content-management/courses/${course.id}`, {
+                                          method: 'DELETE'
+                                        })
+                                          .then(response => {
+                                            if (response.ok) {
+                                              toast({
+                                                title: "Course deleted",
+                                                description: `The course "${course.title}" has been deleted.`
+                                              });
+                                              // Refresh courses list
+                                              queryClient.invalidateQueries({ queryKey: ['/api/content-management/courses'] });
+                                            } else {
+                                              throw new Error("Failed to delete course");
+                                            }
+                                          })
+                                          .catch(error => {
+                                            toast({
+                                              title: "Delete failed",
+                                              description: error.message,
+                                              variant: "destructive"
+                                            });
+                                          });
+                                      }
+                                    }}
+                                  >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                     Delete
                                   </Button>
