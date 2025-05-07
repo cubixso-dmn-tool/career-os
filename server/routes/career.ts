@@ -47,7 +47,7 @@ const pathfinderChatSchema = z.object({
       role: z.enum(['user', 'assistant']),
       content: z.string(),
     })
-  ),
+  ).optional().default([]),
 });
 
 // Generate career guidance
@@ -57,8 +57,9 @@ router.post('/guidance', async (req, res) => {
     const careerGuidance = await generateCareerGuidance(validatedData);
     
     // If user is authenticated, store this guidance in their profile
-    if (req.isAuthenticated() && req.user) {
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
       // TODO: Store career guidance in user profile
+      console.log('User authenticated, would store career guidance for user ID:', req.user.id);
     }
     
     res.json(careerGuidance);
@@ -83,8 +84,8 @@ router.post('/roadmap', async (req, res) => {
     );
     
     // If user is authenticated, store this roadmap in their profile
-    if (req.isAuthenticated() && req.user) {
-      // TODO: Store learning roadmap in user profile
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+      console.log('User authenticated, would store roadmap for user ID:', req.user.id);
     }
     
     res.json(roadmap);
@@ -104,12 +105,12 @@ router.post('/pathfinder/chat', async (req, res) => {
     
     // Get user profile if authenticated
     let userProfile;
-    if (req.isAuthenticated() && req.user) {
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
       const user = await storage.getUser(req.user.id);
       if (user) {
         // Simplistic user profile - in a real app, you'd have more structured data
         userProfile = {
-          name: user.name,
+          name: user.username || user.name,
           // These would come from other tables in a real implementation
           interests: ['web development', 'artificial intelligence'], // Placeholder
           education: 'Bachelor of Technology', // Placeholder
@@ -120,13 +121,13 @@ router.post('/pathfinder/chat', async (req, res) => {
     
     const response = await generatePathFinderResponse(
       validatedData.message,
-      validatedData.chatHistory,
+      validatedData.chatHistory || [],
       userProfile
     );
     
     // If user is authenticated, store this chat in history
-    if (req.isAuthenticated() && req.user) {
-      // TODO: Store chat history
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+      console.log('User authenticated, would store chat history for user ID:', req.user.id);
     }
     
     res.json({ response });
@@ -141,22 +142,15 @@ router.post('/pathfinder/chat', async (req, res) => {
 
 // Get user's saved career paths (if authenticated)
 router.get('/saved-paths', async (req, res) => {
-  if (!req.isAuthenticated() || !req.user) {
+  if (!req.isAuthenticated || !req.isAuthenticated() || !req.user) {
     return res.status(401).json({ message: 'Authentication required' });
   }
   
   try {
     // In a real implementation, you'd fetch from database
-    // Here, returning mock data for demonstration
+    // TODO: Implement actual database fetch for saved paths
     res.json({
-      savedPaths: [
-        {
-          id: 1,
-          title: 'Full Stack Developer Path',
-          createdAt: new Date().toISOString(),
-          // Other data would be here
-        }
-      ]
+      savedPaths: []
     });
   } catch (error) {
     console.error('Error fetching saved career paths:', error);
