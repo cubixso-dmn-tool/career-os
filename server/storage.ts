@@ -900,7 +900,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(communities);
   }
 
-  async createCommunity(insertCommunity: InsertCommunity): Promise<Community> {
+  async createCommunity(insertCommunity: InsertCommunity & { createdBy: number }): Promise<Community> {
     const communityData = {
       ...insertCommunity,
       createdAt: new Date()
@@ -1024,10 +1024,11 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(communityPosts.createdAt));
   }
 
-  async createCommunityPost(insertCommunityPost: InsertCommunityPost): Promise<CommunityPost> {
+  async createCommunityPost(insertCommunityPost: InsertCommunityPost & { userId: number, communityId: number }): Promise<CommunityPost> {
     const postData = {
       ...insertCommunityPost,
       likes: 0,
+      replies: 0,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -1086,7 +1087,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(communityPostComments.createdAt));
   }
 
-  async createCommunityPostComment(insertCommunityPostComment: InsertCommunityPostComment): Promise<CommunityPostComment> {
+  async createCommunityPostComment(insertCommunityPostComment: InsertCommunityPostComment & { userId: number, postId: number }): Promise<CommunityPostComment> {
     const commentData = {
       ...insertCommunityPostComment,
       createdAt: new Date(),
