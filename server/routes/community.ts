@@ -526,9 +526,10 @@ router.delete("/:communityId/posts/:postId/comments/:commentId", async (req, res
       
       await storage.createModerationAction({
         moderatorId: req.user.id,
-        targetUserId: comment.userId,
+        targetId: comment.userId,
+        targetType: "user",
         communityId: post.communityId,
-        actionType: "comment_removal",
+        action: "comment_removal",
         reason: req.body.reason || "Violated community guidelines"
       });
     }
