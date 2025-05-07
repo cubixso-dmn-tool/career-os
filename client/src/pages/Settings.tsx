@@ -1407,7 +1407,7 @@ export default function Settings() {
                       </TabsList>
                       
                       <TabsContent value="upload">
-                    <form className="space-y-4" onSubmit={handleCourseSubmit}>
+                        <form className="space-y-4" onSubmit={handleCourseSubmit}>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="course-title">Course Title</Label>
@@ -1624,7 +1624,20 @@ export default function Settings() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form className="space-y-4" onSubmit={handleProjectSubmit}>
+                    <Tabs defaultValue="upload" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2 mb-4">
+                        <TabsTrigger value="upload" className="flex items-center">
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload New Project
+                        </TabsTrigger>
+                        <TabsTrigger value="manage" className="flex items-center">
+                          <GitBranch className="w-4 h-4 mr-2" />
+                          Manage Projects
+                        </TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="upload">
+                        <form className="space-y-4" onSubmit={handleProjectSubmit}>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="project-title">Project Title</Label>
@@ -1740,6 +1753,62 @@ export default function Settings() {
                         </Button>
                       </div>
                     </form>
+                      </TabsContent>
+                      
+                      <TabsContent value="manage">
+                        {/* Add list of existing projects with options to edit/delete */}
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center">
+                            <h3 className="text-lg font-medium">Existing Projects</h3>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                // Refresh project list
+                                queryClient.invalidateQueries({ queryKey: ['/api/content-management/projects'] })
+                              }}
+                              className="flex items-center"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path><path d="M16 21h5v-5"></path></svg>
+                              Refresh
+                            </Button>
+                          </div>
+                          
+                          {isProjectsLoading ? (
+                            <div className="flex justify-center py-8">
+                              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            </div>
+                          ) : projects && projects.length > 0 ? (
+                            <div className="space-y-2">
+                              {projects.map((project: any) => (
+                                <div key={project.id} className="flex items-center justify-between p-3 border rounded-md">
+                                  <div>
+                                    <h4 className="font-medium">{project.title}</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                      {project.category} • {project.difficulty} • {project.duration}
+                                    </p>
+                                  </div>
+                                  <div className="flex space-x-2">
+                                    <Button variant="outline" size="sm">
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                      Edit
+                                    </Button>
+                                    <Button variant="outline" size="sm" className="text-red-500 hover:text-red-700">
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                      Delete
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 border rounded-md">
+                              <p className="text-muted-foreground">No projects found. Add some projects using the Upload tab.</p>
+                            </div>
+                          )}
+                        </div>
+                      </TabsContent>
+                    </Tabs>
                   </CardContent>
                 </Card>
                 
@@ -1755,7 +1824,20 @@ export default function Settings() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form className="space-y-4" onSubmit={handleCommunitySubmit}>
+                    <Tabs defaultValue="upload" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2 mb-4">
+                        <TabsTrigger value="upload" className="flex items-center">
+                          <Upload className="w-4 h-4 mr-2" />
+                          Create New Community
+                        </TabsTrigger>
+                        <TabsTrigger value="manage" className="flex items-center">
+                          <Layers className="w-4 h-4 mr-2" />
+                          Manage Communities
+                        </TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="upload">
+                        <form className="space-y-4" onSubmit={handleCommunitySubmit}>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="community-name">Community Name</Label>
@@ -1894,7 +1976,68 @@ export default function Settings() {
                           )}
                         </Button>
                       </div>
-                    </form>
+                        </form>
+                      </TabsContent>
+                      
+                      <TabsContent value="manage">
+                        {/* Add list of existing communities with options to edit/delete */}
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center">
+                            <h3 className="text-lg font-medium">Existing Communities</h3>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                // Refresh community list
+                                queryClient.invalidateQueries({ queryKey: ['/api/content-management/communities'] })
+                              }}
+                              className="flex items-center"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path><path d="M16 21h5v-5"></path></svg>
+                              Refresh
+                            </Button>
+                          </div>
+                          
+                          {isCommunitiesLoading ? (
+                            <div className="flex justify-center py-8">
+                              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            </div>
+                          ) : communities && communities.length > 0 ? (
+                            <div className="space-y-2">
+                              {communities.map((community: any) => (
+                                <div key={community.id} className="flex items-center justify-between p-3 border rounded-md">
+                                  <div className="flex items-center">
+                                    {community.icon && (
+                                      <img src={community.icon} alt={community.name} className="w-10 h-10 object-cover rounded-full mr-3" />
+                                    )}
+                                    <div>
+                                      <h4 className="font-medium">{community.name}</h4>
+                                      <p className="text-sm text-muted-foreground">
+                                        {community.type} • {community.isPrivate ? 'Private' : 'Public'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex space-x-2">
+                                    <Button variant="outline" size="sm">
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                      Edit
+                                    </Button>
+                                    <Button variant="outline" size="sm" className="text-red-500 hover:text-red-700">
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                      Delete
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 border rounded-md">
+                              <p className="text-muted-foreground">No communities found. Create communities using the Upload tab.</p>
+                            </div>
+                          )}
+                        </div>
+                      </TabsContent>
+                    </Tabs>
                   </CardContent>
                 </Card>
               </div>
