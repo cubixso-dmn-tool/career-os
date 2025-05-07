@@ -749,6 +749,429 @@ export class DatabaseStorage implements IStorage {
     if (!updatedUserDailyByte) throw new Error("User daily byte not found");
     return updatedUserDailyByte;
   }
+
+  // Role operations
+  async getRole(id: number): Promise<Role | undefined> {
+    const [role] = await db.select().from(roles).where(eq(roles.id, id));
+    return role || undefined;
+  }
+
+  async getAllRoles(): Promise<Role[]> {
+    return await db.select().from(roles);
+  }
+
+  async createRole(insertRole: InsertRole): Promise<Role> {
+    const roleData = {
+      ...insertRole,
+      createdAt: new Date()
+    };
+    
+    const [role] = await db.insert(roles).values(roleData).returning();
+    return role;
+  }
+
+  // Permission operations
+  async getPermission(id: number): Promise<Permission | undefined> {
+    const [permission] = await db.select().from(permissions).where(eq(permissions.id, id));
+    return permission || undefined;
+  }
+
+  async getAllPermissions(): Promise<Permission[]> {
+    return await db.select().from(permissions);
+  }
+
+  async createPermission(insertPermission: InsertPermission): Promise<Permission> {
+    const permissionData = {
+      ...insertPermission,
+      createdAt: new Date()
+    };
+    
+    const [permission] = await db.insert(permissions).values(permissionData).returning();
+    return permission;
+  }
+
+  // RolePermission operations
+  async getRolePermission(id: number): Promise<RolePermission | undefined> {
+    const [rolePermission] = await db
+      .select()
+      .from(rolePermissions)
+      .where(eq(rolePermissions.id, id));
+    
+    return rolePermission || undefined;
+  }
+
+  async getRolePermissions(roleId: number): Promise<Permission[]> {
+    // Join rolePermissions with permissions to get permission details
+    const result = await db
+      .select({
+        permission: permissions
+      })
+      .from(rolePermissions)
+      .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+      .where(eq(rolePermissions.roleId, roleId));
+    
+    return result.map(r => r.permission);
+  }
+
+  async assignPermissionToRole(insertRolePermission: InsertRolePermission): Promise<RolePermission> {
+    const rolePermissionData = {
+      ...insertRolePermission,
+      createdAt: new Date()
+    };
+    
+    const [rolePermission] = await db
+      .insert(rolePermissions)
+      .values(rolePermissionData)
+      .returning();
+    
+    return rolePermission;
+  }
+
+  async removePermissionFromRole(roleId: number, permissionId: number): Promise<void> {
+    await db
+      .delete(rolePermissions)
+      .where(
+        and(
+          eq(rolePermissions.roleId, roleId),
+          eq(rolePermissions.permissionId, permissionId)
+        )
+      );
+  }
+
+  // UserRole operations
+  async getUserRole(id: number): Promise<UserRole | undefined> {
+    const [userRole] = await db
+      .select()
+      .from(userRoles)
+      .where(eq(userRoles.id, id));
+    
+    return userRole || undefined;
+  }
+
+  async getUserRoles(userId: number): Promise<UserRole[]> {
+    return await db
+      .select()
+      .from(userRoles)
+      .where(eq(userRoles.userId, userId));
+  }
+
+  async assignRoleToUser(insertUserRole: InsertUserRole): Promise<UserRole> {
+    const userRoleData = {
+      ...insertUserRole,
+      assignedAt: new Date()
+    };
+    
+    const [userRole] = await db
+      .insert(userRoles)
+      .values(userRoleData)
+      .returning();
+    
+    return userRole;
+  }
+
+  async removeRoleFromUser(userId: number, roleId: number): Promise<void> {
+    await db
+      .delete(userRoles)
+      .where(
+        and(
+          eq(userRoles.userId, userId),
+          eq(userRoles.roleId, roleId)
+        )
+      );
+  }
+
+  // Community operations
+  async getCommunity(id: number): Promise<Community | undefined> {
+    const [community] = await db
+      .select()
+      .from(communities)
+      .where(eq(communities.id, id));
+    
+    return community || undefined;
+  }
+
+  async getAllCommunities(): Promise<Community[]> {
+    return await db.select().from(communities);
+  }
+
+  async createCommunity(insertCommunity: InsertCommunity): Promise<Community> {
+    const communityData = {
+      ...insertCommunity,
+      createdAt: new Date()
+    };
+    
+    const [community] = await db
+      .insert(communities)
+      .values(communityData)
+      .returning();
+    
+    return community;
+  }
+
+  // CommunityMember operations
+  async getCommunityMember(id: number): Promise<CommunityMember | undefined> {
+    const [member] = await db
+      .select()
+      .from(communityMembers)
+      .where(eq(communityMembers.id, id));
+    
+    return member || undefined;
+  }
+
+  async getCommunityMembers(communityId: number): Promise<CommunityMember[]> {
+    return await db
+      .select()
+      .from(communityMembers)
+      .where(eq(communityMembers.communityId, communityId));
+  }
+
+  async isCommunityMember(userId: number, communityId: number): Promise<boolean> {
+    const [member] = await db
+      .select()
+      .from(communityMembers)
+      .where(
+        and(
+          eq(communityMembers.userId, userId),
+          eq(communityMembers.communityId, communityId)
+        )
+      );
+    
+    return !!member;
+  }
+
+  async isCommunityModerator(userId: number, communityId: number): Promise<boolean> {
+    const [member] = await db
+      .select()
+      .from(communityMembers)
+      .where(
+        and(
+          eq(communityMembers.userId, userId),
+          eq(communityMembers.communityId, communityId),
+          eq(communityMembers.role, 'moderator')
+        )
+      );
+    
+    // Check if user is a moderator or the community creator
+    if (member) return true;
+    
+    // Check if user is the community owner
+    const community = await this.getCommunity(communityId);
+    return community ? community.createdBy === userId : false;
+  }
+
+  async joinCommunity(insertCommunityMember: InsertCommunityMember): Promise<CommunityMember> {
+    const memberData = {
+      ...insertCommunityMember,
+      joinedAt: new Date()
+    };
+    
+    const [member] = await db
+      .insert(communityMembers)
+      .values(memberData)
+      .returning();
+    
+    return member;
+  }
+
+  async leaveCommunity(userId: number, communityId: number): Promise<void> {
+    await db
+      .delete(communityMembers)
+      .where(
+        and(
+          eq(communityMembers.userId, userId),
+          eq(communityMembers.communityId, communityId)
+        )
+      );
+  }
+
+  async updateCommunityMemberRole(userId: number, communityId: number, role: string): Promise<CommunityMember> {
+    const [updatedMember] = await db
+      .update(communityMembers)
+      .set({ role })
+      .where(
+        and(
+          eq(communityMembers.userId, userId),
+          eq(communityMembers.communityId, communityId)
+        )
+      )
+      .returning();
+    
+    if (!updatedMember) throw new Error("Community member not found");
+    return updatedMember;
+  }
+
+  // CommunityPost operations
+  async getCommunityPost(id: number): Promise<CommunityPost | undefined> {
+    const [post] = await db
+      .select()
+      .from(communityPosts)
+      .where(eq(communityPosts.id, id));
+    
+    return post || undefined;
+  }
+
+  async getCommunityPosts(communityId: number): Promise<CommunityPost[]> {
+    return await db
+      .select()
+      .from(communityPosts)
+      .where(eq(communityPosts.communityId, communityId))
+      .orderBy(desc(communityPosts.createdAt));
+  }
+
+  async createCommunityPost(insertCommunityPost: InsertCommunityPost): Promise<CommunityPost> {
+    const postData = {
+      ...insertCommunityPost,
+      likes: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    const [post] = await db
+      .insert(communityPosts)
+      .values(postData)
+      .returning();
+    
+    return post;
+  }
+
+  async updateCommunityPost(id: number, updates: Partial<CommunityPost>): Promise<CommunityPost> {
+    const updatedData = {
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    const [updatedPost] = await db
+      .update(communityPosts)
+      .set(updatedData)
+      .where(eq(communityPosts.id, id))
+      .returning();
+    
+    if (!updatedPost) throw new Error("Community post not found");
+    return updatedPost;
+  }
+
+  async deleteCommunityPost(id: number): Promise<void> {
+    // First delete all comments on the post
+    await db
+      .delete(communityPostComments)
+      .where(eq(communityPostComments.postId, id));
+    
+    // Then delete the post
+    await db
+      .delete(communityPosts)
+      .where(eq(communityPosts.id, id));
+  }
+
+  // CommunityPostComment operations
+  async getCommunityPostComment(id: number): Promise<CommunityPostComment | undefined> {
+    const [comment] = await db
+      .select()
+      .from(communityPostComments)
+      .where(eq(communityPostComments.id, id));
+    
+    return comment || undefined;
+  }
+
+  async getCommunityPostComments(postId: number): Promise<CommunityPostComment[]> {
+    return await db
+      .select()
+      .from(communityPostComments)
+      .where(eq(communityPostComments.postId, postId))
+      .orderBy(desc(communityPostComments.createdAt));
+  }
+
+  async createCommunityPostComment(insertCommunityPostComment: InsertCommunityPostComment): Promise<CommunityPostComment> {
+    const commentData = {
+      ...insertCommunityPostComment,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    const [comment] = await db
+      .insert(communityPostComments)
+      .values(commentData)
+      .returning();
+    
+    // Increment the reply count on the post
+    await this.updateCommunityPost(comment.postId, {
+      replies: sql`${communityPosts.replies} + 1`
+    });
+    
+    return comment;
+  }
+
+  async updateCommunityPostComment(id: number, updates: Partial<CommunityPostComment>): Promise<CommunityPostComment> {
+    const updatedData = {
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    const [updatedComment] = await db
+      .update(communityPostComments)
+      .set(updatedData)
+      .where(eq(communityPostComments.id, id))
+      .returning();
+    
+    if (!updatedComment) throw new Error("Community post comment not found");
+    return updatedComment;
+  }
+
+  async deleteCommunityPostComment(id: number): Promise<void> {
+    // Get the comment to know which post to update
+    const comment = await this.getCommunityPostComment(id);
+    
+    if (comment) {
+      // Delete the comment
+      await db
+        .delete(communityPostComments)
+        .where(eq(communityPostComments.id, id));
+      
+      // Decrement the reply count on the post
+      await this.updateCommunityPost(comment.postId, {
+        replies: sql`GREATEST(${communityPosts.replies} - 1, 0)`
+      });
+    }
+  }
+
+  // ModerationAction operations
+  async getModerationAction(id: number): Promise<ModerationAction | undefined> {
+    const [action] = await db
+      .select()
+      .from(moderationActions)
+      .where(eq(moderationActions.id, id));
+    
+    return action || undefined;
+  }
+
+  async getModerationActionsByModerator(userId: number): Promise<ModerationAction[]> {
+    return await db
+      .select()
+      .from(moderationActions)
+      .where(eq(moderationActions.moderatorId, userId))
+      .orderBy(desc(moderationActions.createdAt));
+  }
+
+  async getModerationActionsByCommunity(communityId: number): Promise<ModerationAction[]> {
+    return await db
+      .select()
+      .from(moderationActions)
+      .where(eq(moderationActions.communityId, communityId))
+      .orderBy(desc(moderationActions.createdAt));
+  }
+
+  async createModerationAction(insertModerationAction: InsertModerationAction): Promise<ModerationAction> {
+    const actionData = {
+      ...insertModerationAction,
+      createdAt: new Date()
+    };
+    
+    const [action] = await db
+      .insert(moderationActions)
+      .values(actionData)
+      .returning();
+    
+    return action;
+  }
 }
 
 export const storage = new DatabaseStorage();

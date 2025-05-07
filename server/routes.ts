@@ -21,6 +21,9 @@ import {
   generateCareerRecommendations,
   chatWithPathFinder
 } from "./lib/openai";
+import communityRoutes from "./routes/community";
+import rbacRoutes from "./routes/rbac";
+import { loadUserRolesMiddleware } from "./middleware/rbac";
 
 function handleZodError(error: ZodError, res: Response) {
   return res.status(400).json({
