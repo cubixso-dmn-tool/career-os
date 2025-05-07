@@ -361,9 +361,10 @@ router.delete("/:communityId/posts/:postId", async (req, res) => {
     if (isModerator && post.userId !== req.user.id) {
       await storage.createModerationAction({
         moderatorId: req.user.id,
-        targetUserId: post.userId,
+        targetId: post.userId,
+        targetType: "user",
         communityId: post.communityId,
-        actionType: "post_removal",
+        action: "post_removal",
         reason: req.body.reason || "Violated community guidelines"
       });
     }

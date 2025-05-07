@@ -215,6 +215,7 @@ export const communityMembers = pgTable("community_members", {
   communityId: integer("community_id").notNull().references(() => communities.id),
   userId: integer("user_id").notNull().references(() => users.id),
   roleId: integer("role_id").references(() => roles.id), // Optional role specific to this community
+  role: text("role").default("member").notNull(), // "member", "moderator", "owner"
   joinedAt: timestamp("joined_at").defaultNow().notNull()
 });
 
@@ -225,6 +226,7 @@ export const communityPosts = pgTable("community_posts", {
   title: text("title").notNull(),
   content: text("content").notNull(),
   likes: integer("likes").default(0).notNull(),
+  replies: integer("replies").default(0).notNull(),
   isPinned: boolean("is_pinned").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
@@ -279,7 +281,7 @@ export const insertUserRoleSchema = createInsertSchema(userRoles).omit({ id: tru
 // Community schemas
 export const insertCommunitySchema = createInsertSchema(communities).omit({ id: true, createdAt: true });
 export const insertCommunityMemberSchema = createInsertSchema(communityMembers).omit({ id: true, joinedAt: true });
-export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({ id: true, likes: true, createdAt: true, updatedAt: true });
+export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({ id: true, likes: true, replies: true, createdAt: true, updatedAt: true });
 export const insertCommunityPostCommentSchema = createInsertSchema(communityPostComments).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertModerationActionSchema = createInsertSchema(moderationActions).omit({ id: true, createdAt: true });
 

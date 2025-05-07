@@ -911,6 +911,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Apply RBAC middleware to all routes
+  app.use(loadUserRolesMiddleware);
+
+  // Register community routes
+  app.use('/api/communities', communityRoutes);
+
+  // Register RBAC (roles and permissions) routes
+  app.use('/api/rbac', rbacRoutes);
+
   const httpServer = createServer(app);
   return httpServer;
 }
