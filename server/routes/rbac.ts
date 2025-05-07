@@ -188,6 +188,50 @@ router.delete("/roles/:roleId/permissions/:permissionId", requirePermission("upd
   }
 });
 
+// Current User Info routes
+
+// Get current user's roles and permissions
+router.get("/my-info", async (req, res) => {
+  try {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    // Roles and permissions should already be loaded by the middleware
+    const userInfo = {
+      id: req.user.id,
+      username: req.user.username,
+      roles: req.user.roles || [],
+      permissions: req.user.permissions || []
+    };
+    
+    res.status(200).json(userInfo);
+  } catch (error) {
+    console.error("Error fetching user info:", error);
+    res.status(500).json({ message: "Failed to fetch user info" });
+  }
+});
+
+// Check if current user has a specific permission
+router.get("/has-permission/:permissionName", async (req, res) => {
+  try {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const permissionName = req.params.permissionName;
+    
+    // Check if user has the permission
+    const hasPermission = req.user.permissions && 
+                         req.user.permissions.includes(permissionName);
+    
+    res.status(200).json({ hasPermission });
+  } catch (error) {
+    console.error("Error checking permission:", error);
+    res.status(500).json({ message: "Failed to check permission" });
+  }
+});
+
 // User Role routes
 
 // Get roles for a user
