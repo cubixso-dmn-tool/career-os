@@ -52,7 +52,7 @@ router.get("/:communityId", async (req, res) => {
 });
 
 // Create a new community
-router.post("/", requirePermission("create:community"), async (req, res) => {
+router.post("/", requirePermission("community:create"), async (req, res) => {
   try {
     if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Authentication required" });
