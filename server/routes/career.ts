@@ -119,11 +119,32 @@ router.post('/pathfinder/chat', async (req, res) => {
       }
     }
     
-    const response = await generatePathFinderResponse(
-      validatedData.message,
-      validatedData.chatHistory || [],
-      userProfile
-    );
+    let response;
+    
+    try {
+      // First try to use OpenAI for the response
+      response = await generatePathFinderResponse(
+        validatedData.message,
+        validatedData.chatHistory || [],
+        userProfile
+      );
+    } catch (aiError) {
+      console.log('Using fallback response due to OpenAI error:', aiError.message);
+      
+      // Fallback: Generate a response based on the message content
+      // This is a simple keyword-based fallback that doesn't require OpenAI
+      const message = validatedData.message.toLowerCase();
+      
+      if (message.includes('skill') || message.includes('learn')) {
+        response = "For Indian tech careers, focus on building both technical and soft skills. Technical skills like programming languages (Python, JavaScript), cloud platforms (AWS, Azure), and frameworks are fundamental. Equally important are communication, problem-solving, and teamwork skills that are highly valued in Indian workplaces. Most Indian tech professionals recommend a balance of structured courses and hands-on projects.";
+      } else if (message.includes('salary') || message.includes('pay') || message.includes('income')) {
+        response = "In the Indian tech industry, salaries vary widely based on skills, experience, and location. Entry-level tech roles typically offer ₹3-8 LPA, mid-level positions range from ₹8-20 LPA, and senior roles can exceed ₹25 LPA. Tech hubs like Bangalore, Hyderabad, and Pune generally offer higher compensation packages compared to other Indian cities.";
+      } else if (message.includes('company') || message.includes('work')) {
+        response = "The Indian tech ecosystem offers diverse work environments. You could join established IT giants like TCS, Infosys, or Wipro, which offer stability and structured growth. Alternatively, global tech companies like Google, Microsoft, and Amazon have strong Indian presence with competitive packages. The vibrant startup scene in cities like Bangalore and Delhi provides opportunities to work on cutting-edge technologies with potential equity benefits.";
+      } else {
+        response = "I understand you're interested in tech careers in India. Could you ask a more specific question about education paths, skills, job market trends, or career progression in your chosen field? I'm here to provide tailored guidance for Indian Gen Z students entering the tech industry.";
+      }
+    }
     
     // If user is authenticated, store this chat in history
     if (req.isAuthenticated && req.isAuthenticated() && req.user) {
@@ -135,8 +156,8 @@ router.post('/pathfinder/chat', async (req, res) => {
     if (error instanceof z.ZodError) {
       return handleZodError(error, res);
     }
-    console.error('Error generating PathFinder response:', error);
-    res.status(500).json({ message: 'Failed to generate PathFinder response' });
+    console.error('Error in PathFinder chat endpoint:', error);
+    res.status(500).json({ message: 'Failed to process chat request' });
   }
 });
 
