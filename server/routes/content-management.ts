@@ -71,6 +71,7 @@ router.post("/courses", requireContentPermissions, upload.single('thumbnail'), a
     res.status(201).json(course);
   } catch (error) {
     if (error instanceof ZodError) {
+      console.error("Zod Validation Errors:", JSON.stringify(error.errors, null, 2));
       return handleZodError(error, res);
     }
     console.error("Error creating course:", error);
@@ -107,6 +108,7 @@ router.post("/projects", requireContentPermissions, async (req: Request, res: Re
     res.status(201).json(project);
   } catch (error) {
     if (error instanceof ZodError) {
+      console.error("Zod Validation Errors:", JSON.stringify(error.errors, null, 2));
       return handleZodError(error, res);
     }
     console.error("Error creating project:", error);
@@ -162,6 +164,7 @@ router.post("/communities", requireContentPermissions, upload.fields([
     res.status(201).json(community);
   } catch (error) {
     if (error instanceof ZodError) {
+      console.error("Zod Validation Errors:", JSON.stringify(error.errors, null, 2));
       return handleZodError(error, res);
     }
     console.error("Error creating community:", error);
