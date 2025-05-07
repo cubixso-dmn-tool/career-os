@@ -37,6 +37,10 @@ import {
   Cloud,
   Users,
   BadgeCheck,
+  Upload,
+  BookOpen,
+  GitBranch,
+  Layers
 } from "lucide-react";
 
 // Mock user ID until authentication is implemented
@@ -401,11 +405,18 @@ export default function Settings() {
               <span className="hidden sm:inline">Language</span>
             </TabsTrigger>
             
-            {/* Show admin tab only to users with specific permissions */}
+            {/* Show admin tabs only to users with specific permissions */}
             <PermissionGate permissions={["admin:roles"]}>
               <TabsTrigger value="roles" className="flex items-center">
                 <BadgeCheck className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Roles</span>
+              </TabsTrigger>
+            </PermissionGate>
+            
+            <PermissionGate permissions={["content:upload", "course:manage", "project:manage"]}>
+              <TabsTrigger value="content" className="flex items-center">
+                <Upload className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Content</span>
               </TabsTrigger>
             </PermissionGate>
           </TabsList>
@@ -1086,6 +1097,267 @@ export default function Settings() {
                   </div>
                 </CardContent>
               </Card>
+            </PermissionGate>
+          </TabsContent>
+          
+          {/* Content Management Tab - Only visible to admin users */}
+          <TabsContent value="content">
+            <PermissionGate permissions={["content:upload", "course:manage", "project:manage"]}>
+              <div className="space-y-6">
+                {/* Course Management */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <BookOpen className="h-5 w-5 mr-2 text-primary" />
+                      Course Management
+                    </CardTitle>
+                    <CardDescription>
+                      Upload and manage course content for the platform
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="course-title">Course Title</Label>
+                          <Input id="course-title" placeholder="Enter course title" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="course-category">Category</Label>
+                          <select
+                            id="course-category"
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <option value="">Select category...</option>
+                            <option value="web-development">Web Development</option>
+                            <option value="mobile-development">Mobile Development</option>
+                            <option value="data-science">Data Science</option>
+                            <option value="design">UI/UX Design</option>
+                            <option value="devops">DevOps</option>
+                            <option value="soft-skills">Soft Skills</option>
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="course-description">Description</Label>
+                        <Textarea 
+                          id="course-description" 
+                          placeholder="Enter detailed course description" 
+                          rows={4}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="course-thumbnail">Thumbnail Image</Label>
+                          <Input id="course-thumbnail" type="file" accept="image/*" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="course-price">Price (₹)</Label>
+                          <Input 
+                            id="course-price" 
+                            type="number" 
+                            placeholder="0 for free courses" 
+                            min="0"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <input 
+                          type="checkbox" 
+                          id="is-free" 
+                          className="h-4 w-4 text-primary"
+                        />
+                        <Label htmlFor="is-free">This is a free course</Label>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="course-tags">Tags (comma separated)</Label>
+                        <Input 
+                          id="course-tags" 
+                          placeholder="e.g. javascript, react, beginner"
+                        />
+                      </div>
+                      
+                      <div className="flex justify-end space-x-2">
+                        <Button variant="outline">Reset</Button>
+                        <Button className="flex items-center">
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload Course
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+                
+                {/* Project Recommendations */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <GitBranch className="h-5 w-5 mr-2 text-primary" />
+                      Project Recommendations
+                    </CardTitle>
+                    <CardDescription>
+                      Add new project ideas and challenges for students
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="project-title">Project Title</Label>
+                          <Input id="project-title" placeholder="Enter project title" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="project-category">Category</Label>
+                          <select
+                            id="project-category"
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <option value="">Select category...</option>
+                            <option value="web-development">Web Development</option>
+                            <option value="mobile-development">Mobile Development</option>
+                            <option value="data-science">Data Science</option>
+                            <option value="design">UI/UX Design</option>
+                            <option value="devops">DevOps</option>
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="project-description">Description</Label>
+                        <Textarea 
+                          id="project-description" 
+                          placeholder="Enter detailed project description" 
+                          rows={4}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="project-difficulty">Difficulty Level</Label>
+                          <select
+                            id="project-difficulty"
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <option value="">Select difficulty...</option>
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="project-duration">Estimated Duration</Label>
+                          <Input 
+                            id="project-duration" 
+                            placeholder="e.g. 2-3 weeks" 
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="project-skills">Required Skills (comma separated)</Label>
+                        <Input 
+                          id="project-skills" 
+                          placeholder="e.g. JavaScript, React, Node.js"
+                        />
+                      </div>
+                      
+                      <div className="flex justify-end space-x-2">
+                        <Button variant="outline">Reset</Button>
+                        <Button className="flex items-center">
+                          <Upload className="w-4 h-4 mr-2" />
+                          Add Project
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+                
+                {/* Community Management */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Layers className="h-5 w-5 mr-2 text-primary" />
+                      Community Management
+                    </CardTitle>
+                    <CardDescription>
+                      Create and manage community spaces for discussions
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="community-name">Community Name</Label>
+                          <Input id="community-name" placeholder="Enter community name" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="community-type">Type</Label>
+                          <select
+                            id="community-type"
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <option value="">Select type...</option>
+                            <option value="topic">Topic-based</option>
+                            <option value="career">Career-specific</option>
+                            <option value="regional">Regional</option>
+                            <option value="industry">Industry</option>
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="community-description">Description</Label>
+                        <Textarea 
+                          id="community-description" 
+                          placeholder="Describe what this community is about" 
+                          rows={4}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="community-banner">Banner Image</Label>
+                          <Input id="community-banner" type="file" accept="image/*" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="community-icon">Icon</Label>
+                          <Input id="community-icon" type="file" accept="image/*" />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="community-rules">Community Rules</Label>
+                        <Textarea 
+                          id="community-rules" 
+                          placeholder="Enter community guidelines and rules" 
+                          rows={4}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <input 
+                          type="checkbox" 
+                          id="is-private" 
+                          className="h-4 w-4 text-primary"
+                        />
+                        <Label htmlFor="is-private">Make this community private (invite only)</Label>
+                      </div>
+                      
+                      <div className="flex justify-end space-x-2">
+                        <Button variant="outline">Reset</Button>
+                        <Button className="flex items-center">
+                          <Upload className="w-4 h-4 mr-2" />
+                          Create Community
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+              </div>
             </PermissionGate>
           </TabsContent>
         </Tabs>
