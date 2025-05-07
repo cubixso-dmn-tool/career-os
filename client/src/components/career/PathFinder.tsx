@@ -983,6 +983,9 @@ export default function PathFinder() {
             matchesContent += `   ${career.description}\n\n`;
           });
           
+          // Add tip about interpreting career matches
+          matchesContent += "\n💡 *Career Tip:* When evaluating these matches, consider both the percentage match and how the career aligns with your personal interests. The highest match isn't always the best fit if you're more passionate about another option.";
+          
           addMessage({
             id: Date.now().toString(),
             content: matchesContent,
@@ -1416,9 +1419,16 @@ export default function PathFinder() {
           <p className="text-gray-600 text-sm mb-3">
             Chat with our AI-powered PathFinder assistant to get tailored advice and answers about your {careerPath} career path.
           </p>
-          <Button onClick={startAiChatMode} className="mt-2">
-            Start AI Conversation <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+          <CareerTipTooltip
+            tip="Ask specific questions about required skills, salary expectations, or career progression to get the most value from the AI assistant"
+            category="general"
+            showIcon={false}
+            className="inline-block"
+          >
+            <Button onClick={startAiChatMode} className="mt-2">
+              Start AI Conversation <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </CareerTipTooltip>
         </div>
       ) : (
         <div className="p-4 rounded-lg border border-primary/20 bg-white shadow-sm">
@@ -1431,13 +1441,21 @@ export default function PathFinder() {
           </p>
           
           <form onSubmit={handleChatSubmit} className="flex items-center gap-2">
-            <Input
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Your question about the career path..."
-              disabled={isAiThinking}
-              className="flex-1"
-            />
+            <div className="relative flex-1">
+              <CareerTipTooltip
+                tip="Try asking about skills needed, day-to-day responsibilities, or salary ranges in India for this career path"
+                category="skill"
+                className="w-full"
+              >
+                <Input
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Your question about the career path..."
+                  disabled={isAiThinking}
+                  className="w-full"
+                />
+              </CareerTipTooltip>
+            </div>
             <Button 
               type="submit"
               size="icon"
