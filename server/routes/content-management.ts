@@ -35,32 +35,51 @@ router.post("/courses", requireContentPermissions, upload.single('thumbnail'), a
   try {
     const { body, file } = req;
     
+    console.log("Course upload - Request body:", JSON.stringify(body, null, 2));
+    console.log("Course upload - File received:", file ? "Yes" : "No");
+    
     // Process file if provided
     let thumbnailUrl = '';
     if (file) {
-      const fileResult = await processFileUpload(file, 'courseThumbnails');
-      thumbnailUrl = fileResult.url;
+      try {
+        const fileResult = await processFileUpload(file, 'courseThumbnails');
+        thumbnailUrl = fileResult.url;
+        console.log("Course upload - Processed thumbnail URL:", thumbnailUrl);
+      } catch (fileError) {
+        console.error("Course upload - Error processing file:", fileError);
+      }
     }
     
     // Process tags
     let tags: string[] = [];
     if (body.tags && typeof body.tags === 'string') {
       tags = body.tags.split(',').map((tag: string) => tag.trim());
+      console.log("Course upload - Processed tags:", tags);
     }
     
     // Handle price and isFree
-    const price = body.isFree === 'true' ? 0 : parseFloat(body.price);
     const isFree = body.isFree === 'true';
+    const price = isFree ? 0 : (body.price ? parseFloat(body.price) : 0);
+    console.log("Course upload - Price:", price, "isFree:", isFree);
     
     // Create course data object with authenticated user as creator
+    // Ensure all required fields are present
     const courseData = {
-      ...body,
+      title: body.title || '',
+      description: body.description || '',
+      category: body.category || '',
       price,
       isFree,
       tags,
-      thumbnail: thumbnailUrl,
-      createdBy: req.user!.id // Add the logged-in user's ID as the creator
+      thumbnail: thumbnailUrl || 'https://placehold.co/600x400?text=Course+Thumbnail',
+      createdBy: req.user!.id,
+      // Optional fields with defaults
+      rating: 0,
+      enrolledCount: 0,
+      isFeatured: false
     };
+    
+    console.log("Course upload - Course data to validate:", JSON.stringify(courseData, null, 2));
     
     // Validate with Zod schema
     const validatedData = insertCourseSchema.parse(courseData);
@@ -71,11 +90,11 @@ router.post("/courses", requireContentPermissions, upload.single('thumbnail'), a
     res.status(201).json(course);
   } catch (error) {
     if (error instanceof ZodError) {
-      console.error("Zod Validation Errors:", JSON.stringify(error.errors, null, 2));
+      console.error("Course upload - Zod Validation Errors:", JSON.stringify(error.errors, null, 2));
       return handleZodError(error, res);
     }
-    console.error("Error creating course:", error);
-    res.status(500).json({ message: "Failed to create course" });
+    console.error("Course upload - Error creating course:", error);
+    res.status(500).json({ message: "Failed to create course", details: error.message });
   }
 });
 
@@ -148,12 +167,16 @@ router.post("/communities", requireContentPermissions, upload.fields([
     
     // Create community data object with authenticated user as creator
     const communityData = {
-      ...body,
+      name: body.name || '',
+      description: body.description || '',
       isPrivate,
-      banner: bannerUrl,
-      icon: iconUrl,
+      rules: body.rules || null,
+      banner: bannerUrl || null,
+      icon: iconUrl || null,
       createdBy: req.user!.id // Add the logged-in user's ID as the creator
     };
+    
+    console.log("Community data to validate:", JSON.stringify(communityData, null, 2));
     
     // Validate with Zod schema
     const validatedData = insertCommunitySchema.parse(communityData);
