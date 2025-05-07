@@ -81,7 +81,7 @@ router.post("/", requirePermission("create:community"), async (req, res) => {
 });
 
 // Join a community
-router.post("/:communityId/members", async (req, res) => {
+router.post("/:communityId/members", requirePermission("community:join"), async (req, res) => {
   try {
     if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Authentication required" });
@@ -257,7 +257,7 @@ router.get("/:communityId/posts/:postId", async (req, res) => {
 });
 
 // Create a post in a community
-router.post("/:communityId/posts", async (req, res) => {
+router.post("/:communityId/posts", requirePermission("content:create"), async (req, res) => {
   try {
     if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Authentication required" });
@@ -401,7 +401,7 @@ router.get("/:communityId/posts/:postId/comments", async (req, res) => {
 });
 
 // Add a comment to a post
-router.post("/:communityId/posts/:postId/comments", async (req, res) => {
+router.post("/:communityId/posts/:postId/comments", requirePermission("content:create"), async (req, res) => {
   try {
     if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Authentication required" });
@@ -523,15 +523,16 @@ router.delete("/:communityId/posts/:postId/comments/:commentId", async (req, res
     // Log moderation action if applicable
     if (isModerator && comment.userId !== req.user.id) {
       const post = await storage.getCommunityPost(comment.postId);
-      
-      await storage.createModerationAction({
-        moderatorId: req.user.id,
-        targetId: comment.userId,
-        targetType: "user",
-        communityId: post.communityId,
-        action: "comment_removal",
-        reason: req.body.reason || "Violated community guidelines"
-      });
+      if (post) {
+        await storage.createModerationAction({
+          moderatorId: req.user.id,
+          targetId: comment.userId,
+          targetType: "user",
+          communityId: post.communityId,
+          action: "comment_removal",
+          reason: req.body.reason || "Violated community guidelines"
+        });
+      }
     }
     
     res.status(200).json({ message: "Comment deleted successfully" });
