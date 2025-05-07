@@ -1,12 +1,19 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
 import { z } from 'zod';
-import { handleZodError } from '../routes';
 import { 
   generateCareerGuidance, 
   generateLearningRoadmap, 
   generatePathFinderResponse 
 } from '../services/openai';
 import { storage } from '../storage';
+
+// Helper function to handle Zod validation errors
+function handleZodError(error: z.ZodError, res: Response) {
+  return res.status(400).json({
+    message: "Validation error",
+    errors: error.errors,
+  });
+}
 
 const router = Router();
 

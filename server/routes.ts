@@ -920,6 +920,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register RBAC (roles and permissions) routes
   app.use('/api/rbac', rbacRoutes);
+  
+  // Register Career Guide and PathFinder routes
+  app.use('/api/career', careerRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
