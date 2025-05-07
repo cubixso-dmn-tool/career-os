@@ -849,10 +849,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserRoles(userId: number): Promise<UserRole[]> {
-    return await db
-      .select()
-      .from(userRoles)
-      .where(eq(userRoles.userId, userId));
+    try {
+      const result = await db
+        .select()
+        .from(userRoles)
+        .where(eq(userRoles.userId, userId));
+      return result;
+    } catch (error) {
+      console.error('Error in getUserRoles:', error);
+      return [];
+    }
   }
 
   async assignRoleToUser(insertUserRole: InsertUserRole): Promise<UserRole> {
@@ -1093,9 +1099,12 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     // Increment the reply count on the post
-    await this.updateCommunityPost(comment.postId, {
-      replies: sql`${communityPosts.replies} + 1`
-    });
+    const post = await this.getCommunityPost(comment.postId);
+    if (post) {
+      await this.updateCommunityPost(comment.postId, {
+        replies: post.replies + 1
+      });
+    }
     
     return comment;
   }
@@ -1127,9 +1136,12 @@ export class DatabaseStorage implements IStorage {
         .where(eq(communityPostComments.id, id));
       
       // Decrement the reply count on the post
-      await this.updateCommunityPost(comment.postId, {
-        replies: sql`GREATEST(${communityPosts.replies} - 1, 0)`
-      });
+      const post = await this.getCommunityPost(comment.postId);
+      if (post) {
+        await this.updateCommunityPost(comment.postId, {
+          replies: Math.max(0, post.replies - 1)
+        });
+      }
     }
   }
 

@@ -6,6 +6,13 @@ import { Permission } from "@shared/schema";
 declare global {
   namespace Express {
     interface User {
+      id: number;
+      username: string;
+      email: string;
+      name: string;
+      bio?: string | null;
+      avatar?: string | null;
+      createdAt: Date;
       roles?: number[]; // Array of role IDs
       permissions?: string[]; // Array of permission names
     }

@@ -192,8 +192,7 @@ export const userRoles = pgTable("user_roles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   roleId: integer("role_id").notNull().references(() => roles.id),
-  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
-  assignedBy: integer("assigned_by").references(() => users.id) // optional field to track who assigned the role
+  assignedAt: timestamp("assigned_at").defaultNow().notNull()
 });
 
 // Communities tables for role-based moderation
