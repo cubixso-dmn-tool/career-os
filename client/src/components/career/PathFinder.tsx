@@ -6,8 +6,9 @@ import { ArrowRight, Sparkles, X, Send, Loader2, LightbulbIcon } from "lucide-re
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { CareerTipTooltip } from "@/components/ui/career-tip-tooltip";
+import { CareerTipTooltip, TipCategory } from "@/components/ui/career-tip-tooltip";
 import { TipCard } from "@/components/ui/tip-card";
+import { getContextualCareerTip } from "@/lib/career-tips";
 
 // PathFinder Avatar Component
 const PathFinderAvatar = () => (
@@ -45,6 +46,55 @@ type InterestType = {
   emoji: string;
   label: string;
   selected: boolean;
+};
+
+// Helper functions for getting contextual career tips
+const getContextualTip = (category: string, field: string): string => {
+  const tip = getContextualCareerTip(
+    'pathfinder', 
+    field.toLowerCase()
+  );
+  
+  if (tip) {
+    return tip.tip;
+  }
+  
+  // Default tips for different categories
+  switch (category.toLowerCase()) {
+    case 'basic info':
+      return "When entering basic information, be honest about your education level - Indian employers often have specific requirements for educational qualifications.";
+    case 'technical background':
+      return "Technical skills are crucial in India's competitive job market. Focus on in-demand skills like cloud technologies, AI/ML, and full-stack development.";
+    case 'work style':
+      return "Indian workplaces often value team collaboration, but the ability to work independently is equally important. Consider how you perform best.";
+    case 'work environment':
+      return "Post-pandemic, remote work has become more accepted in India, but some roles still benefit from in-office presence, especially for early-career professionals.";
+    case 'learning & growth':
+      return "In India's fast-evolving tech landscape, your learning style impacts career growth. Companies value candidates who can adapt and upskill quickly.";
+    case 'career priorities':
+      return "While salary is important, consider work-life balance and growth opportunities in India's tech sector where burnout can be common in some roles.";
+    case 'growth priorities':
+      return "Indian tech companies are increasingly valuing leadership skills alongside technical expertise as your career progresses.";
+    default:
+      return "Your responses help us create a personalized career path recommendation tailored specifically for the Indian job market.";
+  }
+};
+
+const getContextualTipCategory = (field: string): TipCategory => {
+  // Map fields to appropriate tip categories
+  if (['programmingExperience', 'techSkills', 'learningStyle', 'growthPriorities'].includes(field)) {
+    return 'skill';
+  }
+  
+  if (['workStyle', 'teamSize', 'workEnvironment'].includes(field)) {
+    return 'industry';
+  }
+  
+  if (['salaryImportance', 'workLifeBalance'].includes(field)) {
+    return 'salary';
+  }
+  
+  return 'general';
 };
 
 // Main PathFinder Component
@@ -1219,7 +1269,14 @@ export default function PathFinder() {
           >
             <div className="mb-4">
               <p className="text-xs text-gray-500">{currentQuestionData.category}</p>
-              <p className="font-medium text-gray-700 mb-3">{currentQuestionData.question}</p>
+              <div className="font-medium text-gray-700 mb-3 flex items-start">
+                <CareerTipTooltip 
+                  tip={getContextualTip(currentQuestionData.category, currentQuestionData.field)} 
+                  category={getContextualTipCategory(currentQuestionData.field)}
+                >
+                  <p>{currentQuestionData.question}</p>
+                </CareerTipTooltip>
+              </div>
             </div>
             
             <div className={`grid ${currentQuestionData.options.length > 4 ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
@@ -1310,6 +1367,13 @@ export default function PathFinder() {
         </h3>
         <p className="text-sm text-gray-600 mt-1">Progress: 1/6 checkpoints completed</p>
       </div>
+      
+      <TipCard 
+        context="pathfinder" 
+        secondaryContext="results" 
+        className="mb-6"
+        showRefresh={true}
+      />
       
       <div className="relative pl-8 border-l-2 border-dashed border-gray-300 mb-6">
         {['Introduction', 'Skills', 'Courses', 'Projects', 'Resume', 'Network'].map((checkpoint, index) => (
