@@ -177,3 +177,40 @@ export function requireCommunityOwner(communityIdParam: string = 'communityId') 
     }
   };
 }
+
+/**
+ * Middleware to check if a user has content management permissions
+ * This middleware checks for any of the content-related permissions
+ */
+export function requireContentPermissions(req: Request, res: Response, next: NextFunction) {
+  // If user is not authenticated, deny access
+  if (!req.isAuthenticated() || !req.user) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+  
+  // Skip permission check if user has no permissions loaded
+  if (!req.user.permissions) {
+    return res.status(403).json({ message: "Permission check failed: User permissions not loaded" });
+  }
+  
+  // Check if user has any of the content management permissions
+  const contentPermissions = [
+    'course:manage',
+    'project:manage',
+    'content:upload',
+    'community:create'
+  ];
+  
+  const hasContentPermission = contentPermissions.some(permission => 
+    req.user.permissions?.includes(permission)
+  );
+  
+  if (hasContentPermission) {
+    return next();
+  }
+  
+  // Deny access if user doesn't have required permissions
+  return res.status(403).json({ 
+    message: "Access denied: Content management permissions required" 
+  });
+}

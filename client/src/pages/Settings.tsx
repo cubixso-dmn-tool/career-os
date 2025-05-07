@@ -271,6 +271,262 @@ export default function Settings() {
     });
   };
   
+  // Content Management form states
+  const [courseForm, setCourseForm] = useState({
+    title: "",
+    description: "",
+    category: "",
+    price: 0,
+    isFree: true,
+    tags: "",
+    thumbnail: null as File | null,
+    thumbnailPreview: ""
+  });
+  
+  const [projectForm, setProjectForm] = useState({
+    title: "",
+    description: "",
+    category: "",
+    difficulty: "",
+    duration: "",
+    skills: ""
+  });
+  
+  const [communityForm, setCommunityForm] = useState({
+    name: "",
+    description: "",
+    type: "",
+    rules: "",
+    isPrivate: false,
+    banner: null as File | null,
+    bannerPreview: "",
+    icon: null as File | null,
+    iconPreview: ""
+  });
+  
+  // Course upload mutation
+  const uploadCourseMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const formData = new FormData();
+      
+      // Append text fields
+      Object.keys(data).forEach(key => {
+        if (key !== 'thumbnail' && key !== 'thumbnailPreview') {
+          formData.append(key, data[key]);
+        }
+      });
+      
+      // Append thumbnail if present
+      if (data.thumbnail) {
+        formData.append('thumbnail', data.thumbnail);
+      }
+      
+      const response = await fetch("/api/content-management/courses", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to upload course");
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Course uploaded",
+        description: "New course has been added successfully.",
+      });
+      
+      // Reset form
+      setCourseForm({
+        title: "",
+        description: "",
+        category: "",
+        price: 0,
+        isFree: true,
+        tags: "",
+        thumbnail: null,
+        thumbnailPreview: ""
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Project upload mutation
+  const uploadProjectMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch("/api/content-management/projects", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to upload project");
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Project uploaded",
+        description: "New project recommendation has been added successfully.",
+      });
+      
+      // Reset form
+      setProjectForm({
+        title: "",
+        description: "",
+        category: "",
+        difficulty: "",
+        duration: "",
+        skills: ""
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Community upload mutation
+  const uploadCommunityMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const formData = new FormData();
+      
+      // Append text fields
+      Object.keys(data).forEach(key => {
+        if (!['banner', 'icon', 'bannerPreview', 'iconPreview'].includes(key)) {
+          formData.append(key, data[key]);
+        }
+      });
+      
+      // Append files if present
+      if (data.banner) {
+        formData.append('banner', data.banner);
+      }
+      
+      if (data.icon) {
+        formData.append('icon', data.icon);
+      }
+      
+      const response = await fetch("/api/content-management/communities", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to create community");
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Community created",
+        description: "New community has been created successfully.",
+      });
+      
+      // Reset form
+      setCommunityForm({
+        name: "",
+        description: "",
+        type: "",
+        rules: "",
+        isPrivate: false,
+        banner: null,
+        bannerPreview: "",
+        icon: null,
+        iconPreview: ""
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Creation failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Handle file upload for course thumbnail
+  const handleCourseThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        if (event.target) {
+          setCourseForm({
+            ...courseForm,
+            thumbnail: file,
+            thumbnailPreview: event.target.result as string
+          });
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  // Handle file uploads for community banner and icon
+  const handleCommunityFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'banner' | 'icon') => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        if (event.target) {
+          if (fileType === 'banner') {
+            setCommunityForm({
+              ...communityForm,
+              banner: file,
+              bannerPreview: event.target.result as string
+            });
+          } else {
+            setCommunityForm({
+              ...communityForm,
+              icon: file,
+              iconPreview: event.target.result as string
+            });
+          }
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  // Handle course form submission
+  const handleCourseSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    uploadCourseMutation.mutate(courseForm);
+  };
+  
+  // Handle project form submission
+  const handleProjectSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    uploadProjectMutation.mutate(projectForm);
+  };
+  
+  // Handle community form submission
+  const handleCommunitySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    uploadCommunityMutation.mutate(communityForm);
+  };
+  
   // Roles Management
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);

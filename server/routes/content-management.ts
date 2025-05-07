@@ -1,61 +1,78 @@
-import { Router, Request, Response } from "express";
-import { storage } from "../storage";
-import { requirePermission } from "../middleware/rbac";
+import express, { Request, Response, Router } from 'express';
+import { storage } from '../storage';
 import { 
-  insertCourseSchema,
-  insertProjectSchema,
-  insertCommunitySchema
-} from "@shared/schema";
-import { processUpload } from "../lib/upload-helper";
-import { ZodError } from "zod";
+  insertCourseSchema, 
+  insertProjectSchema, 
+  insertCommunitySchema 
+} from '@shared/schema';
+import { ZodError } from 'zod';
+import multer from 'multer';
+import { processFileUpload } from '../lib/upload-helper';
+import { requireContentPermissions } from '../middleware/rbac';
 
 const router = Router();
 
-// Middleware to ensure admin permissions
-const requireContentPermissions = requirePermission(["content:upload", "course:manage", "project:manage"]);
+// Configure multer for file uploads
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
 
 /**
  * Handle Zod validation errors
  */
 function handleZodError(error: ZodError, res: Response) {
-  const formattedErrors = error.errors.map(err => ({
-    path: err.path.join('.'),
-    message: err.message
-  }));
-  
   return res.status(400).json({
     message: "Validation error",
-    errors: formattedErrors
+    errors: error.errors,
   });
 }
 
 /**
  * Create a new course
  */
-router.post("/courses", requireContentPermissions, async (req: Request, res: Response) => {
+router.post("/courses", requireContentPermissions, upload.single('thumbnail'), async (req: Request, res: Response) => {
   try {
-    // Validate request body
-    const courseData = insertCourseSchema.parse(req.body);
+    const { body, file } = req;
     
-    // Handle file upload if provided
-    if (req.body.thumbnailBase64) {
-      const uploadResult = await processUpload(req.body.thumbnailBase64, "course-thumbnails");
-      courseData.thumbnail = uploadResult.url;
+    // Process file if provided
+    let thumbnailUrl = '';
+    if (file) {
+      const fileResult = await processFileUpload(file, 'courseThumbnails');
+      thumbnailUrl = fileResult.url;
     }
     
-    // Create course
-    const course = await storage.createCourse({
-      ...courseData,
-      tags: Array.isArray(courseData.tags) ? courseData.tags : 
-        (courseData.tags ? courseData.tags.split(',').map(tag => tag.trim()) : [])
-    });
+    // Process tags
+    let tags: string[] = [];
+    if (body.tags && typeof body.tags === 'string') {
+      tags = body.tags.split(',').map((tag: string) => tag.trim());
+    }
+    
+    // Handle price and isFree
+    const price = body.isFree === 'true' ? 0 : parseFloat(body.price);
+    const isFree = body.isFree === 'true';
+    
+    // Create course data object with authenticated user as creator
+    const courseData = {
+      ...body,
+      price,
+      isFree,
+      tags,
+      thumbnail: thumbnailUrl,
+      createdBy: req.user!.id // Add the logged-in user's ID as the creator
+    };
+    
+    // Validate with Zod schema
+    const validatedData = insertCourseSchema.parse(courseData);
+    
+    // Save to database
+    const course = await storage.createCourse(validatedData);
     
     res.status(201).json(course);
   } catch (error) {
     if (error instanceof ZodError) {
       return handleZodError(error, res);
     }
-    
     console.error("Error creating course:", error);
     res.status(500).json({ message: "Failed to create course" });
   }
@@ -66,64 +83,86 @@ router.post("/courses", requireContentPermissions, async (req: Request, res: Res
  */
 router.post("/projects", requireContentPermissions, async (req: Request, res: Response) => {
   try {
-    // Validate request body
-    const projectData = insertProjectSchema.parse(req.body);
+    const projectData = req.body;
     
-    // Process skills as array
-    const project = await storage.createProject({
+    // Process skills list
+    let skills: string[] = [];
+    if (projectData.skills && typeof projectData.skills === 'string') {
+      skills = projectData.skills.split(',').map((skill: string) => skill.trim());
+    }
+    
+    // Create the project object
+    const newProject = {
       ...projectData,
-      skills: Array.isArray(projectData.skills) ? projectData.skills : 
-        (projectData.skills ? projectData.skills.split(',').map(skill => skill.trim()) : [])
-    });
+      skills
+    };
+    
+    // Validate with Zod schema
+    const validatedData = insertProjectSchema.parse(newProject);
+    
+    // Save to database
+    const project = await storage.createProject(validatedData);
     
     res.status(201).json(project);
   } catch (error) {
     if (error instanceof ZodError) {
       return handleZodError(error, res);
     }
-    
     console.error("Error creating project:", error);
-    res.status(500).json({ message: "Failed to create project recommendation" });
+    res.status(500).json({ message: "Failed to create project" });
   }
 });
 
 /**
  * Create a new community
  */
-router.post("/communities", requireContentPermissions, async (req: Request, res: Response) => {
+router.post("/communities", requireContentPermissions, upload.fields([
+  { name: 'banner', maxCount: 1 },
+  { name: 'icon', maxCount: 1 }
+]), async (req: Request, res: Response) => {
   try {
-    // Get current user ID for createdBy field
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ message: "Authentication required" });
+    const { body } = req;
+    
+    // Process file uploads
+    let bannerUrl = '';
+    let iconUrl = '';
+    
+    // Cast req to any to access files property
+    const reqWithFiles = req as any;
+    
+    if (reqWithFiles.files && reqWithFiles.files.banner && reqWithFiles.files.banner[0]) {
+      const bannerResult = await processFileUpload(reqWithFiles.files.banner[0], 'communityBanners');
+      bannerUrl = bannerResult.url;
     }
     
-    // Validate request body
-    const communityData = insertCommunitySchema.parse(req.body);
-    
-    // Handle file uploads if provided
-    if (req.body.bannerBase64) {
-      const uploadResult = await processUpload(req.body.bannerBase64, "community-banners");
-      communityData.banner = uploadResult.url;
+    if (reqWithFiles.files && reqWithFiles.files.icon && reqWithFiles.files.icon[0]) {
+      const iconResult = await processFileUpload(reqWithFiles.files.icon[0], 'communityIcons');
+      iconUrl = iconResult.url;
     }
     
-    if (req.body.iconBase64) {
-      const uploadResult = await processUpload(req.body.iconBase64, "community-icons");
-      communityData.icon = uploadResult.url;
-    }
+    // Handle isPrivate
+    const isPrivate = body.isPrivate === 'true';
     
-    // Create community
-    const community = await storage.createCommunity({
-      ...communityData,
-      createdBy: userId
-    });
+    // Create community data object with authenticated user as creator
+    const communityData = {
+      ...body,
+      isPrivate,
+      banner: bannerUrl,
+      icon: iconUrl,
+      createdBy: req.user!.id // Add the logged-in user's ID as the creator
+    };
+    
+    // Validate with Zod schema
+    const validatedData = insertCommunitySchema.parse(communityData);
+    
+    // Save to database
+    const community = await storage.createCommunity(validatedData);
     
     res.status(201).json(community);
   } catch (error) {
     if (error instanceof ZodError) {
       return handleZodError(error, res);
     }
-    
     console.error("Error creating community:", error);
     res.status(500).json({ message: "Failed to create community" });
   }
@@ -135,7 +174,7 @@ router.post("/communities", requireContentPermissions, async (req: Request, res:
 router.get("/courses", requireContentPermissions, async (_req: Request, res: Response) => {
   try {
     const courses = await storage.getAllCourses();
-    res.status(200).json(courses);
+    res.json(courses);
   } catch (error) {
     console.error("Error fetching courses:", error);
     res.status(500).json({ message: "Failed to fetch courses" });
@@ -148,7 +187,7 @@ router.get("/courses", requireContentPermissions, async (_req: Request, res: Res
 router.get("/projects", requireContentPermissions, async (_req: Request, res: Response) => {
   try {
     const projects = await storage.getAllProjects();
-    res.status(200).json(projects);
+    res.json(projects);
   } catch (error) {
     console.error("Error fetching projects:", error);
     res.status(500).json({ message: "Failed to fetch projects" });
@@ -161,7 +200,7 @@ router.get("/projects", requireContentPermissions, async (_req: Request, res: Re
 router.get("/communities", requireContentPermissions, async (_req: Request, res: Response) => {
   try {
     const communities = await storage.getAllCommunities();
-    res.status(200).json(communities);
+    res.json(communities);
   } catch (error) {
     console.error("Error fetching communities:", error);
     res.status(500).json({ message: "Failed to fetch communities" });
