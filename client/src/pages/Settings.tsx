@@ -266,6 +266,109 @@ export default function Settings() {
       description: "Your language preferences have been saved.",
     });
   };
+  
+  // Roles Management
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
+  
+  // Fetch all users
+  const { data: users, isLoading: isUsersLoading } = useQuery({
+    queryKey: ['/api/users'],
+    queryFn: undefined, // Use default queryFn from queryClient
+  });
+  
+  // Fetch all roles
+  const { data: roles, isLoading: isRolesLoading } = useQuery({
+    queryKey: ['/api/rbac/roles'],
+    queryFn: undefined, // Use default queryFn from queryClient
+  });
+  
+  // Fetch selected user's roles
+  const { data: userRoles, isLoading: isUserRolesLoading, refetch: refetchUserRoles } = useQuery({
+    queryKey: ['/api/rbac/users', selectedUserId, 'roles'],
+    queryFn: undefined, // Use default queryFn from queryClient
+    enabled: !!selectedUserId, // Only run query if selectedUserId is not null
+  });
+  
+  // Mutation to assign role to user
+  const assignRoleMutation = useMutation({
+    mutationFn: async ({ userId, roleId }: { userId: number; roleId: number }) => {
+      const response = await fetch(`/api/rbac/users/${userId}/roles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roleId }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to assign role to user');
+      }
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Role assigned',
+        description: 'The role has been successfully assigned to the user.',
+      });
+      if (selectedUserId) {
+        refetchUserRoles();
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to assign role',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // Mutation to remove role from user
+  const removeRoleMutation = useMutation({
+    mutationFn: async ({ userId, roleId }: { userId: number; roleId: number }) => {
+      const response = await fetch(`/api/rbac/users/${userId}/roles/${roleId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to remove role from user');
+      }
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Role removed',
+        description: 'The role has been successfully removed from the user.',
+      });
+      if (selectedUserId) {
+        refetchUserRoles();
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to remove role',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // Handle assign role
+  const handleAssignRole = () => {
+    if (selectedUserId && selectedRoleId) {
+      assignRoleMutation.mutate({ userId: selectedUserId, roleId: selectedRoleId });
+    } else {
+      toast({
+        title: 'Selection required',
+        description: 'Please select both a user and a role.',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // Handle remove role
+  const handleRemoveRole = (roleId: number) => {
+    if (selectedUserId) {
+      removeRoleMutation.mutate({ userId: selectedUserId, roleId });
+    }
+  };
 
   return (
     <Layout title="Settings">
@@ -853,6 +956,137 @@ export default function Settings() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          {/* Role Management - only visible to admins */}
+          <TabsContent value="roles">
+            <PermissionGate permissions={["admin:roles"]}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Role Management</CardTitle>
+                  <CardDescription>
+                    Assign or remove roles for users across the platform
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {/* User Selection */}
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-medium">Select User</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="select-user">User</Label>
+                          <select
+                            id="select-user"
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            value={selectedUserId || ""}
+                            onChange={(e) => setSelectedUserId(e.target.value ? parseInt(e.target.value) : null)}
+                          >
+                            <option value="">Select a user...</option>
+                            {users && users.map((user: any) => (
+                              <option key={user.id} value={user.id}>
+                                {user.name || user.username} {user.email ? `(${user.email})` : ""}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        
+                        {isUsersLoading && (
+                          <div className="flex items-center space-x-2">
+                            <div className="h-4 w-4 animate-spin rounded-full border-t-2 border-primary"></div>
+                            <span className="text-sm text-muted-foreground">Loading users...</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <Separator />
+                    
+                    {/* Current User Roles */}
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-medium">Current Roles</h3>
+                      {!selectedUserId && (
+                        <p className="text-sm text-muted-foreground">Select a user to view their roles</p>
+                      )}
+                      
+                      {selectedUserId && isUserRolesLoading && (
+                        <div className="flex items-center space-x-2">
+                          <div className="h-4 w-4 animate-spin rounded-full border-t-2 border-primary"></div>
+                          <span className="text-sm text-muted-foreground">Loading roles...</span>
+                        </div>
+                      )}
+                      
+                      {selectedUserId && userRoles && userRoles.length === 0 && (
+                        <p className="text-sm text-muted-foreground">This user has no roles assigned</p>
+                      )}
+                      
+                      {selectedUserId && userRoles && userRoles.length > 0 && (
+                        <div className="grid gap-2">
+                          {userRoles.map((role: any) => (
+                            <div key={role.id} className="flex items-center justify-between p-3 bg-muted rounded-md">
+                              <div>
+                                <p className="font-medium">{role.name}</p>
+                                <p className="text-xs text-muted-foreground">{role.description}</p>
+                              </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleRemoveRole(role.id)}
+                                disabled={removeRoleMutation.isPending}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <Separator />
+                    
+                    {/* Assign New Role */}
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-medium">Assign Role</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="select-role">Role</Label>
+                          <select
+                            id="select-role"
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            value={selectedRoleId || ""}
+                            onChange={(e) => setSelectedRoleId(e.target.value ? parseInt(e.target.value) : null)}
+                            disabled={!selectedUserId}
+                          >
+                            <option value="">Select a role...</option>
+                            {roles && roles.map((role: any) => (
+                              <option key={role.id} value={role.id}>{role.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        
+                        {isRolesLoading && (
+                          <div className="flex items-center space-x-2">
+                            <div className="h-4 w-4 animate-spin rounded-full border-t-2 border-primary"></div>
+                            <span className="text-sm text-muted-foreground">Loading roles...</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex justify-end mt-4">
+                        <Button 
+                          onClick={handleAssignRole}
+                          disabled={!selectedUserId || !selectedRoleId || assignRoleMutation.isPending}
+                          className="flex items-center"
+                        >
+                          {assignRoleMutation.isPending ? "Assigning..." : "Assign Role"}
+                          <BadgeCheck className="w-4 h-4 ml-2" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </PermissionGate>
           </TabsContent>
         </Tabs>
       </div>
