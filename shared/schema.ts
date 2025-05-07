@@ -176,8 +176,6 @@ export const permissions = pgTable("permissions", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   description: text("description"),
-  resource: text("resource").notNull(), // e.g., "community", "course", etc.
-  action: text("action").notNull(), // e.g., "create", "read", "update", "delete", "moderate"
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 

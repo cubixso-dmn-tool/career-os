@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { roles, permissions, rolePermissions } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 /**
  * Script to populate default roles and permissions for RBAC
@@ -18,7 +18,7 @@ async function populateRBAC() {
 
   console.log("Creating roles...");
   for (const role of roleData) {
-    const existing = await db.select().from(roles).where({ name: role.name });
+    const existing = await db.select().from(roles).where(eq(roles.name, role.name));
     
     if (existing.length === 0) {
       const [newRole] = await db.insert(roles).values({
@@ -58,7 +58,7 @@ async function populateRBAC() {
 
   console.log("Creating permissions...");
   for (const perm of permissionData) {
-    const existing = await db.select().from(permissions).where({ name: perm.name });
+    const existing = await db.select().from(permissions).where(eq(permissions.name, perm.name));
     
     if (existing.length === 0) {
       const [newPerm] = await db.insert(permissions).values({
@@ -121,10 +121,12 @@ async function populateRBAC() {
       }
       
       // Check if this role-permission mapping already exists
-      const existing = await db.select().from(rolePermissions).where({
-        roleId,
-        permissionId: permId
-      });
+      const existing = await db.select().from(rolePermissions).where(
+        and(
+          eq(rolePermissions.roleId, roleId),
+          eq(rolePermissions.permissionId, permId)
+        )
+      );
       
       if (existing.length === 0) {
         await db.insert(rolePermissions).values({
