@@ -25,12 +25,11 @@ export default function CareerRoadmap({ careerPath = "Software Engineer" }: Care
   useEffect(() => {
     const fetchUserProgress = async () => {
       try {
-        const response = await apiRequest("GET", "/api/career/progress");
-        // If API call succeeds, update progress
-        if (response.ok) {
-          const data = await response.json();
-          setUserProgress(data);
-        }
+        const data = await apiRequest({
+          url: "/api/career/progress",
+          method: "GET"
+        });
+        setUserProgress(data);
       } catch (error) {
         console.error("Error fetching user progress:", error);
       }
@@ -42,32 +41,27 @@ export default function CareerRoadmap({ careerPath = "Software Engineer" }: Care
   // Mark a step as started
   const startStep = async (step: string) => {
     try {
-      const response = await apiRequest("POST", "/api/career/progress/step", {
-        step,
-        action: "start"
+      const updatedData = await apiRequest({
+        url: "/api/career/progress/step",
+        method: "POST",
+        body: {
+          step,
+          action: "start"
+        }
       });
-
-      if (response.ok) {
-        toast({
-          title: "Step started",
-          description: `You've started the ${step} step in your career journey.`,
-        });
-        // Refresh progress data
-        const updatedData = await response.json();
-        setUserProgress(updatedData);
-      } else {
-        toast({
-          title: "Unable to start step",
-          description: "Please complete the previous steps first.",
-          variant: "destructive",
-        });
-      }
+      
+      toast({
+        title: "Step started",
+        description: `You've started the ${step} step in your career journey.`
+      });
+      
+      setUserProgress(updatedData);
     } catch (error) {
       console.error("Error starting step:", error);
       toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
+        title: "Unable to start step",
+        description: "Please complete the previous steps first.",
+        variant: "destructive"
       });
     }
   };

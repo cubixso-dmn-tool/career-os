@@ -1,6 +1,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { Link } from "wouter";
 import Layout from "@/components/layout/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -627,9 +628,22 @@ export default function CareerGuide() {
     <Layout title="Career Guide">
       <header className="mb-8">
         <h1 className="text-3xl font-bold">Career Guide</h1>
-        <p className="text-gray-600 mt-2">
-          Explore tech career paths or get personalized recommendations with our AI career advisor
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-gray-600 mt-2">
+            Explore tech career paths or get personalized recommendations with our AI career advisor
+          </p>
+          <Button 
+            variant="outline" 
+            className="mt-4 sm:mt-0 flex items-center"
+            asChild
+          >
+            <Link href="/career-roadmap">
+              <BarChart className="h-4 w-4 mr-2" />
+              View Career Roadmap
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Link>
+          </Button>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">

@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 
 export default function CareerRoadmapPage() {
   // Fetch user profile/career data to get the career path
-  const { data: userData, isLoading } = useQuery({
+  const { data: userData, isLoading } = useQuery<{careerPath?: {title: string}}|null>({
     queryKey: ['/api/users/profile'],
     retry: false
   });
