@@ -3,13 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sparkles, X, Send, Loader2, LightbulbIcon, Info as InfoIcon } from "lucide-react";
+import { ArrowRight, Sparkles, X, Send, Loader2, LightbulbIcon, Info as InfoIcon, BarChart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { CareerTipTooltip, TipCategory } from "@/components/ui/career-tip-tooltip";
 import { TipCard } from "@/components/ui/tip-card";
 import { getContextualCareerTip } from "@/lib/career-tips";
+import { Link } from "wouter";
 
 // PathFinder Avatar Component
 const PathFinderAvatar = () => (
