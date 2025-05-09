@@ -315,6 +315,32 @@ router.get("/streak", async (req: Request, res: Response) => {
   }
 });
 
+// Extended streak data endpoint for the streak motivator
+router.get("/streak-data", async (req: Request, res: Response) => {
+  try {
+    // Mock data that would normally come from the database
+    // The real implementation would calculate this from the user's activity history
+    const currentStreak = 5; // Current consecutive days of activity
+    const longestStreak = 12; // Longest streak ever achieved
+    
+    // Last 7 days of activity (Sunday to Saturday)
+    // Each number represents whether the user was active that day and for how many sessions
+    const streakHistory = [2, 3, 1, 2, 0, 1, 2];
+    
+    // ISO date string of last activity
+    const lastActive = new Date().toISOString();
+    
+    res.json({
+      currentStreak,
+      longestStreak,
+      streakHistory,
+      lastActive
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: "Failed to get streak data", error: error.message });
+  }
+});
+
 // API Routes for Practice Items
 router.get("/practice-items", async (req: Request, res: Response) => {
   try {

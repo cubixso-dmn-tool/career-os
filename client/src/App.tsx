@@ -18,7 +18,6 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import LandingPage from "@/pages/LandingPage";
 import { AuthProvider } from "@/hooks/use-auth-context";
-import { LearningModeProvider } from "@/hooks/use-learning-mode";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 function Router() {
@@ -87,10 +86,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <LearningModeProvider>
-          <Router />
-          <Toaster />
-        </LearningModeProvider>
+        <Router />
+        <Toaster />
       </AuthProvider>
     </QueryClientProvider>
   );
