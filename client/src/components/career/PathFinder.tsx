@@ -1576,65 +1576,6 @@ export default function PathFinder() {
         showRefresh={true}
       />
       
-      <div className="bg-white rounded-lg p-6 border border-gray-100 shadow-sm mb-8">
-        <h3 className="font-semibold text-lg mb-6">Your career journey roadmap</h3>
-        
-        <div className="relative ml-4 pl-6 border-l-2 border-dashed border-gray-300">
-          {['Introduction', 'Skills', 'Courses', 'Projects', 'Resume', 'Network'].map((checkpoint, index) => (
-            <div key={checkpoint} className="mb-10 relative">
-              <div className={cn(
-                "absolute -left-[28px] h-8 w-8 rounded-full border-2 flex items-center justify-center",
-                index === 0 
-                  ? "bg-primary border-primary text-white" 
-                  : "bg-white border-gray-300"
-              )}>
-                {index === 0 ? '✓' : (index + 1)}
-              </div>
-              <div className={cn(
-                "p-5 rounded-lg border bg-white",
-                index === 0 ? "border-primary shadow-sm" : "border-gray-200"
-              )}>
-                <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-lg">{checkpoint}</h4>
-                  {index <= 1 && (
-                    <CareerTipTooltip
-                      tip={
-                        index === 0 
-                          ? "You've completed this milestone! The introduction helps you understand the basics of your chosen career path."
-                          : checkpoint === "Skills" 
-                            ? "This section will guide you through acquiring the essential skills needed for a " + careerPath + " role."
-                            : checkpoint === "Courses" 
-                            ? "Recommended learning resources to master the required skills for your career path."
-                            : checkpoint === "Projects" 
-                            ? "Hands-on projects to build your portfolio and demonstrate your capabilities."
-                            : checkpoint === "Resume" 
-                            ? "Create a tailored resume for your chosen career path with our guided builder."
-                            : "Connect with mentors and peers to expand your professional network."
-                      }
-                      category={index === 0 ? "roadmap" : "skill"}
-                      showIcon={true}
-                    >
-                      <InfoIcon className="h-4 w-4 text-gray-400 hover:text-primary cursor-help" />
-                    </CareerTipTooltip>
-                  )}
-                </div>
-                <p className="text-gray-600 text-sm mt-2">
-                  {index === 0 
-                    ? 'Completed! You\'ve started your journey toward a career in ' + careerPath + '.'
-                    : 'Unlock this section by completing previous steps.'}
-                </p>
-                
-                {index === 1 && (
-                  <Button size="sm" className="mt-3" variant="outline" disabled>
-                    Start Learning
-                  </Button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      
       {!chatMode ? (
         <div className="p-4 rounded-lg border border-gray-200 bg-white shadow-sm">
           <h4 className="font-bold text-lg flex items-center">
