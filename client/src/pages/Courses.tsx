@@ -9,12 +9,13 @@ import IntegratedPractice from "@/components/courses/IntegratedPractice";
 import ProgressHeatmap from "@/components/courses/ProgressHeatmap";
 import CommunityReviews from "@/components/courses/CommunityReviews";
 import LiveCohortChallenges from "@/components/courses/LiveCohortChallenges";
+import LearningModeSwitcher from "@/components/courses/LearningModeSwitcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Search, SlidersHorizontal, X, Compass, Zap, BookmarkIcon } from "lucide-react";
+import { BookOpen, Search, SlidersHorizontal, X, Compass, Zap, BookmarkIcon, Settings } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +40,7 @@ export default function Courses({}: CoursesProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"courses" | "mylearning">("courses");
+  const [showLearningModeSettings, setShowLearningModeSettings] = useState(false);
 
   // Fetch courses from content management API
   const { data: courses = [], isLoading } = useQuery<Course[]>({
@@ -310,6 +312,14 @@ export default function Courses({}: CoursesProps) {
   // Render the My Learning tab content
   const renderMyLearning = () => (
     <div className="space-y-8">
+      {/* Desktop Learning Mode Switcher */}
+      <div className="hidden md:block mb-8">
+        <div className="bg-white border rounded-lg p-5">
+          <h2 className="text-xl font-semibold mb-4">Learning Preferences</h2>
+          <LearningModeSwitcher activeTab={activeTab} />
+        </div>
+      </div>
+      
       {/* Daily Learning Bytes */}
       <MicrolearningBites />
       
@@ -327,10 +337,33 @@ export default function Courses({}: CoursesProps) {
   return (
     <Layout title="Courses">
       <div className="px-4 py-6 md:px-8 pb-20 md:pb-6">
-        <div className="flex items-center mb-6">
-          <BookOpen className="h-6 w-6 mr-2 text-primary" />
-          <h1 className="text-2xl font-bold text-gray-900">Courses</h1>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <BookOpen className="h-6 w-6 mr-2 text-primary" />
+            <h1 className="text-2xl font-bold text-gray-900">Courses</h1>
+          </div>
+          
+          {/* Settings button that shows/hides learning mode switcher on mobile */}
+          <div className="md:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowLearningModeSettings(!showLearningModeSettings)}
+            >
+              <Settings className="h-5 w-5 text-gray-600" />
+            </Button>
+          </div>
         </div>
+        
+        {/* Learning Mode Switcher - only visible on mobile when toggled */}
+        {showLearningModeSettings && (
+          <div className="mb-6 md:hidden">
+            <div className="bg-white border rounded-lg p-4">
+              <h2 className="text-lg font-medium mb-3">Learning Preferences</h2>
+              <LearningModeSwitcher activeTab={activeTab} />
+            </div>
+          </div>
+        )}
         
         {/* Main Navigation Tabs */}
         <Tabs 
