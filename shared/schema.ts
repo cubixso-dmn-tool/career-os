@@ -69,7 +69,15 @@ export const userProjects = pgTable("user_projects", {
   projectId: integer("project_id").notNull().references(() => projects.id),
   progress: integer("progress").default(0).notNull(),
   isCompleted: boolean("is_completed").default(false).notNull(),
-  startedAt: timestamp("started_at").defaultNow().notNull()
+  isPublic: boolean("is_public").default(false).notNull(),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+  repoUrl: text("repo_url"),
+  demoUrl: text("demo_url"),
+  screenshots: text("screenshots").array(),
+  description: text("description"),
+  feedback: text("feedback"),
+  reflection: text("reflection")
 });
 
 export const softSkills = pgTable("soft_skills", {
@@ -197,6 +205,19 @@ export const userRoles = pgTable("user_roles", {
   userId: integer("user_id").notNull().references(() => users.id),
   roleId: integer("role_id").notNull().references(() => roles.id),
   assignedAt: timestamp("assigned_at").defaultNow().notNull()
+});
+
+// Project Wallet / Portfolio
+export const portfolioLinks = pgTable("portfolio_links", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  description: text("description"),
+  isPublic: boolean("is_public").default(true).notNull(),
+  viewCount: integer("view_count").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at")
 });
 
 // Communities tables for role-based moderation
