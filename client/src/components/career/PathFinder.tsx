@@ -1683,8 +1683,8 @@ export default function PathFinder() {
   return (
     <div className="relative max-w-4xl mx-auto">
       {/* PathFinder Chat Interface */}
-      <div className="bg-white rounded-xl shadow-md p-4 mb-4">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white rounded-xl shadow-md p-6 mb-4">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <PathFinderAvatar />
             <h3 className="text-xl font-semibold ml-3">PathFinder</h3>
@@ -1701,25 +1701,25 @@ export default function PathFinder() {
         </div>
         
         {!started ? (
-          <div className="py-12 flex flex-col items-center justify-center">
-            <h2 className="text-2xl font-bold mb-3">Discover Your Perfect Tech Career</h2>
-            <p className="text-gray-600 max-w-md text-center mb-6">
+          <div className="py-16 flex flex-col items-center justify-center">
+            <h2 className="text-3xl font-bold mb-4 text-center">Discover Your Perfect Tech Career</h2>
+            <p className="text-gray-600 max-w-md text-center mb-8">
               Answer a few questions and I'll recommend the best tech career path for you based on your interests and strengths.
             </p>
             <Button 
               size="lg" 
               onClick={startChat}
-              className="flex items-center"
+              className="flex items-center px-6 py-6 text-lg"
             >
               <span>Let's Get Started</span>
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
         ) : (
-          <div className="flex flex-col h-[550px]">
+          <div className="flex flex-col h-[600px]">
             {/* Messages Container */}
-            <div className="flex-1 overflow-y-auto px-2 py-4">
-              <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto px-4 py-4 mb-4 border border-gray-100 rounded-lg bg-gray-50">
+              <div className="space-y-6">
                 {messages.map(message => (
                   <div 
                     key={message.id}
@@ -1729,21 +1729,21 @@ export default function PathFinder() {
                     )}
                   >
                     {message.sender === 'bot' && !message.isTyping && (
-                      <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold mr-2 mt-1">
+                      <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold mr-3 mt-1 shadow-sm">
                         PF
                       </div>
                     )}
                     
                     <div className={cn(
-                      "max-w-[80%] rounded-2xl py-2 px-4",
+                      "max-w-[75%] rounded-2xl py-3 px-5 shadow-sm",
                       message.sender === 'user' 
                         ? "bg-primary text-white rounded-tr-none" 
-                        : "bg-gray-100 text-gray-800 rounded-tl-none"
+                        : "bg-white text-gray-800 rounded-tl-none border border-gray-100"
                     )}>
                       {message.isTyping ? (
                         <TypingIndicator />
                       ) : (
-                        <div className="text-sm">{message.content}</div>
+                        <div className="text-sm leading-relaxed">{message.content}</div>
                       )}
                     </div>
                   </div>
@@ -1753,7 +1753,7 @@ export default function PathFinder() {
             </div>
             
             {/* Interactive Input Areas based on current stage */}
-            <div className="mt-4 border-t pt-4">
+            <div className="pt-4">
               {currentStage === 2 && renderInterestPicker()}
               {currentStage === 3 && renderEnhancedQuestionnaire()}
               {currentStage === 4 && analyzing && renderAnalysisAnimation()}
