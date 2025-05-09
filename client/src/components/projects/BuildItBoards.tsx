@@ -6,6 +6,7 @@ import {
   TabsTrigger, 
   TabsContent 
 } from "@/components/ui/tabs";
+import { Project } from "@shared/schema";
 import { 
   Card, 
   CardContent, 
@@ -160,34 +161,38 @@ export default function BuildItBoards() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
   
   // Fetch projects from API
-  const { data: projects = [], isLoading } = useQuery({
-    queryKey: ['/api/content-management/projects', { careerTrack: selectedTrack, difficulty: selectedDifficulty }],
+  const { data: projects = [], isLoading } = useQuery<Project[]>({
+    queryKey: ['/api/projects', { careerTrack: selectedTrack, difficulty: selectedDifficulty }],
     queryFn: undefined, // Use default queryFn from queryClient
   });
   
   // Filter projects by career track and difficulty
-  const filteredProjects = projects.filter((project: any) => {
+  const filteredProjects = projects.filter((project) => {
     const matchesCareerTrack = project.careerTrack === selectedTrack;
-    const matchesDifficulty = !selectedDifficulty || project.difficulty.toLowerCase() === selectedDifficulty;
+    const matchesDifficulty = !selectedDifficulty || 
+      (project.difficulty && project.difficulty.toLowerCase() === selectedDifficulty);
     
     return matchesCareerTrack && matchesDifficulty;
   });
   
   // Projects grouped by difficulty
-  const beginnerProjects = projects.filter((project: any) => 
-    project.careerTrack === selectedTrack && project.difficulty.toLowerCase() === 'beginner'
+  const beginnerProjects = projects.filter((project) => 
+    project.careerTrack === selectedTrack && 
+    project.difficulty && project.difficulty.toLowerCase() === 'beginner'
   );
   
-  const intermediateProjects = projects.filter((project: any) => 
-    project.careerTrack === selectedTrack && project.difficulty.toLowerCase() === 'intermediate'
+  const intermediateProjects = projects.filter((project) => 
+    project.careerTrack === selectedTrack && 
+    project.difficulty && project.difficulty.toLowerCase() === 'intermediate'
   );
   
-  const advancedProjects = projects.filter((project: any) => 
-    project.careerTrack === selectedTrack && project.difficulty.toLowerCase() === 'advanced'
+  const advancedProjects = projects.filter((project) => 
+    project.careerTrack === selectedTrack && 
+    project.difficulty && project.difficulty.toLowerCase() === 'advanced'
   );
   
   // Featured or popular projects
-  const popularProjects = projects.filter((project: any) => 
+  const popularProjects = projects.filter((project) => 
     project.isPopular === true && project.careerTrack === selectedTrack
   ).slice(0, 3);
   

@@ -58,9 +58,11 @@ export interface IStorage {
   // Project operations
   getProject(id: number): Promise<Project | undefined>;
   getAllProjects(): Promise<Project[]>;
-  getFilteredProjects(category?: string, difficulty?: string): Promise<Project[]>;
+  getFilteredProjects(category?: string, difficulty?: string, careerTrack?: string): Promise<Project[]>;
   getRecommendedProjects(userId: number): Promise<Project[]>;
   createProject(project: InsertProject): Promise<Project>;
+  updateProject(id: number, updates: Partial<Project>): Promise<Project>;
+  deleteProject(id: number): Promise<boolean>;
 
   // UserProject operations
   getUserProject(id: number): Promise<UserProject | undefined>;
@@ -344,7 +346,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(projects);
   }
 
-  async getFilteredProjects(category?: string, difficulty?: string): Promise<Project[]> {
+  async getFilteredProjects(category?: string, difficulty?: string, careerTrack?: string): Promise<Project[]> {
     // Get all projects and filter in memory
     const allProjects = await db.select().from(projects);
     
@@ -356,12 +358,37 @@ export class DatabaseStorage implements IStorage {
       }
       
       // Check difficulty filter
-      if (difficulty && project.difficulty !== difficulty) {
+      if (difficulty && project.difficulty.toLowerCase() !== difficulty.toLowerCase()) {
+        return false;
+      }
+      
+      // Check career track filter
+      if (careerTrack && project.careerTrack !== careerTrack) {
         return false;
       }
       
       return true;
     });
+  }
+  
+  async updateProject(id: number, updates: Partial<Project>): Promise<Project> {
+    const [updatedProject] = await db
+      .update(projects)
+      .set(updates)
+      .where(eq(projects.id, id))
+      .returning();
+    
+    if (!updatedProject) throw new Error("Project not found");
+    return updatedProject;
+  }
+  
+  async deleteProject(id: number): Promise<boolean> {
+    const [deletedProject] = await db
+      .delete(projects)
+      .where(eq(projects.id, id))
+      .returning();
+    
+    return !!deletedProject;
   }
 
   async getRecommendedProjects(userId: number): Promise<Project[]> {
