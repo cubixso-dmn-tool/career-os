@@ -1714,86 +1714,90 @@ export default function PathFinder() {
   );
 
   return (
-    <div className="relative max-w-4xl mx-auto">
-      {/* PathFinder Chat Interface */}
-      <div className="bg-white rounded-xl shadow-md p-6 mb-4">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center">
-            <PathFinderAvatar />
-            <h3 className="text-xl font-semibold ml-3">PathFinder</h3>
-          </div>
-          
-          {started && (
-            <button
-              onClick={() => setStarted(false)}
-              className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-gray-100"
-            >
-              <X className="h-5 w-5 text-gray-500" />
-            </button>
-          )}
-        </div>
-        
-        {!started ? (
-          <div className="py-16 flex flex-col items-center justify-center">
-            <h2 className="text-3xl font-bold mb-4 text-center">Discover Your Perfect Tech Career</h2>
-            <p className="text-gray-600 max-w-md text-center mb-8">
-              Answer a few questions and I'll recommend the best tech career path for you based on your interests and strengths.
-            </p>
-            <Button 
-              size="lg" 
-              onClick={startChat}
-              className="flex items-center px-6 py-6 text-lg"
-            >
-              <span>Let's Get Started</span>
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
-        ) : (
-          <div className="flex flex-col h-[600px]">
-            {/* Messages Container */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 mb-4 border border-gray-100 rounded-lg bg-gray-50">
-              <div className="space-y-6">
-                {messages.map(message => (
-                  <div 
-                    key={message.id}
-                    className={cn(
-                      "flex",
-                      message.sender === 'user' ? "justify-end" : "justify-start",
-                    )}
-                  >
-                    {message.sender === 'bot' && !message.isTyping && (
-                      <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold mr-3 mt-1 shadow-sm">
-                        PF
-                      </div>
-                    )}
-                    
-                    <div className={cn(
-                      "max-w-[75%] rounded-2xl py-3 px-5 shadow-sm",
-                      message.sender === 'user' 
-                        ? "bg-primary text-white rounded-tr-none" 
-                        : "bg-white text-gray-800 rounded-tl-none border border-gray-100"
-                    )}>
-                      {message.isTyping ? (
-                        <TypingIndicator />
-                      ) : (
-                        <div className="text-sm leading-relaxed">{message.content}</div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
+    <div className="mx-auto max-w-5xl">
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        {/* PathFinder Header */}
+        <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-b">
+          <div className="flex items-center justify-between p-6">
+            <div className="flex items-center">
+              <PathFinderAvatar />
+              <h3 className="text-xl font-semibold ml-4">PathFinder AI Career Guide</h3>
             </div>
             
-            {/* Interactive Input Areas based on current stage */}
-            <div className="pt-4">
-              {currentStage === 2 && renderInterestPicker()}
-              {currentStage === 3 && renderEnhancedQuestionnaire()}
-              {currentStage === 4 && analyzing && renderAnalysisAnimation()}
-              {currentStage === 5 && renderRoadmap()}
-            </div>
+            {started && (
+              <button
+                onClick={() => setStarted(false)}
+                className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-600" />
+              </button>
+            )}
           </div>
-        )}
+        </div>
+        
+        <div className="p-6">
+          {!started ? (
+            <div className="py-20 flex flex-col items-center justify-center">
+              <h2 className="text-3xl font-bold mb-6 text-center">Discover Your Perfect Tech Career</h2>
+              <p className="text-gray-600 max-w-lg text-center mb-10 text-lg">
+                Answer a few questions and I'll recommend the best tech career path for you based on your interests and strengths.
+              </p>
+              <Button 
+                size="lg" 
+                onClick={startChat}
+                className="flex items-center px-8 py-6 text-lg rounded-full"
+              >
+                <span>Let's Get Started</span>
+                <ArrowRight className="ml-3 h-5 w-5" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col h-[650px]">
+              {/* Messages Container */}
+              <div className="flex-1 overflow-y-auto mb-6 border border-gray-100 rounded-xl bg-gray-50 shadow-inner">
+                <div className="p-6 space-y-6">
+                  {messages.map(message => (
+                    <div 
+                      key={message.id}
+                      className={cn(
+                        "flex",
+                        message.sender === 'user' ? "justify-end" : "justify-start",
+                      )}
+                    >
+                      {message.sender === 'bot' && !message.isTyping && (
+                        <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-white text-base font-bold mr-4 mt-1 shadow-md">
+                          PF
+                        </div>
+                      )}
+                      
+                      <div className={cn(
+                        "max-w-[75%] rounded-2xl py-4 px-6 shadow-sm",
+                        message.sender === 'user' 
+                          ? "bg-primary text-white rounded-tr-none" 
+                          : "bg-white text-gray-800 rounded-tl-none border border-gray-100"
+                      )}>
+                        {message.isTyping ? (
+                          <TypingIndicator />
+                        ) : (
+                          <div className="text-sm leading-relaxed">{message.content}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              </div>
+              
+              {/* Interactive Input Areas based on current stage */}
+              <div className="pt-4">
+                {currentStage === 2 && renderInterestPicker()}
+                {currentStage === 3 && renderEnhancedQuestionnaire()}
+                {currentStage === 4 && analyzing && renderAnalysisAnimation()}
+                {currentStage === 5 && renderRoadmap()}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

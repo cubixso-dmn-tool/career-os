@@ -34,8 +34,8 @@ export default function Layout({ children, title }: LayoutProps) {
       <MobileSidebar user={userWithDefaults} />
 
       {/* Main Content */}
-      <main className="flex-1 relative">
-        <div className="px-4 py-6 md:px-8 pb-20 md:pb-6">
+      <main className="flex-1 relative bg-gray-50">
+        <div className="container mx-auto px-4 py-6 md:px-8 pb-20 md:pb-6 max-w-7xl">
           {children}
         </div>
       </main>
