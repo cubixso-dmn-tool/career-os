@@ -1,12 +1,96 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Info as InfoIcon } from "lucide-react";
+import { Info as InfoIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CareerTipTooltip } from "@/components/ui/career-tip-tooltip";
 import { TipCard } from "@/components/ui/tip-card";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+
+interface ResourcesProps {
+  careerPath: string;
+}
+
+// Resources section component with API data fetching
+function ResourcesSection({ careerPath }: ResourcesProps) {
+  const [resources, setResources] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  
+  useEffect(() => {
+    async function fetchResources() {
+      try {
+        setLoading(true);
+        const data = await apiRequest({
+          url: `/api/career/roadmap/resources/${encodeURIComponent(careerPath)}`,
+          method: "GET"
+        });
+        setResources(data);
+        setError(false);
+      } catch (err) {
+        console.error("Error fetching resources:", err);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchResources();
+  }, [careerPath]);
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="text-center py-6 text-gray-500">
+        <p>Unable to load resources. Please try again later.</p>
+        <Button variant="outline" size="sm" className="mt-2" onClick={() => setLoading(true)}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="p-4 border rounded-lg">
+        <h4 className="font-medium">Recommended Reading</h4>
+        <ul className="mt-2 space-y-1 text-sm text-gray-600">
+          {resources?.recommendedBooks?.map((book: any, index: number) => (
+            <li key={index}>• "{book.title}" by {book.author}</li>
+          )) || (
+            <>
+              <li>• "The Pragmatic Programmer" by Andrew Hunt</li>
+              <li>• "Clean Code" by Robert C. Martin</li>
+              <li>• "Cracking the Coding Interview" by Gayle McDowell</li>
+            </>
+          )}
+        </ul>
+      </div>
+      <div className="p-4 border rounded-lg">
+        <h4 className="font-medium">Online Resources</h4>
+        <ul className="mt-2 space-y-1 text-sm text-gray-600">
+          {resources?.onlineResources?.map((resource: any, index: number) => (
+            <li key={index}>• {resource.name} for {resource.description || "learning"}</li>
+          )) || (
+            <>
+              <li>• LeetCode for coding practice</li>
+              <li>• GitHub for portfolio projects</li>
+              <li>• Stack Overflow for problem-solving</li>
+            </>
+          )}
+        </ul>
+      </div>
+    </div>
+  );
+}
 
 interface CareerRoadmapProps {
   careerPath?: string;
@@ -26,7 +110,7 @@ export default function CareerRoadmap({ careerPath = "Software Engineer" }: Care
     const fetchUserProgress = async () => {
       try {
         const data = await apiRequest({
-          url: "/api/career/progress",
+          url: "/api/career/roadmap/progress",
           method: "GET"
         });
         setUserProgress(data);
@@ -42,7 +126,7 @@ export default function CareerRoadmap({ careerPath = "Software Engineer" }: Care
   const startStep = async (step: string) => {
     try {
       const updatedData = await apiRequest({
-        url: "/api/career/progress/step",
+        url: "/api/career/roadmap/progress/step",
         method: "POST",
         body: {
           step,
@@ -195,24 +279,9 @@ export default function CareerRoadmap({ careerPath = "Software Engineer" }: Care
           
           <div className="bg-white rounded-lg p-6 border border-gray-100 shadow-sm">
             <h3 className="font-semibold text-lg mb-4">Resources for your journey</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 border rounded-lg">
-                <h4 className="font-medium">Recommended Reading</h4>
-                <ul className="mt-2 space-y-1 text-sm text-gray-600">
-                  <li>• "The Pragmatic Programmer" by Andrew Hunt</li>
-                  <li>• "Clean Code" by Robert C. Martin</li>
-                  <li>• "Cracking the Coding Interview" by Gayle McDowell</li>
-                </ul>
-              </div>
-              <div className="p-4 border rounded-lg">
-                <h4 className="font-medium">Online Resources</h4>
-                <ul className="mt-2 space-y-1 text-sm text-gray-600">
-                  <li>• LeetCode for coding practice</li>
-                  <li>• GitHub for portfolio projects</li>
-                  <li>• Stack Overflow for problem-solving</li>
-                </ul>
-              </div>
-            </div>
+            
+            {/* Resources section with loading state */}
+            <ResourcesSection careerPath={careerPath} />
           </div>
         </div>
       </div>
