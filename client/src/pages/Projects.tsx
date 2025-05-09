@@ -15,16 +15,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { GitBranch, Search, X, BookOpen } from "lucide-react";
 import { Project, UserProject, User } from "@shared/schema";
 
+// For components like MobileHeader, Sidebar, and MobileSidebar that need user data
+interface UiUser {
+  name: string;
+  email?: string;
+  avatar: string;
+}
+
 // Default user data when user is not authenticated
-const defaultUser: User = {
-  id: 0,
-  username: 'guest',
+const defaultUser: UiUser = {
   name: 'Ananya Singh',
   email: 'ananya.s@example.com',
-  password: '',
-  bio: null,
-  avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6',
-  createdAt: new Date()
+  avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6'
 };
 
 // Mock user ID until authentication is implemented
@@ -50,6 +52,13 @@ export default function Projects({}: ProjectsProps) {
     queryKey: [`/api/users/${USER_ID}`],
     queryFn: undefined, // Use default queryFn from queryClient
   });
+  
+  // Convert User type to UiUser type if userData exists
+  const uiUserData: UiUser | undefined = userData ? {
+    name: userData.name,
+    email: userData.email,
+    avatar: userData.avatar || defaultUser.avatar // Use default avatar if null
+  } : undefined;
 
   // Fetch user projects
   const { data: userProjects = [] } = useQuery<UserProject[]>({
@@ -104,17 +113,17 @@ export default function Projects({}: ProjectsProps) {
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Mobile Header */}
-      <MobileHeader user={userData || defaultUser} />
+      <MobileHeader user={uiUserData || defaultUser} />
 
       {/* Sidebar */}
-      <Sidebar user={userData || defaultUser} />
+      <Sidebar user={uiUserData || defaultUser} />
 
       {/* Mobile Sidebar */}
       {isSidebarOpen && (
         <MobileSidebar 
           isOpen={isSidebarOpen} 
           onClose={closeSidebar} 
-          user={userData || defaultUser}
+          user={uiUserData || defaultUser}
         />
       )}
 
