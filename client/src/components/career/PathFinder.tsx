@@ -14,7 +14,7 @@ import { getContextualCareerTip } from "@/lib/career-tips";
 // PathFinder Avatar Component
 const PathFinderAvatar = () => (
   <motion.div 
-    className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white text-xl font-bold shadow-md"
+    className="h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white text-xl font-bold shadow-lg"
     initial={{ scale: 0.8, opacity: 0 }}
     animate={{ 
       scale: 1, 
