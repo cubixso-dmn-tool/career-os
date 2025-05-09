@@ -3,21 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, ExternalLink, Github, Check } from "lucide-react";
 import { Link } from "wouter";
-
-interface Project {
-  id: number;
-  title: string;
-  description: string;
-  difficulty: string;
-  duration: string;
-  skills: string[] | string;
-  category: string;
-  careerTrack?: string;
-  thumbnail?: string;
-  githubRepo?: string;
-  isPopular?: boolean;
-  estimatedHours?: number;
-}
+import { Project } from "@shared/schema";
 
 interface ProjectCardProps {
   project: Project;

@@ -1,8 +1,9 @@
 import { Router, Request, Response } from "express";
 import { storage } from "../storage";
-import { insertProjectSchema, Project } from "@shared/schema";
-import { ZodError } from "zod";
+import { z } from "zod";
+import { insertProjectSchema } from "@shared/schema";
 import { requireContentPermissions } from "../middleware/rbac";
+import { handleZodError } from "../routes";
 
 const router = Router();
 
@@ -11,26 +12,25 @@ const router = Router();
  */
 router.get("/", async (req: Request, res: Response) => {
   try {
-    const { category, difficulty, careerTrack } = req.query;
-    let projects = await storage.getAllProjects();
+    const careerTrack = req.query.careerTrack as string;
+    const difficulty = req.query.difficulty as string;
     
-    // Apply filters if provided
-    if (category) {
-      projects = projects.filter(project => project.category === category);
+    // If filters are provided, use filtered endpoint
+    if (careerTrack || difficulty) {
+      const projects = await storage.getFilteredProjects(
+        undefined, // category - not using this filter for now
+        difficulty,
+        careerTrack
+      );
+      return res.json(projects);
     }
     
-    if (difficulty) {
-      projects = projects.filter(project => project.difficulty.toLowerCase() === difficulty.toString().toLowerCase());
-    }
-    
-    if (careerTrack) {
-      projects = projects.filter(project => project.careerTrack === careerTrack);
-    }
-    
-    res.json(projects);
+    // Otherwise get all projects
+    const projects = await storage.getAllProjects();
+    return res.json(projects);
   } catch (error) {
     console.error("Error fetching projects:", error);
-    res.status(500).json({ message: "Failed to fetch projects" });
+    return res.status(500).json({ message: "Failed to fetch projects" });
   }
 });
 
@@ -49,10 +49,10 @@ router.get("/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Project not found" });
     }
     
-    res.json(project);
+    return res.json(project);
   } catch (error) {
-    console.error(`Error fetching project ${req.params.id}:`, error);
-    res.status(500).json({ message: "Failed to fetch project" });
+    console.error("Error fetching project:", error);
+    return res.status(500).json({ message: "Failed to fetch project" });
   }
 });
 
@@ -61,25 +61,18 @@ router.get("/:id", async (req: Request, res: Response) => {
  */
 router.get("/career-track/:trackId", async (req: Request, res: Response) => {
   try {
-    const { trackId } = req.params;
-    const { difficulty } = req.query;
+    const careerTrack = req.params.trackId;
     
-    let projects = await storage.getAllProjects();
+    const projects = await storage.getFilteredProjects(
+      undefined, // category
+      undefined, // difficulty
+      careerTrack
+    );
     
-    // Filter by career track
-    projects = projects.filter(project => project.careerTrack === trackId);
-    
-    // Apply difficulty filter if provided
-    if (difficulty) {
-      projects = projects.filter(project => 
-        project.difficulty.toLowerCase() === difficulty.toString().toLowerCase()
-      );
-    }
-    
-    res.json(projects);
+    return res.json(projects);
   } catch (error) {
-    console.error(`Error fetching projects for career track ${req.params.trackId}:`, error);
-    res.status(500).json({ message: "Failed to fetch projects by career track" });
+    console.error("Error fetching projects by career track:", error);
+    return res.status(500).json({ message: "Failed to fetch projects" });
   }
 });
 
@@ -88,12 +81,13 @@ router.get("/career-track/:trackId", async (req: Request, res: Response) => {
  */
 router.get("/popular", async (req: Request, res: Response) => {
   try {
-    const projects = await storage.getAllProjects();
-    const popularProjects = projects.filter(project => project.isPopular === true);
-    res.json(popularProjects);
+    const allProjects = await storage.getAllProjects();
+    const popularProjects = allProjects.filter(project => project.isPopular === true);
+    
+    return res.json(popularProjects);
   } catch (error) {
     console.error("Error fetching popular projects:", error);
-    res.status(500).json({ message: "Failed to fetch popular projects" });
+    return res.status(500).json({ message: "Failed to fetch popular projects" });
   }
 });
 
@@ -103,19 +97,16 @@ router.get("/popular", async (req: Request, res: Response) => {
 router.post("/", requireContentPermissions, async (req: Request, res: Response) => {
   try {
     const projectData = insertProjectSchema.parse(req.body);
-    const newProject = await storage.createProject(projectData);
-    res.status(201).json(newProject);
-  } catch (error) {
-    console.error("Error creating project:", error);
     
-    if (error instanceof ZodError) {
-      return res.status(400).json({ 
-        message: "Invalid project data", 
-        errors: error.errors 
-      });
+    const project = await storage.createProject(projectData);
+    return res.status(201).json(project);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return handleZodError(error, res);
     }
     
-    res.status(500).json({ message: "Failed to create project" });
+    console.error("Error creating project:", error);
+    return res.status(500).json({ message: "Failed to create project" });
   }
 });
 
@@ -129,25 +120,18 @@ router.put("/:id", requireContentPermissions, async (req: Request, res: Response
       return res.status(400).json({ message: "Invalid project ID" });
     }
     
-    const projectData = insertProjectSchema.parse(req.body);
-    const updatedProject = await storage.updateProject(id, projectData);
-    
-    if (!updatedProject) {
+    const existingProject = await storage.getProject(id);
+    if (!existingProject) {
       return res.status(404).json({ message: "Project not found" });
     }
     
-    res.json(updatedProject);
+    const projectData = req.body;
+    const project = await storage.updateProject(id, projectData);
+    
+    return res.json(project);
   } catch (error) {
-    console.error(`Error updating project ${req.params.id}:`, error);
-    
-    if (error instanceof ZodError) {
-      return res.status(400).json({ 
-        message: "Invalid project data", 
-        errors: error.errors 
-      });
-    }
-    
-    res.status(500).json({ message: "Failed to update project" });
+    console.error("Error updating project:", error);
+    return res.status(500).json({ message: "Failed to update project" });
   }
 });
 
@@ -161,16 +145,21 @@ router.delete("/:id", requireContentPermissions, async (req: Request, res: Respo
       return res.status(400).json({ message: "Invalid project ID" });
     }
     
-    const success = await storage.deleteProject(id);
-    
-    if (!success) {
+    const existingProject = await storage.getProject(id);
+    if (!existingProject) {
       return res.status(404).json({ message: "Project not found" });
     }
     
-    res.status(200).json({ message: "Project deleted successfully" });
+    const result = await storage.deleteProject(id);
+    
+    if (result) {
+      return res.status(200).json({ message: "Project deleted successfully" });
+    } else {
+      return res.status(500).json({ message: "Failed to delete project" });
+    }
   } catch (error) {
-    console.error(`Error deleting project ${req.params.id}:`, error);
-    res.status(500).json({ message: "Failed to delete project" });
+    console.error("Error deleting project:", error);
+    return res.status(500).json({ message: "Failed to delete project" });
   }
 });
 

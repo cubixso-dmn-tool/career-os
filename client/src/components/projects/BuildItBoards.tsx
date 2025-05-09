@@ -240,7 +240,7 @@ export default function BuildItBoards() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {popularProjects.map((project: any) => (
+            {popularProjects.map((project) => (
               <ProjectCard key={project.id} project={project} />
             ))}
           </div>
@@ -319,7 +319,7 @@ export default function BuildItBoards() {
                 </div>
               ) : beginnerProjects.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {beginnerProjects.map((project: any) => (
+                  {beginnerProjects.map((project) => (
                     <ProjectCard key={project.id} project={project} />
                   ))}
                 </div>
@@ -361,7 +361,7 @@ export default function BuildItBoards() {
                 </div>
               ) : intermediateProjects.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {intermediateProjects.map((project: any) => (
+                  {intermediateProjects.map((project) => (
                     <ProjectCard key={project.id} project={project} />
                   ))}
                 </div>
@@ -403,7 +403,7 @@ export default function BuildItBoards() {
                 </div>
               ) : advancedProjects.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {advancedProjects.map((project: any) => (
+                  {advancedProjects.map((project) => (
                     <ProjectCard key={project.id} project={project} />
                   ))}
                 </div>

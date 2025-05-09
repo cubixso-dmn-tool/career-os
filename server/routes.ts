@@ -30,7 +30,7 @@ import coursesRoutes from "./routes/courses";
 import projectsRoutes from "./routes/projects";
 import { loadUserRolesMiddleware } from "./middleware/rbac";
 
-function handleZodError(error: ZodError, res: Response) {
+export function handleZodError(error: ZodError, res: Response) {
   return res.status(400).json({
     message: "Validation error",
     errors: error.errors,
