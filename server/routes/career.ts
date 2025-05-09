@@ -137,29 +137,35 @@ router.post('/pathfinder/chat', async (req, res) => {
           );
           const softSkillNames = softSkills.filter(Boolean).map(s => s?.name || '');
           
+          // Get recommended niches and career from quiz results
+          const recommendedNiches = quizResults.length > 0 && Array.isArray(quizResults[0].recommendedNiches) 
+            ? quizResults[0].recommendedNiches 
+            : ['technology'];
+            
+          const recommendedCareer = quizResults.length > 0 && quizResults[0].recommendedCareer 
+            ? quizResults[0].recommendedCareer 
+            : undefined;
+          
           // Enhanced user profile with actual user data
           userProfile = {
-            name: user.name || user.username,
-            interests: quizResults.length > 0 && quizResults[0].recommendedNiches ? 
-              quizResults[0].recommendedNiches : ['technology'],
-            education: user.education || 'Current Indian student',
-            skills: [...new Set([
-              ...(user.skills || []),
+            name: user.username, // Using username which we know exists
+            interests: recommendedNiches,
+            education: 'Current Indian student', // Default value
+            skills: Array.from(new Set([
               ...(softSkillNames || [])
-            ])],
+            ])),
             enrolledCourses: courseNames,
             projects: projectNames,
-            careerPath: quizResults.length > 0 && quizResults[0].recommendedCareer ? 
-              quizResults[0].recommendedCareer : undefined,
-            location: user.location || 'India'
+            careerPath: recommendedCareer,
+            location: 'India' // Default value
           };
         } catch (error) {
           console.error("Error getting additional user data:", error);
           // Fallback to basic profile if there are errors with additional data
           userProfile = {
-            name: user.name || user.username,
-            education: user.education || 'Current Indian student',
-            location: user.location || 'India'
+            name: user.username,
+            education: 'Current Indian student',
+            location: 'India'
           };
         }
       }

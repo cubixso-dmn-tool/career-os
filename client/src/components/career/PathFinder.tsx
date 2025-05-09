@@ -158,6 +158,21 @@ export default function PathFinder() {
   const [chatHistory, setChatHistory] = useState<{role: 'user' | 'assistant', content: string}[]>([]);
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [showAssessment, setShowAssessment] = useState(false);
+  const [careerAssessment, setCareerAssessment] = useState<{
+    careerSuggestions: Array<{
+      title: string;
+      match: number;
+      description: string;
+      skills: string[];
+      salary: string;
+      growthProspect: string;
+      educationPath: string;
+      certifications: string[];
+    }>;
+    explanation: string;
+  } | null>(null);
+  const [assessmentLoading, setAssessmentLoading] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -1361,6 +1376,113 @@ export default function PathFinder() {
     </div>
   );
 
+  // Request a career assessment based on the conversation
+  const requestCareerAssessment = async () => {
+    if (chatHistory.length < 4) {
+      toast({
+        title: "More conversation needed",
+        description: "Please chat a bit more so I can understand your interests and skills better.",
+        variant: "default"
+      });
+      return;
+    }
+    
+    setAssessmentLoading(true);
+    
+    try {
+      const response = await fetch('/api/career/pathfinder/quick-assessment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chatHistory
+        }),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate career assessment');
+      }
+      
+      const data = await response.json();
+      setCareerAssessment(data);
+      setShowAssessment(true);
+      
+      // Add a message about the assessment
+      addMessage({
+        id: Date.now().toString(),
+        content: "Based on our conversation, I've prepared a career assessment for you. Check it out below!",
+        sender: 'bot'
+      });
+      
+    } catch (error) {
+      console.error('Error generating career assessment:', error);
+      toast({
+        title: "Assessment Error",
+        description: "Sorry, I couldn't generate your career assessment. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setAssessmentLoading(false);
+    }
+  };
+  
+  // Render Career Assessment component
+  const renderCareerAssessment = () => {
+    if (!careerAssessment) return null;
+    
+    return (
+      <div className="mt-6 mb-6 w-full border border-primary/20 rounded-lg p-4">
+        <h3 className="text-xl font-bold text-primary mb-3">Career Assessment</h3>
+        <p className="text-gray-600 mb-4">{careerAssessment.explanation}</p>
+        
+        <div className="space-y-4">
+          {careerAssessment.careerSuggestions.map((career, index: number) => (
+            <div key={index} className="border rounded-lg p-4 bg-white">
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="text-lg font-bold">{career.title}</h4>
+                <Badge variant={career.match > 85 ? "default" : "outline"}>{career.match}% Match</Badge>
+              </div>
+              
+              <p className="text-gray-600 text-sm mb-3">{career.description}</p>
+              
+              <div className="mb-3">
+                <h5 className="text-sm font-semibold mb-1">Key Skills</h5>
+                <div className="flex flex-wrap gap-2">
+                  {career.skills.map((skill: string, i: number) => (
+                    <Badge key={i} variant="outline" className="bg-primary/5">{skill}</Badge>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="font-semibold">Salary Range</p>
+                  <p className="text-gray-600">{career.salary}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">Growth Prospects</p>
+                  <p className="text-gray-600">{career.growthProspect}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">Education Path</p>
+                  <p className="text-gray-600">{career.educationPath}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">Recommended Certifications</p>
+                  <ul className="text-gray-600 list-disc pl-4">
+                    {career.certifications.slice(0, 2).map((cert: string, i: number) => (
+                      <li key={i}>{cert}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+  
   // Render Roadmap component
   const renderRoadmap = () => (
     <div className="mt-6 mb-10 w-full">
@@ -1472,6 +1594,37 @@ export default function PathFinder() {
           <p className="text-gray-600 text-sm mb-4">
             Ask anything about your career path, skills, learning resources, or next steps.
           </p>
+          
+          <div className="mb-4 flex justify-between items-center">
+            <Button
+              onClick={requestCareerAssessment}
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              disabled={isAiThinking || assessmentLoading || chatHistory.length < 4}
+            >
+              {assessmentLoading ? (
+                <>
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <LightbulbIcon className="h-3 w-3 mr-1" />
+                  Get Career Assessment
+                </>
+              )}
+            </Button>
+            
+            <CareerTipTooltip
+              tip="After a few questions, I can analyze our conversation to recommend career paths that match your interests and skills"
+              category="skill"
+            >
+              <InfoIcon className="h-4 w-4 text-gray-400 hover:text-primary cursor-help" />
+            </CareerTipTooltip>
+          </div>
+          
+          {showAssessment && renderCareerAssessment()}
           
           <form onSubmit={handleChatSubmit} className="flex items-center gap-2">
             <div className="relative flex-1">
