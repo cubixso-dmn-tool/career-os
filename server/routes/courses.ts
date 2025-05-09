@@ -1,7 +1,6 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { db } from "../db";
-import { authenticateRoute } from "../middleware/auth";
 
 const router = Router();
 

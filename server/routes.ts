@@ -26,6 +26,7 @@ import rbacRoutes from "./routes/rbac";
 import careerRoutes from "./routes/career";
 import careerRoadmapRoutes from "./routes/career-roadmap";
 import contentManagementRoutes from "./routes/content-management";
+import coursesRoutes from "./routes/courses";
 import { loadUserRolesMiddleware } from "./middleware/rbac";
 
 function handleZodError(error: ZodError, res: Response) {
@@ -931,6 +932,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register Content Management routes
   app.use('/api/content-management', contentManagementRoutes);
+  
+  // Register Course features routes
+  app.use('/api/courses', coursesRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
