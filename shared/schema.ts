@@ -51,10 +51,16 @@ export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  difficulty: text("difficulty").notNull(),
+  difficulty: text("difficulty").notNull(), // "beginner", "intermediate", "advanced"
   duration: text("duration").notNull(),
   skills: text("skills").array(),
-  category: text("category").notNull()
+  category: text("category").notNull(), // Project category (e.g., "web", "mobile", "data")
+  careerTrack: text("career_track").notNull(), // Career track (e.g., "frontend", "backend", "fullstack", "data science")
+  thumbnail: text("thumbnail"), // Image URL
+  githubRepo: text("github_repo"), // Optional GitHub repository link
+  isPopular: boolean("is_popular").default(false),
+  estimatedHours: integer("estimated_hours"), // Estimated hours to complete
+  createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
 export const userProjects = pgTable("user_projects", {
@@ -255,7 +261,7 @@ export const insertUserSchema = createInsertSchema(users).omit({ id: true, creat
 export const insertQuizResultSchema = createInsertSchema(quizResults).omit({ id: true, completedAt: true });
 export const insertCourseSchema = createInsertSchema(courses).omit({ id: true });
 export const insertEnrollmentSchema = createInsertSchema(enrollments).omit({ id: true, enrolledAt: true });
-export const insertProjectSchema = createInsertSchema(projects).omit({ id: true });
+export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true });
 export const insertUserProjectSchema = createInsertSchema(userProjects).omit({ id: true, startedAt: true });
 export const insertSoftSkillSchema = createInsertSchema(softSkills).omit({ id: true });
 export const insertUserSoftSkillSchema = createInsertSchema(userSoftSkills).omit({ id: true });
