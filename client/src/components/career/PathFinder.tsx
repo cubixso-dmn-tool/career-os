@@ -1023,40 +1023,50 @@ export default function PathFinder() {
 
   // Render the Interest Picker component
   const renderInterestPicker = () => (
-    <div className="mt-4 mb-6 w-full">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {interests.map(interest => (
-          <motion.button
-            key={interest.id}
-            className={cn(
-              "h-32 rounded-lg border-2 flex flex-col items-center justify-center space-y-2 transition-all",
-              interest.selected 
-                ? "border-primary bg-primary/10 shadow-md" 
-                : "border-gray-200 hover:border-primary/30 hover:bg-gray-50",
-              selectedInterestsCount >= 3 && !interest.selected && "opacity-50 cursor-not-allowed"
-            )}
-            onClick={() => handleInterestClick(interest.id)}
-            whileHover={selectedInterestsCount < 3 || interest.selected ? { scale: 1.02 } : {}}
-            whileTap={selectedInterestsCount < 3 || interest.selected ? { scale: 0.98 } : {}}
-            disabled={selectedInterestsCount >= 3 && !interest.selected}
-          >
-            <span className="text-3xl">{interest.emoji}</span>
-            <span className="text-sm font-medium text-center">{interest.label}</span>
-          </motion.button>
-        ))}
-      </div>
-      
-      {selectedInterestsCount > 0 && (
-        <div className="mt-4 flex justify-end">
-          <Button 
-            onClick={continueToEnhancedQuestionnaire}
-            className="space-x-2"
-          >
-            <span>Continue</span>
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+    <div className="w-full">
+      <div className="bg-white rounded-lg p-6 border border-gray-100 shadow-sm">
+        <h3 className="font-semibold text-lg mb-6">What interests you the most?</h3>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {interests.map(interest => (
+            <motion.button
+              key={interest.id}
+              className={cn(
+                "h-36 rounded-lg border-2 flex flex-col items-center justify-center space-y-3 transition-all",
+                interest.selected 
+                  ? "border-primary bg-primary/10 shadow-md" 
+                  : "border-gray-200 hover:border-primary/30 hover:bg-gray-50",
+                selectedInterestsCount >= 3 && !interest.selected && "opacity-50 cursor-not-allowed"
+              )}
+              onClick={() => handleInterestClick(interest.id)}
+              whileHover={selectedInterestsCount < 3 || interest.selected ? { scale: 1.02, boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)" } : {}}
+              whileTap={selectedInterestsCount < 3 || interest.selected ? { scale: 0.98 } : {}}
+              disabled={selectedInterestsCount >= 3 && !interest.selected}
+            >
+              <span className="text-4xl">{interest.emoji}</span>
+              <span className="text-sm font-medium text-center">{interest.label}</span>
+            </motion.button>
+          ))}
         </div>
-      )}
+        
+        <div className="mt-6 flex justify-between items-center">
+          <p className="text-sm text-gray-500">
+            {selectedInterestsCount === 0 
+              ? "Select 1-3 interests" 
+              : `${selectedInterestsCount} of 3 selected`}
+          </p>
+          
+          {selectedInterestsCount > 0 && (
+            <Button 
+              onClick={continueToEnhancedQuestionnaire}
+              className="space-x-2"
+            >
+              <span>Continue</span>
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 
@@ -1268,91 +1278,110 @@ export default function PathFinder() {
     };
     
     return (
-      <div className="mt-4 mb-6 w-full max-w-md mx-auto">
-        <div className="flex justify-center mb-6">
-          <div className="h-2 w-full max-w-xs bg-gray-200 rounded-full overflow-hidden">
+      <div className="w-full">
+        <div className="bg-white rounded-lg p-6 border border-gray-100 shadow-sm">
+          <div className="flex justify-between items-center mb-4">
+            <Badge variant="outline" className="bg-primary/5 text-primary font-medium">
+              Question {currentQuestion} of {totalQuestions}
+            </Badge>
+            <span className="text-sm text-gray-500 font-medium">{currentQuestionData.category}</span>
+          </div>
+          
+          <div className="w-full bg-gray-100 rounded-full h-2 mb-6 overflow-hidden">
             <div 
-              className="h-full bg-primary rounded-full transition-all duration-300" 
+              className="h-full bg-primary rounded-full transition-all duration-500" 
               style={{ width: `${(currentQuestion / totalQuestions) * 100}%` }}
             />
           </div>
-        </div>
-        
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentQuestionData.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-3"
-          >
-            <div className="mb-4">
-              <p className="text-xs text-gray-500">{currentQuestionData.category}</p>
-              <div className="font-medium text-gray-700 mb-3 flex items-start">
-                <CareerTipTooltip 
-                  tip={getContextualTip(currentQuestionData.category, currentQuestionData.field)} 
-                  category={getContextualTipCategory(currentQuestionData.field)}
-                >
-                  <p>{currentQuestionData.question}</p>
-                </CareerTipTooltip>
-              </div>
-            </div>
-            
-            <div className={`grid ${currentQuestionData.options.length > 4 ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
-              {currentQuestionData.options.map(option => (
-                <Button
-                  key={option.value}
-                  variant={
-                    isMultiSelect
-                      ? multiSelectOptions.includes(option.value) ? "default" : "outline"
-                      : questionnaire[currentQuestionData.field as keyof typeof questionnaire] === option.value
-                        ? "default"
-                        : "outline"
-                  }
-                  onClick={() => handleOptionSelect(option.value)}
-                  className={`h-auto py-3 justify-start ${
-                    isMultiSelect && multiSelectOptions.length >= 3 && !multiSelectOptions.includes(option.value)
-                      ? "opacity-50"
-                      : ""
-                  }`}
-                  disabled={
-                    isMultiSelect && multiSelectOptions.length >= 3 && !multiSelectOptions.includes(option.value)
-                  }
-                >
-                  <span className="text-left">{option.label}</span>
-                </Button>
-              ))}
-            </div>
-            
-            {isMultiSelect && (
-              <div className="flex justify-between mt-4">
-                <p className="text-xs text-gray-500 self-center">
-                  {multiSelectOptions.length === 0 
-                    ? "Select up to 3 options" 
-                    : `Selected ${multiSelectOptions.length} of 3`}
-                </p>
-                {multiSelectOptions.length > 0 && (
-                  <Button 
-                    onClick={handleMultiSelectContinue}
-                    size="sm"
-                    className="space-x-2"
+          
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentQuestionData.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-5"
+            >
+              <div className="mb-5">
+                <div className="font-medium text-gray-800 text-lg mb-2 flex items-start">
+                  <CareerTipTooltip 
+                    tip={getContextualTip(currentQuestionData.category, currentQuestionData.field)} 
+                    category={getContextualTipCategory(currentQuestionData.field)}
                   >
-                    <span>Continue</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                )}
+                    <p>{currentQuestionData.question}</p>
+                  </CareerTipTooltip>
+                </div>
               </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-        
-        <div className="mt-8 text-center">
-          <button 
-            onClick={skipQuestionnaire}
-            className="text-gray-500 text-sm hover:text-primary hover:underline transition-colors"
-          >
-            Skip remaining questions
-          </button>
+              
+              <div className={cn(
+                "grid gap-3",
+                currentQuestionData.options.length <= 3 ? "grid-cols-1" : 
+                currentQuestionData.options.length <= 6 ? "grid-cols-2" : 
+                "grid-cols-2 md:grid-cols-3"
+              )}>
+                {currentQuestionData.options.map(option => (
+                  <motion.div
+                    key={option.value}
+                    whileHover={!(isMultiSelect && multiSelectOptions.length >= 3 && !multiSelectOptions.includes(option.value)) ? 
+                      { scale: 1.02, boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)" } : {}}
+                    whileTap={!(isMultiSelect && multiSelectOptions.length >= 3 && !multiSelectOptions.includes(option.value)) ? 
+                      { scale: 0.98 } : {}}
+                  >
+                    <Button
+                      variant={
+                        isMultiSelect
+                          ? multiSelectOptions.includes(option.value) ? "default" : "outline"
+                          : questionnaire[currentQuestionData.field as keyof typeof questionnaire] === option.value
+                            ? "default"
+                            : "outline"
+                      }
+                      onClick={() => handleOptionSelect(option.value)}
+                      className={cn(
+                        "w-full h-auto py-4 px-5 justify-start text-left",
+                        isMultiSelect && multiSelectOptions.length >= 3 && !multiSelectOptions.includes(option.value)
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                      )}
+                      disabled={
+                        isMultiSelect && multiSelectOptions.length >= 3 && !multiSelectOptions.includes(option.value)
+                      }
+                    >
+                      <span>{option.label}</span>
+                    </Button>
+                  </motion.div>
+                ))}
+              </div>
+              
+              {isMultiSelect && (
+                <div className="flex justify-between mt-6">
+                  <p className="text-sm text-gray-500 self-center">
+                    {multiSelectOptions.length === 0 
+                      ? "Select up to 3 options" 
+                      : `Selected ${multiSelectOptions.length} of 3`}
+                  </p>
+                  {multiSelectOptions.length > 0 && (
+                    <Button 
+                      onClick={handleMultiSelectContinue}
+                      className="space-x-2"
+                    >
+                      <span>Continue</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+          
+          <div className="mt-8 text-center">
+            <button 
+              onClick={skipQuestionnaire}
+              className="text-sm text-gray-500 hover:text-primary transition-colors"
+            >
+              Skip remaining questions
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1485,19 +1514,19 @@ export default function PathFinder() {
   
   // Render Roadmap component
   const renderRoadmap = () => (
-    <div className="mt-6 mb-10 w-full">
-      <div className="bg-gradient-to-r from-primary/20 to-primary/5 rounded-lg p-4 mb-6">
+    <div className="w-full">
+      <div className="bg-gradient-to-r from-primary/20 to-primary/5 rounded-xl p-6 mb-8 shadow-sm">
         <h3 className="text-xl font-bold flex items-center">
-          <span className="mr-2">🎯</span>
+          <span className="mr-3 text-2xl">🎯</span>
           You're on the path to becoming a {careerPath} expert!
         </h3>
-        <p className="text-sm text-gray-600 mt-1">Progress: 1/6 checkpoints completed</p>
+        <p className="text-sm text-gray-600 mt-2 ml-8">Progress: 1/6 checkpoints completed</p>
         <CareerTipTooltip
           tip="Your personalized career roadmap will guide you through all the steps needed to establish yourself in your chosen field"
           category="roadmap"
-          className="mt-2 inline-block"
+          className="mt-3 inline-block ml-8"
         >
-          <Badge variant="outline" className="mt-2 border-primary/50 text-primary bg-white cursor-help">
+          <Badge variant="outline" className="border-primary/50 text-primary bg-white cursor-help hover:bg-primary/5">
             What's this roadmap?
           </Badge>
         </CareerTipTooltip>
@@ -1506,7 +1535,7 @@ export default function PathFinder() {
       <TipCard 
         context="pathfinder" 
         secondaryContext="results" 
-        className="mb-6"
+        className="mb-8 shadow-sm"
         showRefresh={true}
       />
       
