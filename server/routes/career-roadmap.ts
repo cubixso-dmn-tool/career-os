@@ -1,12 +1,19 @@
 import { Router } from "express";
 import { storage } from "../storage";
-import { isAuthenticated } from "../middleware/auth";
+import { loadUserRolesMiddleware } from "../middleware/rbac";
 
 const router = Router();
 
+// Apply middleware to load user roles and permissions
+router.use(loadUserRolesMiddleware);
+
 // Get user career progress
-router.get('/progress', isAuthenticated, async (req, res) => {
+router.get('/progress', async (req, res) => {
   try {
+    if (!req.isAuthenticated || !req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     // For now, return mock data - in real implementation, this would fetch from the database
     // using the authenticated user's ID (req.user.id)
     const mockUserProgress = {
@@ -24,8 +31,12 @@ router.get('/progress', isAuthenticated, async (req, res) => {
 });
 
 // Update user progress for a step
-router.post('/progress/step', isAuthenticated, async (req, res) => {
+router.post('/progress/step', async (req, res) => {
   try {
+    if (!req.isAuthenticated || !req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     const { step, action } = req.body;
     
     if (!step || !action) {
@@ -53,8 +64,12 @@ router.post('/progress/step', isAuthenticated, async (req, res) => {
 });
 
 // Get recommended resources for career path
-router.get('/resources/:careerPath', isAuthenticated, async (req, res) => {
+router.get('/resources/:careerPath', async (req, res) => {
   try {
+    if (!req.isAuthenticated || !req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     const { careerPath } = req.params;
     
     // Mock implementation - in real app, this would query the database based on career path

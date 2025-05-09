@@ -24,6 +24,7 @@ import {
 import communityRoutes from "./routes/community";
 import rbacRoutes from "./routes/rbac";
 import careerRoutes from "./routes/career";
+import careerRoadmapRoutes from "./routes/career-roadmap";
 import contentManagementRoutes from "./routes/content-management";
 import { loadUserRolesMiddleware } from "./middleware/rbac";
 
@@ -924,6 +925,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register Career Guide and PathFinder routes
   app.use('/api/career', careerRoutes);
+  
+  // Register Career Roadmap routes
+  app.use('/api/career/roadmap', careerRoadmapRoutes);
   
   // Register Content Management routes
   app.use('/api/content-management', contentManagementRoutes);
