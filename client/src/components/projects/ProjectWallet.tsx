@@ -123,7 +123,7 @@ export default function ProjectWallet() {
       const response = await apiRequest({
         url: "/api/portfolio-links",
         method: "POST",
-        data
+        body: data
       });
       return response;
     },
@@ -150,7 +150,7 @@ export default function ProjectWallet() {
       const response = await apiRequest({
         url: `/api/user/projects/${id}`,
         method: "PATCH",
-        data
+        body: data
       });
       return response;
     },
