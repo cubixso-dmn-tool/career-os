@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { 
   Briefcase, 
   Calendar, 
+  Check,
   Github, 
   Globe, 
   ChevronLeft,
@@ -83,7 +84,7 @@ export default function Portfolio() {
   // Fetch portfolio data
   const { data, isLoading, error } = useQuery<PortfolioData>({
     queryKey: [`/api/portfolio/${slug}`],
-    queryFn: async () => {
+    queryFn: async ({ queryKey }) => {
       // Also increment view count
       const response = await apiRequest("GET", `/api/portfolio/${slug}`);
       if (!response.ok) {

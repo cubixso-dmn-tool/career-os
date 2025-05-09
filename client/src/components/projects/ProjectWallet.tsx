@@ -120,12 +120,12 @@ export default function ProjectWallet() {
   // Create portfolio link mutation
   const createPortfolioLinkMutation = useMutation({
     mutationFn: async (data: z.infer<typeof portfolioLinkSchema>) => {
-      const response = await apiRequest("POST", "/api/portfolio-links", data);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create portfolio link");
-      }
-      return response.json();
+      const response = await apiRequest({
+        url: "/api/portfolio-links",
+        method: "POST",
+        data
+      });
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/portfolio-links"] });
@@ -147,12 +147,12 @@ export default function ProjectWallet() {
   // Update project details mutation
   const updateProjectDetailsMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number, data: z.infer<typeof projectDetailsSchema> }) => {
-      const response = await apiRequest("PATCH", `/api/user/projects/${id}`, data);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update project details");
-      }
-      return response.json();
+      const response = await apiRequest({
+        url: `/api/user/projects/${id}`,
+        method: "PATCH",
+        data
+      });
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user/projects"] });

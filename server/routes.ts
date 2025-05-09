@@ -940,6 +940,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register Projects routes
   app.use('/api/projects', projectsRoutes);
+  
+  // Portfolio routes for Project Wallet
+  app.use(portfolioRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
