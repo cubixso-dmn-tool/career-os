@@ -86,11 +86,10 @@ export default function Portfolio() {
     queryKey: [`/api/portfolio/${slug}`],
     queryFn: async ({ queryKey }) => {
       // Also increment view count
-      const response = await apiRequest("GET", `/api/portfolio/${slug}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch portfolio");
-      }
-      return response.json();
+      return await apiRequest({
+        url: `/api/portfolio/${slug}`,
+        method: "GET"
+      });
     },
   });
   
@@ -143,13 +142,11 @@ export default function Portfolio() {
       <header className="bg-white border-b">
         <div className="container mx-auto px-4 py-6 max-w-7xl">
           <div className="flex justify-between items-center">
-            <Link href="/">
-              <a className="flex items-center">
-                <div className="h-8 w-8 bg-primary rounded-md flex items-center justify-center text-white font-bold mr-2">
-                  CP
-                </div>
-                <span className="text-lg font-bold">CareerOS</span>
-              </a>
+            <Link href="/" className="flex items-center">
+              <div className="h-8 w-8 bg-primary rounded-md flex items-center justify-center text-white font-bold mr-2">
+                CP
+              </div>
+              <span className="text-lg font-bold">CareerOS</span>
             </Link>
             
             <Button variant="outline" size="sm" onClick={copyShareableLink}>
