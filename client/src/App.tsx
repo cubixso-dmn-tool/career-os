@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import CareerGuide from "@/pages/CareerGuide";
+import CareerRoadmap from "@/pages/CareerRoadmap";
 import Courses from "@/pages/Courses";
 import Projects from "@/pages/Projects";
 import Community from "@/pages/Community";
@@ -31,6 +32,11 @@ function Router() {
       <Route path="/career-guide">
         <ProtectedRoute>
           <CareerGuide />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/career-roadmap">
+        <ProtectedRoute>
+          <CareerRoadmap />
         </ProtectedRoute>
       </Route>
       <Route path="/courses">

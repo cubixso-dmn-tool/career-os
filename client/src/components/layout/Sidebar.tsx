@@ -34,6 +34,7 @@ export default function Sidebar({ user }: SidebarProps) {
   const navItems = [
     { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/career-guide", icon: Compass, label: "Career Guide" },
+    { path: "/career-roadmap", icon: GitBranch, label: "Career Roadmap" },
     { path: "/courses", icon: BookOpen, label: "Courses" },
     { path: "/projects", icon: GitBranch, label: "Projects" },
     { path: "/community", icon: MessageSquare, label: "Community" },
