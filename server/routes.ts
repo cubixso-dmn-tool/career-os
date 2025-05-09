@@ -28,6 +28,7 @@ import careerRoadmapRoutes from "./routes/career-roadmap";
 import contentManagementRoutes from "./routes/content-management";
 import coursesRoutes from "./routes/courses";
 import projectsRoutes from "./routes/projects";
+import portfolioRoutes from "./routes/portfolio";
 import { loadUserRolesMiddleware } from "./middleware/rbac";
 
 export function handleZodError(error: ZodError, res: Response) {

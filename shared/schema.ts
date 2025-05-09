@@ -308,11 +308,15 @@ export const insertCommunityMemberSchema = createInsertSchema(communityMembers).
 export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({ id: true, likes: true, replies: true, createdAt: true, updatedAt: true, userId: true, communityId: true });
 export const insertCommunityPostCommentSchema = createInsertSchema(communityPostComments).omit({ id: true, createdAt: true, updatedAt: true, userId: true, postId: true });
 export const insertModerationActionSchema = createInsertSchema(moderationActions).omit({ id: true, createdAt: true });
+export const insertPortfolioLinkSchema = createInsertSchema(portfolioLinks).omit({ id: true, createdAt: true, viewCount: true });
 
 // Types
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+export type InsertPortfolioLink = z.infer<typeof insertPortfolioLinkSchema>;
+export type PortfolioLink = typeof portfolioLinks.$inferSelect;
 
 export type InsertQuizResult = z.infer<typeof insertQuizResultSchema>;
 export type QuizResult = typeof quizResults.$inferSelect;
