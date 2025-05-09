@@ -1008,13 +1008,49 @@ export default function PathFinder() {
             sender: 'bot'
           });
           
-          // Final message - call to action
+          // Final message - call to action with roadmap link
           setTimeout(() => {
             addMessage({
               id: Date.now().toString(),
-              content: `Let's continue your journey toward becoming a ${topMatches[0].title}!`,
+              content: (
+                <div>
+                  <p className="mb-4">{`Let's continue your journey toward becoming a ${topMatches[0].title}!`}</p>
+                  
+                  <div className="mt-2 mb-2 flex flex-col sm:flex-row sm:items-center gap-2">
+                    <Link href="/career-roadmap" className="inline-flex">
+                      <Button className="w-full sm:w-auto">
+                        <BarChart className="h-4 w-4 mr-2" />
+                        View Career Roadmap
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </Link>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="w-full sm:w-auto mt-2 sm:mt-0"
+                      onClick={startAiChatMode}
+                    >
+                      Continue Chatting
+                    </Button>
+                  </div>
+                  
+                  <div className="mt-4 bg-primary/10 rounded-lg p-3 text-sm">
+                    <p className="font-medium flex items-center">
+                      <InfoIcon className="h-4 w-4 mr-2 text-primary" />
+                      Visit your personalized Career Roadmap to see a step-by-step plan for becoming a {topMatches[0].title}
+                    </p>
+                  </div>
+                </div>
+              ),
               sender: 'bot'
             });
+            
+            // Store selected career path in localStorage for the roadmap
+            try {
+              localStorage.setItem('selectedCareerPath', topMatches[0].title);
+            } catch (e) {
+              console.error('Error saving career path to localStorage:', e);
+            }
           }, 1000);
         }, 1000);
       }, 3000);
