@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GitBranch, Search, X, BookOpen } from "lucide-react";
+import { Project, UserProject, User } from "@shared/schema";
 
 // Mock user ID until authentication is implemented
 const USER_ID = 1;
@@ -26,20 +27,20 @@ export default function Projects({}: ProjectsProps) {
   const [difficultyFilter, setDifficultyFilter] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"classic" | "boards">("classic");
 
-  // Fetch projects from content management API
-  const { data: projects = [], isLoading } = useQuery({
-    queryKey: ['/api/content-management/projects', { category: selectedCategory, difficulty: difficultyFilter }],
+  // Fetch projects from projects API
+  const { data: projects = [], isLoading } = useQuery<Project[]>({
+    queryKey: ['/api/projects', { careerTrack: selectedCategory, difficulty: difficultyFilter }],
     queryFn: undefined, // Use default queryFn from queryClient
   });
 
   // Fetch user data
-  const { data: userData } = useQuery({
+  const { data: userData } = useQuery<User>({
     queryKey: [`/api/users/${USER_ID}`],
     queryFn: undefined, // Use default queryFn from queryClient
   });
 
   // Fetch user projects
-  const { data: userProjects = [] } = useQuery({
+  const { data: userProjects = [] } = useQuery<UserProject[]>({
     queryKey: [`/api/users/${USER_ID}/user-projects`],
     queryFn: undefined, // Use default queryFn from queryClient
   });
@@ -50,11 +51,11 @@ export default function Projects({}: ProjectsProps) {
   }, [closeSidebar]);
 
   // Filter projects based on search term, category and difficulty
-  const filteredProjects = projects.filter((project: any) => {
+  const filteredProjects = projects.filter((project: Project) => {
     const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          project.description.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesCategory = !selectedCategory || project.category === selectedCategory;
+    const matchesCategory = !selectedCategory || project.careerTrack === selectedCategory;
     
     const matchesDifficulty = !difficultyFilter || difficultyFilter === "all" || 
                              project.difficulty === difficultyFilter;
@@ -62,16 +63,16 @@ export default function Projects({}: ProjectsProps) {
     return matchesSearch && matchesCategory && matchesDifficulty;
   });
 
-  // Get all available categories from projects
-  const categories = [...new Set(projects.map((project: any) => project.category))];
+  // Get all available career tracks from projects
+  const categories = [...new Set(projects.map((project: Project) => project.careerTrack))];
 
   // Find in-progress projects
-  const inProgressProjects = userProjects.filter((userProject: any) => 
+  const inProgressProjects = userProjects.filter((userProject: UserProject) => 
     !userProject.isCompleted
   );
 
   // Find completed projects
-  const completedProjects = userProjects.filter((userProject: any) => 
+  const completedProjects = userProjects.filter((userProject: UserProject) => 
     userProject.isCompleted
   );
 
@@ -141,8 +142,8 @@ export default function Projects({}: ProjectsProps) {
                 <TabsContent value="in-progress">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {inProgressProjects.length > 0 ? (
-                      inProgressProjects.map((userProject: any) => {
-                        const project = projects.find((p: any) => p.id === userProject.projectId);
+                      inProgressProjects.map((userProject: UserProject) => {
+                        const project = projects.find((p: Project) => p.id === userProject.projectId);
                         return project ? <ProjectCard key={userProject.id} project={project} /> : null;
                       })
                     ) : (

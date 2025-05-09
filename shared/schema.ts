@@ -53,7 +53,7 @@ export const projects = pgTable("projects", {
   description: text("description").notNull(),
   difficulty: text("difficulty").notNull(), // "beginner", "intermediate", "advanced"
   duration: text("duration").notNull(),
-  skills: text("skills").array(),
+  skills: text("skills").array().notNull().default([]),
   category: text("category").notNull(), // Project category (e.g., "web", "mobile", "data")
   careerTrack: text("career_track").notNull(), // Career track (e.g., "frontend", "backend", "fullstack", "data science")
   thumbnail: text("thumbnail"), // Image URL

@@ -11,10 +11,12 @@ interface ProjectCardProps {
 }
 
 export default function ProjectCard({ project, compact = false }: ProjectCardProps) {
-  // Handle skills that might be a string or array
+  // Handle skills that might be a string array, string, or null
   const skillsArray = Array.isArray(project.skills) 
     ? project.skills 
-    : (typeof project.skills === 'string' ? project.skills.split(',').map((s: string) => s.trim()) : []);
+    : (typeof project.skills === 'string' 
+        ? project.skills.split(',').map((s: string) => s.trim()) 
+        : []);
   
   const difficultyColor = {
     'beginner': 'bg-green-500',
