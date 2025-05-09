@@ -11,18 +11,16 @@ interface ProjectCardProps {
 }
 
 export default function ProjectCard({ project, compact = false }: ProjectCardProps) {
-  // Handle skills that might be a string array, string, or null
-  const skillsArray = Array.isArray(project.skills) 
-    ? project.skills 
-    : (typeof project.skills === 'string' 
-        ? project.skills.split(',').map((s: string) => s.trim()) 
-        : []);
+  // Handle skills using the updated schema where skills is always an array
+  const skillsArray = project.skills || [];
   
-  const difficultyColor = {
-    'beginner': 'bg-green-500',
-    'intermediate': 'bg-amber-500',
-    'advanced': 'bg-red-500'
-  }[project.difficulty?.toLowerCase()] || 'bg-green-500';
+  const difficultyColor = project.difficulty 
+    ? {
+        'beginner': 'bg-green-500',
+        'intermediate': 'bg-amber-500',
+        'advanced': 'bg-red-500'
+      }[project.difficulty.toLowerCase()] || 'bg-green-500'
+    : 'bg-green-500';
 
   // Get career track display name
   const getCareerTrackName = (trackId: string) => {

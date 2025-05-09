@@ -15,6 +15,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { GitBranch, Search, X, BookOpen } from "lucide-react";
 import { Project, UserProject, User } from "@shared/schema";
 
+// Default user data when user is not authenticated
+const defaultUser: User = {
+  id: 0,
+  username: 'guest',
+  name: 'Ananya Singh',
+  email: 'ananya.s@example.com',
+  password: '',
+  bio: null,
+  avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6',
+  createdAt: new Date()
+};
+
 // Mock user ID until authentication is implemented
 const USER_ID = 1;
 
@@ -64,7 +76,13 @@ export default function Projects({}: ProjectsProps) {
   });
 
   // Get all available career tracks from projects
-  const categories = [...new Set(projects.map((project: Project) => project.careerTrack))];
+  const categoriesSet = new Set<string>();
+  projects.forEach((project: Project) => {
+    if (project.careerTrack) {
+      categoriesSet.add(project.careerTrack);
+    }
+  });
+  const categories = Array.from(categoriesSet);
 
   // Find in-progress projects
   const inProgressProjects = userProjects.filter((userProject: UserProject) => 
@@ -86,17 +104,17 @@ export default function Projects({}: ProjectsProps) {
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Mobile Header */}
-      <MobileHeader user={userData || { name: 'Ananya Singh', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6' }} />
+      <MobileHeader user={userData || defaultUser} />
 
       {/* Sidebar */}
-      <Sidebar user={userData || { name: 'Ananya Singh', email: 'ananya.s@example.com', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6' }} />
+      <Sidebar user={userData || defaultUser} />
 
       {/* Mobile Sidebar */}
       {isSidebarOpen && (
         <MobileSidebar 
           isOpen={isSidebarOpen} 
           onClose={closeSidebar} 
-          user={userData || { name: 'Ananya Singh', email: 'ananya.s@example.com', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6' }}
+          user={userData || defaultUser}
         />
       )}
 
@@ -160,8 +178,8 @@ export default function Projects({}: ProjectsProps) {
                 <TabsContent value="completed">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {completedProjects.length > 0 ? (
-                      completedProjects.map((userProject: any) => {
-                        const project = projects.find((p: any) => p.id === userProject.projectId);
+                      completedProjects.map((userProject: UserProject) => {
+                        const project = projects.find((p: Project) => p.id === userProject.projectId);
                         return project ? <ProjectCard key={userProject.id} project={project} /> : null;
                       })
                     ) : (
@@ -311,7 +329,7 @@ export default function Projects({}: ProjectsProps) {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredProjects.map((project: any) => (
+                    {filteredProjects.map((project: Project) => (
                       <ProjectCard key={project.id} project={project} />
                     ))}
                   </div>
