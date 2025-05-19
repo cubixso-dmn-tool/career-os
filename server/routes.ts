@@ -27,10 +27,9 @@ import careerRoutes from "./routes/career";
 import careerRoadmapRoutes from "./routes/career-roadmap";
 import contentManagementRoutes from "./routes/content-management";
 import coursesRoutes from "./routes/courses";
-import projectsRoutes from "./routes/projects";
 import { loadUserRolesMiddleware } from "./middleware/rbac";
 
-export function handleZodError(error: ZodError, res: Response) {
+function handleZodError(error: ZodError, res: Response) {
   return res.status(400).json({
     message: "Validation error",
     errors: error.errors,
@@ -936,9 +935,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register Course features routes
   app.use('/api/courses', coursesRoutes);
-  
-  // Register Projects routes
-  app.use('/api/projects', projectsRoutes);
 
   const httpServer = createServer(app);
   return httpServer;

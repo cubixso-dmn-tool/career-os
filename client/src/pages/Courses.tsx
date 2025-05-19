@@ -10,13 +10,12 @@ import ProgressHeatmap from "@/components/courses/ProgressHeatmap";
 import CommunityReviews from "@/components/courses/CommunityReviews";
 import LiveCohortChallenges from "@/components/courses/LiveCohortChallenges";
 import LearningModeSwitcher from "@/components/courses/LearningModeSwitcher";
-import StreakMotivator from "@/components/courses/StreakMotivator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Search, SlidersHorizontal, X, Compass, Zap, BookmarkIcon, Settings, Flame } from "lucide-react";
+import { BookOpen, Search, SlidersHorizontal, X, Compass, Zap, BookmarkIcon, Settings } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
@@ -319,15 +318,6 @@ export default function Courses({}: CoursesProps) {
           <h2 className="text-xl font-semibold mb-4">Learning Preferences</h2>
           <LearningModeSwitcher activeTab={activeTab} />
         </div>
-      </div>
-      
-      {/* Learning Streak Motivator */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4 flex items-center">
-          <Flame className="mr-2 h-5 w-5 text-primary" />
-          Your Learning Streak
-        </h2>
-        <StreakMotivator />
       </div>
       
       {/* Daily Learning Bytes */}
