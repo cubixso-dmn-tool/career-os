@@ -15,15 +15,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { GitBranch, Search, X, BookOpen } from "lucide-react";
 import { Project, UserProject, User } from "@shared/schema";
 
-// For components like MobileHeader, Sidebar, and MobileSidebar that need user data
-interface UiUser {
+// Interface for MobileHeader component
+interface MobileHeaderUser {
   name: string;
-  email?: string;
   avatar: string;
 }
 
-// Default user data when user is not authenticated
-const defaultUser: UiUser = {
+// Interface for Sidebar and MobileSidebar components
+interface SidebarUser {
+  name: string;
+  email: string;
+  avatar: string;
+}
+
+// Default user data for MobileHeader
+const defaultHeaderUser: MobileHeaderUser = {
+  name: 'Ananya Singh',
+  avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6'
+};
+
+// Default user data for Sidebar components
+const defaultSidebarUser: SidebarUser = {
   name: 'Ananya Singh',
   email: 'ananya.s@example.com',
   avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6'
@@ -53,11 +65,16 @@ export default function Projects({}: ProjectsProps) {
     queryFn: undefined, // Use default queryFn from queryClient
   });
   
-  // Convert User type to UiUser type if userData exists
-  const uiUserData: UiUser | undefined = userData ? {
+  // Convert User data for different component requirements
+  const headerUserData: MobileHeaderUser | undefined = userData ? {
+    name: userData.name,
+    avatar: userData.avatar || defaultHeaderUser.avatar // Use default avatar if null
+  } : undefined;
+  
+  const sidebarUserData: SidebarUser | undefined = userData ? {
     name: userData.name,
     email: userData.email,
-    avatar: userData.avatar || defaultUser.avatar // Use default avatar if null
+    avatar: userData.avatar || defaultSidebarUser.avatar // Use default avatar if null
   } : undefined;
 
   // Fetch user projects
