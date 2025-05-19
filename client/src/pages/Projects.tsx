@@ -130,19 +130,15 @@ export default function Projects({}: ProjectsProps) {
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Mobile Header */}
-      <MobileHeader user={uiUserData || defaultUser} />
+      <MobileHeader user={headerUserData || defaultHeaderUser} />
 
       {/* Sidebar */}
-      <Sidebar user={uiUserData || defaultUser} />
+      <Sidebar user={sidebarUserData || defaultSidebarUser} />
 
-      {/* Mobile Sidebar */}
-      {isSidebarOpen && (
-        <MobileSidebar 
-          isOpen={isSidebarOpen} 
-          onClose={closeSidebar} 
-          user={uiUserData || defaultUser}
-        />
-      )}
+      {/* Mobile Sidebar - Original component gets isSidebarOpen and closeSidebar from useSidebar hook internally */}
+      <MobileSidebar 
+        user={sidebarUserData || defaultSidebarUser}
+      />
 
       {/* Main Content */}
       <main className="flex-1 relative">
