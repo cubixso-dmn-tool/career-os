@@ -7,13 +7,12 @@ import MobileNavigation from "@/components/layout/MobileNavigation";
 import MobileSidebar from "@/components/layout/MobileSidebar";
 import ProjectCard from "@/components/projects/ProjectCard";
 import BuildItBoards from "@/components/projects/BuildItBoards";
-import ProjectWallet from "@/components/projects/ProjectWallet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GitBranch, Search, X, BookOpen, Briefcase } from "lucide-react";
+import { GitBranch, Search, X, BookOpen } from "lucide-react";
 import { Project, UserProject, User } from "@shared/schema";
 
 // For components like MobileHeader, Sidebar, and MobileSidebar that need user data
@@ -157,7 +156,7 @@ export default function Projects({}: ProjectsProps) {
           </div>
 
           {/* My Projects Section */}
-          {viewMode === "classic" && (
+          {viewMode === "classic" && (inProgressProjects.length > 0 || completedProjects.length > 0) && (
             <div className="mb-8">
               <h2 className="text-lg font-semibold mb-4">My Projects</h2>
               
@@ -165,12 +164,6 @@ export default function Projects({}: ProjectsProps) {
                 <TabsList className="w-full md:w-auto justify-start mb-4">
                   <TabsTrigger value="in-progress">In Progress ({inProgressProjects.length})</TabsTrigger>
                   <TabsTrigger value="completed">Completed ({completedProjects.length})</TabsTrigger>
-                  <TabsTrigger value="portfolio">
-                    <div className="flex items-center">
-                      <Briefcase className="mr-1 h-4 w-4" />
-                      Project Wallet
-                    </div>
-                  </TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="in-progress">
@@ -207,10 +200,6 @@ export default function Projects({}: ProjectsProps) {
                       </div>
                     )}
                   </div>
-                </TabsContent>
-                
-                <TabsContent value="portfolio">
-                  <ProjectWallet />
                 </TabsContent>
               </Tabs>
             </div>

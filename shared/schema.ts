@@ -69,15 +69,7 @@ export const userProjects = pgTable("user_projects", {
   projectId: integer("project_id").notNull().references(() => projects.id),
   progress: integer("progress").default(0).notNull(),
   isCompleted: boolean("is_completed").default(false).notNull(),
-  isPublic: boolean("is_public").default(false).notNull(),
-  startedAt: timestamp("started_at").defaultNow().notNull(),
-  completedAt: timestamp("completed_at"),
-  repoUrl: text("repo_url"),
-  demoUrl: text("demo_url"),
-  screenshots: text("screenshots").array(),
-  description: text("description"),
-  feedback: text("feedback"),
-  reflection: text("reflection")
+  startedAt: timestamp("started_at").defaultNow().notNull()
 });
 
 export const softSkills = pgTable("soft_skills", {
@@ -207,19 +199,6 @@ export const userRoles = pgTable("user_roles", {
   assignedAt: timestamp("assigned_at").defaultNow().notNull()
 });
 
-// Project Wallet / Portfolio
-export const portfolioLinks = pgTable("portfolio_links", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  slug: text("slug").notNull().unique(),
-  title: text("title").notNull(),
-  description: text("description"),
-  isPublic: boolean("is_public").default(true).notNull(),
-  viewCount: integer("view_count").default(0).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  expiresAt: timestamp("expires_at")
-});
-
 // Communities tables for role-based moderation
 
 export const communities = pgTable("communities", {
@@ -308,15 +287,11 @@ export const insertCommunityMemberSchema = createInsertSchema(communityMembers).
 export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({ id: true, likes: true, replies: true, createdAt: true, updatedAt: true, userId: true, communityId: true });
 export const insertCommunityPostCommentSchema = createInsertSchema(communityPostComments).omit({ id: true, createdAt: true, updatedAt: true, userId: true, postId: true });
 export const insertModerationActionSchema = createInsertSchema(moderationActions).omit({ id: true, createdAt: true });
-export const insertPortfolioLinkSchema = createInsertSchema(portfolioLinks).omit({ id: true, createdAt: true, viewCount: true });
 
 // Types
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
-
-export type InsertPortfolioLink = z.infer<typeof insertPortfolioLinkSchema>;
-export type PortfolioLink = typeof portfolioLinks.$inferSelect;
 
 export type InsertQuizResult = z.infer<typeof insertQuizResultSchema>;
 export type QuizResult = typeof quizResults.$inferSelect;
