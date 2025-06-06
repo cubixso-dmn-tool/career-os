@@ -9,7 +9,7 @@ import IntegratedPractice from "@/components/courses/IntegratedPractice";
 import ProgressHeatmap from "@/components/courses/ProgressHeatmap";
 import CommunityReviews from "@/components/courses/CommunityReviews";
 import LiveCohortChallenges from "@/components/courses/LiveCohortChallenges";
-import MinimalLearningModeSwitcher from "@/components/courses/MinimalLearningModeSwitcher";
+import LearningModeSwitcher from "@/components/courses/LearningModeSwitcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -100,51 +100,51 @@ export default function Courses({}: CoursesProps) {
   const renderCoursesCatalog = () => (
     <>
       {/* Search and Filter Bar */}
-      <div className="mb-8 space-y-4">
-        <div className="cantina-row gap-4">
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <Input
               placeholder="Search courses..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="cantina-input pl-10"
+              className="pl-9"
             />
             {searchTerm && (
               <button 
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 cantina-text-muted hover:text-foreground"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 onClick={() => setSearchTerm("")}
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             )}
           </div>
           
-          <div className="cantina-row gap-2">
+          <div className="flex gap-2">
             <Select value={priceFilter || ""} onValueChange={setPriceFilter}>
-              <SelectTrigger className="w-32 cantina-input">
+              <SelectTrigger className="w-32">
                 <SelectValue placeholder="Price" />
               </SelectTrigger>
-              <SelectContent className="cantina-card">
-                <SelectItem value="all" className="cantina-text-body">All Prices</SelectItem>
-                <SelectItem value="free" className="cantina-text-body">Free</SelectItem>
-                <SelectItem value="paid" className="cantina-text-body">Paid</SelectItem>
+              <SelectContent>
+                <SelectItem value="all">All Prices</SelectItem>
+                <SelectItem value="free">Free</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
               </SelectContent>
             </Select>
             
             <Button 
               variant="outline" 
-              className="md:hidden cantina-button-ghost"
+              className="md:hidden"
               onClick={() => setShowFilters(!showFilters)}
             >
-              <SlidersHorizontal size={16} />
+              <SlidersHorizontal size={18} />
             </Button>
             
             {(selectedCategory || priceFilter || selectedTags.length > 0) && (
               <Button 
                 variant="ghost" 
                 onClick={clearFilters}
-                className="cantina-button-ghost"
+                className="text-primary"
               >
                 Clear Filters
               </Button>
@@ -311,12 +311,12 @@ export default function Courses({}: CoursesProps) {
   
   // Render the My Learning tab content
   const renderMyLearning = () => (
-    <div className="cantina-stack">
+    <div className="space-y-8">
       {/* Desktop Learning Mode Switcher */}
-      <div className="hidden md:block">
-        <div className="cantina-card p-6">
-          <h2 className="text-sm cantina-text-muted mb-4 uppercase tracking-wide">Learning Preferences</h2>
-          <MinimalLearningModeSwitcher />
+      <div className="hidden md:block mb-8">
+        <div className="bg-white border rounded-lg p-5">
+          <h2 className="text-xl font-semibold mb-4">Learning Preferences</h2>
+          <LearningModeSwitcher activeTab={activeTab} />
         </div>
       </div>
       
@@ -336,33 +336,31 @@ export default function Courses({}: CoursesProps) {
 
   return (
     <Layout title="Courses">
-      <div className="px-4 py-6 md:px-8 pb-20 md:pb-6 bg-background min-h-screen">
-        {/* Header */}
-        <div className="cantina-row justify-between mb-8 cantina-divider pb-6">
-          <div className="cantina-row">
-            <BookOpen className="h-5 w-5 text-accent" />
-            <h1 className="text-xl font-semibold cantina-text-heading">Courses</h1>
+      <div className="px-4 py-6 md:px-8 pb-20 md:pb-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <BookOpen className="h-6 w-6 mr-2 text-primary" />
+            <h1 className="text-2xl font-bold text-gray-900">Courses</h1>
           </div>
           
-          {/* Settings button for mobile */}
+          {/* Settings button that shows/hides learning mode switcher on mobile */}
           <div className="md:hidden">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowLearningModeSettings(!showLearningModeSettings)}
-              className="cantina-button-ghost h-8 w-8"
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-5 w-5 text-gray-600" />
             </Button>
           </div>
         </div>
         
-        {/* Mobile Learning Mode Switcher */}
+        {/* Learning Mode Switcher - only visible on mobile when toggled */}
         {showLearningModeSettings && (
           <div className="mb-6 md:hidden">
-            <div className="cantina-card p-4">
-              <h2 className="text-sm cantina-text-muted mb-3 uppercase tracking-wide">Learning Preferences</h2>
-              <MinimalLearningModeSwitcher />
+            <div className="bg-white border rounded-lg p-4">
+              <h2 className="text-lg font-medium mb-3">Learning Preferences</h2>
+              <LearningModeSwitcher activeTab={activeTab} />
             </div>
           </div>
         )}
@@ -372,16 +370,14 @@ export default function Courses({}: CoursesProps) {
           defaultValue="courses" 
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as "courses" | "mylearning")}
-          className="mb-8"
+          className="mb-6"
         >
-          <TabsList className="w-full flex bg-transparent cantina-divider p-0 h-auto mb-8">
+          <TabsList className="w-full flex sm:w-auto bg-transparent border-b p-0 h-auto mb-6">
             <TabsTrigger 
               value="courses" 
               className={cn(
-                "font-medium px-6 py-3 border-b-2 bg-transparent cantina-row",
-                activeTab === "courses" 
-                  ? "border-accent cantina-text-accent" 
-                  : "border-transparent cantina-text-muted hover:text-foreground"
+                "rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none",
+                activeTab === "courses" ? "border-primary font-medium" : "text-gray-600"
               )}
             >
               <Compass className="h-4 w-4 mr-2" />
@@ -390,10 +386,8 @@ export default function Courses({}: CoursesProps) {
             <TabsTrigger 
               value="mylearning" 
               className={cn(
-                "font-medium px-6 py-3 border-b-2 bg-transparent cantina-row",
-                activeTab === "mylearning" 
-                  ? "border-accent cantina-text-accent" 
-                  : "border-transparent cantina-text-muted hover:text-foreground"
+                "rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none",
+                activeTab === "mylearning" ? "border-primary font-medium" : "text-gray-600"
               )}
             >
               <BookmarkIcon className="h-4 w-4 mr-2" />

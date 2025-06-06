@@ -12,6 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -30,6 +36,7 @@ import {
   MonitorSmartphone,
   Settings
 } from "lucide-react";
+import { useLearningMode } from "@/hooks/use-learning-mode";
 import { cn } from "@/lib/utils";
 
 type LearningModeType = "text" | "audio" | "video" | "interactive" | "microlearning";
