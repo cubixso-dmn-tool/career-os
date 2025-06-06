@@ -101,18 +101,18 @@ export default function Courses({}: CoursesProps) {
     <>
       {/* Search and Filter Bar */}
       <div className="mb-8 space-y-4">
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="cantina-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" size={16} />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
             <Input
-              placeholder="SEARCH COURSES..."
+              placeholder="Search courses..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-black/60 border-white/20 text-white placeholder:text-white/40 font-mono text-sm uppercase tracking-wide"
+              className="cantina-input pl-10"
             />
             {searchTerm && (
               <button 
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/40 hover:text-white"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 cantina-text-muted hover:text-foreground"
                 onClick={() => setSearchTerm("")}
               >
                 <X size={16} />
@@ -120,21 +120,21 @@ export default function Courses({}: CoursesProps) {
             )}
           </div>
           
-          <div className="flex gap-2">
+          <div className="cantina-row gap-2">
             <Select value={priceFilter || ""} onValueChange={setPriceFilter}>
-              <SelectTrigger className="w-32 bg-black/60 border-white/20 text-white font-mono text-xs">
-                <SelectValue placeholder="PRICE" />
+              <SelectTrigger className="w-32 cantina-input">
+                <SelectValue placeholder="Price" />
               </SelectTrigger>
-              <SelectContent className="bg-black border-white/20">
-                <SelectItem value="all" className="text-white font-mono">ALL</SelectItem>
-                <SelectItem value="free" className="text-white font-mono">FREE</SelectItem>
-                <SelectItem value="paid" className="text-white font-mono">PAID</SelectItem>
+              <SelectContent className="cantina-card">
+                <SelectItem value="all" className="cantina-text-body">All Prices</SelectItem>
+                <SelectItem value="free" className="cantina-text-body">Free</SelectItem>
+                <SelectItem value="paid" className="cantina-text-body">Paid</SelectItem>
               </SelectContent>
             </Select>
             
             <Button 
               variant="outline" 
-              className="md:hidden bg-black/60 border-white/20 text-white hover:bg-white/10"
+              className="md:hidden cantina-button-ghost"
               onClick={() => setShowFilters(!showFilters)}
             >
               <SlidersHorizontal size={16} />
@@ -144,9 +144,9 @@ export default function Courses({}: CoursesProps) {
               <Button 
                 variant="ghost" 
                 onClick={clearFilters}
-                className="text-white/60 hover:text-white hover:bg-white/10 font-mono text-xs uppercase"
+                className="cantina-button-ghost"
               >
-                Clear
+                Clear Filters
               </Button>
             )}
           </div>
@@ -311,11 +311,11 @@ export default function Courses({}: CoursesProps) {
   
   // Render the My Learning tab content
   const renderMyLearning = () => (
-    <div className="space-y-8">
+    <div className="cantina-stack">
       {/* Desktop Learning Mode Switcher */}
-      <div className="hidden md:block mb-8">
-        <div className="bg-black/60 border border-white/20 p-6">
-          <h2 className="text-sm font-mono text-white/70 mb-4 uppercase tracking-wide">Learning Preferences</h2>
+      <div className="hidden md:block">
+        <div className="cantina-card p-6">
+          <h2 className="text-sm cantina-text-muted mb-4 uppercase tracking-wide">Learning Preferences</h2>
           <MinimalLearningModeSwitcher />
         </div>
       </div>
