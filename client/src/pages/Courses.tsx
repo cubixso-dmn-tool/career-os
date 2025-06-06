@@ -336,12 +336,12 @@ export default function Courses({}: CoursesProps) {
 
   return (
     <Layout title="Courses">
-      <div className="px-4 py-6 md:px-8 pb-20 md:pb-6 bg-black min-h-screen">
+      <div className="px-4 py-6 md:px-8 pb-20 md:pb-6 bg-background min-h-screen">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8 border-b border-white/20 pb-4">
-          <div className="flex items-center">
-            <BookOpen className="h-5 w-5 mr-3 text-white" />
-            <h1 className="text-xl font-mono font-bold text-white uppercase tracking-wider">Courses</h1>
+        <div className="cantina-row justify-between mb-8 cantina-divider pb-6">
+          <div className="cantina-row">
+            <BookOpen className="h-5 w-5 text-accent" />
+            <h1 className="text-xl font-semibold cantina-text-heading">Courses</h1>
           </div>
           
           {/* Settings button for mobile */}
@@ -350,7 +350,7 @@ export default function Courses({}: CoursesProps) {
               variant="ghost"
               size="icon"
               onClick={() => setShowLearningModeSettings(!showLearningModeSettings)}
-              className="h-8 w-8 text-white/60 hover:text-white hover:bg-white/10"
+              className="cantina-button-ghost h-8 w-8"
             >
               <Settings className="h-4 w-4" />
             </Button>
@@ -360,8 +360,8 @@ export default function Courses({}: CoursesProps) {
         {/* Mobile Learning Mode Switcher */}
         {showLearningModeSettings && (
           <div className="mb-6 md:hidden">
-            <div className="bg-black/60 border border-white/20 p-4">
-              <h2 className="text-sm font-mono text-white/70 mb-3 uppercase tracking-wide">Learning Preferences</h2>
+            <div className="cantina-card p-4">
+              <h2 className="text-sm cantina-text-muted mb-3 uppercase tracking-wide">Learning Preferences</h2>
               <MinimalLearningModeSwitcher />
             </div>
           </div>
@@ -374,26 +374,26 @@ export default function Courses({}: CoursesProps) {
           onValueChange={(value) => setActiveTab(value as "courses" | "mylearning")}
           className="mb-8"
         >
-          <TabsList className="w-full flex bg-transparent border-b border-white/20 p-0 h-auto mb-8">
+          <TabsList className="w-full flex bg-transparent cantina-divider p-0 h-auto mb-8">
             <TabsTrigger 
               value="courses" 
               className={cn(
-                "font-mono uppercase tracking-wider text-xs px-6 py-3 border-b-2 bg-transparent",
+                "font-medium px-6 py-3 border-b-2 bg-transparent cantina-row",
                 activeTab === "courses" 
-                  ? "border-white text-white" 
-                  : "border-transparent text-white/60 hover:text-white"
+                  ? "border-accent cantina-text-accent" 
+                  : "border-transparent cantina-text-muted hover:text-foreground"
               )}
             >
               <Compass className="h-4 w-4 mr-2" />
-              Browse
+              Browse Courses
             </TabsTrigger>
             <TabsTrigger 
               value="mylearning" 
               className={cn(
-                "font-mono uppercase tracking-wider text-xs px-6 py-3 border-b-2 bg-transparent",
+                "font-medium px-6 py-3 border-b-2 bg-transparent cantina-row",
                 activeTab === "mylearning" 
-                  ? "border-white text-white" 
-                  : "border-transparent text-white/60 hover:text-white"
+                  ? "border-accent cantina-text-accent" 
+                  : "border-transparent cantina-text-muted hover:text-foreground"
               )}
             >
               <BookmarkIcon className="h-4 w-4 mr-2" />
