@@ -9,7 +9,7 @@ import IntegratedPractice from "@/components/courses/IntegratedPractice";
 import ProgressHeatmap from "@/components/courses/ProgressHeatmap";
 import CommunityReviews from "@/components/courses/CommunityReviews";
 import LiveCohortChallenges from "@/components/courses/LiveCohortChallenges";
-import LearningModeSwitcher from "@/components/courses/LearningModeSwitcher";
+import MinimalLearningModeSwitcher from "@/components/courses/MinimalLearningModeSwitcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -100,53 +100,53 @@ export default function Courses({}: CoursesProps) {
   const renderCoursesCatalog = () => (
     <>
       {/* Search and Filter Bar */}
-      <div className="mb-6 space-y-4">
+      <div className="mb-8 space-y-4">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" size={16} />
             <Input
-              placeholder="Search courses..."
+              placeholder="SEARCH COURSES..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
+              className="pl-10 bg-black/60 border-white/20 text-white placeholder:text-white/40 font-mono text-sm uppercase tracking-wide"
             />
             {searchTerm && (
               <button 
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/40 hover:text-white"
                 onClick={() => setSearchTerm("")}
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             )}
           </div>
           
           <div className="flex gap-2">
             <Select value={priceFilter || ""} onValueChange={setPriceFilter}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="Price" />
+              <SelectTrigger className="w-32 bg-black/60 border-white/20 text-white font-mono text-xs">
+                <SelectValue placeholder="PRICE" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Prices</SelectItem>
-                <SelectItem value="free">Free</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
+              <SelectContent className="bg-black border-white/20">
+                <SelectItem value="all" className="text-white font-mono">ALL</SelectItem>
+                <SelectItem value="free" className="text-white font-mono">FREE</SelectItem>
+                <SelectItem value="paid" className="text-white font-mono">PAID</SelectItem>
               </SelectContent>
             </Select>
             
             <Button 
               variant="outline" 
-              className="md:hidden"
+              className="md:hidden bg-black/60 border-white/20 text-white hover:bg-white/10"
               onClick={() => setShowFilters(!showFilters)}
             >
-              <SlidersHorizontal size={18} />
+              <SlidersHorizontal size={16} />
             </Button>
             
             {(selectedCategory || priceFilter || selectedTags.length > 0) && (
               <Button 
                 variant="ghost" 
                 onClick={clearFilters}
-                className="text-primary"
+                className="text-white/60 hover:text-white hover:bg-white/10 font-mono text-xs uppercase"
               >
-                Clear Filters
+                Clear
               </Button>
             )}
           </div>
@@ -314,9 +314,9 @@ export default function Courses({}: CoursesProps) {
     <div className="space-y-8">
       {/* Desktop Learning Mode Switcher */}
       <div className="hidden md:block mb-8">
-        <div className="bg-white border rounded-lg p-5">
-          <h2 className="text-xl font-semibold mb-4">Learning Preferences</h2>
-          <LearningModeSwitcher activeTab={activeTab} />
+        <div className="bg-black/60 border border-white/20 p-6">
+          <h2 className="text-sm font-mono text-white/70 mb-4 uppercase tracking-wide">Learning Preferences</h2>
+          <MinimalLearningModeSwitcher />
         </div>
       </div>
       
@@ -336,31 +336,33 @@ export default function Courses({}: CoursesProps) {
 
   return (
     <Layout title="Courses">
-      <div className="px-4 py-6 md:px-8 pb-20 md:pb-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="px-4 py-6 md:px-8 pb-20 md:pb-6 bg-black min-h-screen">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8 border-b border-white/20 pb-4">
           <div className="flex items-center">
-            <BookOpen className="h-6 w-6 mr-2 text-primary" />
-            <h1 className="text-2xl font-bold text-gray-900">Courses</h1>
+            <BookOpen className="h-5 w-5 mr-3 text-white" />
+            <h1 className="text-xl font-mono font-bold text-white uppercase tracking-wider">Courses</h1>
           </div>
           
-          {/* Settings button that shows/hides learning mode switcher on mobile */}
+          {/* Settings button for mobile */}
           <div className="md:hidden">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowLearningModeSettings(!showLearningModeSettings)}
+              className="h-8 w-8 text-white/60 hover:text-white hover:bg-white/10"
             >
-              <Settings className="h-5 w-5 text-gray-600" />
+              <Settings className="h-4 w-4" />
             </Button>
           </div>
         </div>
         
-        {/* Learning Mode Switcher - only visible on mobile when toggled */}
+        {/* Mobile Learning Mode Switcher */}
         {showLearningModeSettings && (
           <div className="mb-6 md:hidden">
-            <div className="bg-white border rounded-lg p-4">
-              <h2 className="text-lg font-medium mb-3">Learning Preferences</h2>
-              <LearningModeSwitcher activeTab={activeTab} />
+            <div className="bg-black/60 border border-white/20 p-4">
+              <h2 className="text-sm font-mono text-white/70 mb-3 uppercase tracking-wide">Learning Preferences</h2>
+              <MinimalLearningModeSwitcher />
             </div>
           </div>
         )}
@@ -370,24 +372,28 @@ export default function Courses({}: CoursesProps) {
           defaultValue="courses" 
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as "courses" | "mylearning")}
-          className="mb-6"
+          className="mb-8"
         >
-          <TabsList className="w-full flex sm:w-auto bg-transparent border-b p-0 h-auto mb-6">
+          <TabsList className="w-full flex bg-transparent border-b border-white/20 p-0 h-auto mb-8">
             <TabsTrigger 
               value="courses" 
               className={cn(
-                "rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none",
-                activeTab === "courses" ? "border-primary font-medium" : "text-gray-600"
+                "font-mono uppercase tracking-wider text-xs px-6 py-3 border-b-2 bg-transparent",
+                activeTab === "courses" 
+                  ? "border-white text-white" 
+                  : "border-transparent text-white/60 hover:text-white"
               )}
             >
               <Compass className="h-4 w-4 mr-2" />
-              Browse Courses
+              Browse
             </TabsTrigger>
             <TabsTrigger 
               value="mylearning" 
               className={cn(
-                "rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none",
-                activeTab === "mylearning" ? "border-primary font-medium" : "text-gray-600"
+                "font-mono uppercase tracking-wider text-xs px-6 py-3 border-b-2 bg-transparent",
+                activeTab === "mylearning" 
+                  ? "border-white text-white" 
+                  : "border-transparent text-white/60 hover:text-white"
               )}
             >
               <BookmarkIcon className="h-4 w-4 mr-2" />
