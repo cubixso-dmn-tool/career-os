@@ -29,6 +29,7 @@ import contentManagementRoutes from "./routes/content-management";
 import coursesRoutes from "./routes/courses";
 import aiCareerCoachRoutes from "./routes/ai-career-coach";
 import industryExpertsRoutes from "./routes/industry-experts";
+import learningResourcesRoutes from "./routes/learning-resources";
 import { loadUserRolesMiddleware } from "./middleware/rbac";
 
 function handleZodError(error: ZodError, res: Response) {

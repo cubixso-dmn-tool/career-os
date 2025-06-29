@@ -460,77 +460,363 @@ export default function Dashboard() {
             </TabsContent>
 
             <TabsContent value="learning" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Recommended Courses */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BookOpen className="h-5 w-5" />
-                      Recommended for You
-                    </CardTitle>
-                    <CardDescription>Courses tailored to your career path</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {(recommendedCourses || [
-                      { id: 1, title: "Advanced React Development", progress: 65, instructor: "Sarah Wilson", rating: 4.8 },
-                      { id: 2, title: "System Design Fundamentals", progress: 0, instructor: "Mike Chen", rating: 4.9 },
-                      { id: 3, title: "Data Structures & Algorithms", progress: 30, instructor: "Alex Kumar", rating: 4.7 }
-                    ]).slice(0, 3).map((course: any, index: number) => (
-                      <div key={index} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-sm">{course.title}</h4>
-                          <div className="flex items-center gap-1">
-                            <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                            <span className="text-xs">{course.rating}</span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-600 mb-3">by {course.instructor}</p>
-                        {course.progress > 0 ? (
-                          <div className="mb-3">
-                            <div className="flex justify-between text-xs mb-1">
-                              <span>Progress</span>
-                              <span>{course.progress}%</span>
-                            </div>
-                            <Progress value={course.progress} className="h-2" />
-                          </div>
-                        ) : null}
-                        <Link href="/courses">
-                          <Button size="sm" className="w-full">
-                            {course.progress > 0 ? 'Continue' : 'Start Course'}
-                          </Button>
-                        </Link>
+              {/* Roadmap Integration Header */}
+              <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5 text-purple-600" />
+                    Learning Journey: {careerPath || 'Software Developer'}
+                  </CardTitle>
+                  <CardDescription>
+                    Courses and projects aligned with your personalized career roadmap
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between text-sm mb-2">
+                        <span>Overall Progress</span>
+                        <span className="font-medium">{progress?.percentage || 70}%</span>
                       </div>
-                    ))}
-                  </CardContent>
-                </Card>
+                      <Progress value={progress?.percentage || 70} className="h-3" />
+                    </div>
+                    <Link href="/career-roadmap">
+                      <Button variant="outline" size="sm">
+                        View Roadmap
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
 
-                {/* Daily Learning Byte */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Zap className="h-5 w-5" />
-                      Daily Learning Byte
-                    </CardTitle>
-                    <CardDescription>
-                      Streak: {dailyByteStreak || 5} days 🔥
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
-                      <h4 className="font-medium mb-2">
-                        {dailyByte?.title || "What is the difference between let, const, and var in JavaScript?"}
-                      </h4>
-                      <p className="text-sm text-gray-600 mb-4">
-                        {dailyByte?.content || "Learn about variable declarations and their scoping rules in modern JavaScript development."}
-                      </p>
-                      <Link href="/courses">
-                        <Button size="sm">
-                          Take Today's Challenge
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Current Phase Resources */}
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Current Learning Phase */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Zap className="h-5 w-5 text-orange-500" />
+                        Current Phase: Advanced Development
+                      </CardTitle>
+                      <CardDescription>
+                        Focus on system design, performance optimization, and specialization
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Phase Courses */}
+                      <div>
+                        <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
+                          <BookOpen className="h-4 w-4" />
+                          Recommended Courses
+                        </h4>
+                        <div className="space-y-3">
+                          {[
+                            {
+                              title: "System Design Interview Prep",
+                              provider: "Tech Interview Pro",
+                              duration: "8 weeks",
+                              level: "Advanced",
+                              rating: 4.9,
+                              students: "12.5K",
+                              price: "₹2,999",
+                              progress: 45,
+                              nextLesson: "Designing Netflix Architecture"
+                            },
+                            {
+                              title: "Performance Optimization in React",
+                              provider: "Advanced React Academy",
+                              duration: "4 weeks",
+                              level: "Intermediate",
+                              rating: 4.8,
+                              students: "8.2K",
+                              price: "₹1,999",
+                              progress: 0,
+                              nextLesson: "Introduction to React Profiler"
+                            },
+                            {
+                              title: "Microservices Architecture",
+                              provider: "Cloud Native Institute",
+                              duration: "6 weeks",
+                              level: "Advanced",
+                              rating: 4.7,
+                              students: "5.8K",
+                              price: "₹3,499",
+                              progress: 20,
+                              nextLesson: "Service Discovery Patterns"
+                            }
+                          ].map((course, index) => (
+                            <div key={index} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1">
+                                  <h5 className="font-medium text-sm mb-1">{course.title}</h5>
+                                  <div className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                                    <span>{course.provider}</span>
+                                    <span>•</span>
+                                    <span>{course.duration}</span>
+                                    <span>•</span>
+                                    <Badge variant="outline" className="text-xs">
+                                      {course.level}
+                                    </Badge>
+                                  </div>
+                                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                                    <div className="flex items-center gap-1">
+                                      <Star className="h-3 w-3 text-yellow-500 fill-current" />
+                                      <span>{course.rating}</span>
+                                    </div>
+                                    <span>{course.students} students</span>
+                                    <span className="font-medium text-purple-600">{course.price}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {course.progress > 0 ? (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span>Progress: {course.progress}%</span>
+                                    <span className="text-purple-600">Next: {course.nextLesson}</span>
+                                  </div>
+                                  <Progress value={course.progress} className="h-2" />
+                                  <Button size="sm" className="w-full mt-2">
+                                    Continue Learning
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Button size="sm" className="w-full mt-2" variant="outline">
+                                  Start Course
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Phase Projects */}
+                      <div>
+                        <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
+                          <GitBranch className="h-4 w-4" />
+                          Hands-on Projects
+                        </h4>
+                        <div className="space-y-3">
+                          {[
+                            {
+                              title: "Build a Scalable Chat Application",
+                              description: "Create a real-time chat app using WebSockets, Redis, and microservices architecture",
+                              difficulty: "Advanced",
+                              duration: "3-4 weeks",
+                              tech: ["Node.js", "Redis", "WebSockets", "Docker"],
+                              status: "in_progress",
+                              progress: 60
+                            },
+                            {
+                              title: "Performance Monitoring Dashboard",
+                              description: "Build a comprehensive dashboard to monitor application performance metrics",
+                              difficulty: "Intermediate",
+                              duration: "2-3 weeks",
+                              tech: ["React", "D3.js", "Monitoring APIs"],
+                              status: "recommended",
+                              progress: 0
+                            },
+                            {
+                              title: "Distributed File Storage System",
+                              description: "Implement a distributed file storage system with replication and fault tolerance",
+                              difficulty: "Expert",
+                              duration: "4-6 weeks",
+                              tech: ["Go", "gRPC", "Distributed Systems"],
+                              status: "upcoming",
+                              progress: 0
+                            }
+                          ].map((project, index) => (
+                            <div key={index} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h5 className="font-medium text-sm">{project.title}</h5>
+                                    <Badge variant={project.status === 'in_progress' ? 'default' : 'secondary'} className="text-xs">
+                                      {project.status === 'in_progress' ? 'In Progress' : 
+                                       project.status === 'recommended' ? 'Recommended' : 'Upcoming'}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-xs text-gray-600 mb-2">{project.description}</p>
+                                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                                    <span>{project.difficulty}</span>
+                                    <span>•</span>
+                                    <span>{project.duration}</span>
+                                  </div>
+                                  <div className="flex flex-wrap gap-1 mb-2">
+                                    {project.tech.map((tech, techIndex) => (
+                                      <Badge key={techIndex} variant="outline" className="text-xs">
+                                        {tech}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {project.status === 'in_progress' ? (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span>Progress</span>
+                                    <span>{project.progress}%</span>
+                                  </div>
+                                  <Progress value={project.progress} className="h-2" />
+                                  <Button size="sm" className="w-full mt-2">
+                                    Continue Project
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Button 
+                                  size="sm" 
+                                  className="w-full mt-2" 
+                                  variant={project.status === 'recommended' ? 'default' : 'outline'}
+                                  disabled={project.status === 'upcoming'}
+                                >
+                                  {project.status === 'recommended' ? 'Start Project' : 'Coming Soon'}
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Learning Path Sidebar */}
+                <div className="space-y-6">
+                  {/* Roadmap Progress */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Target className="h-4 w-4" />
+                        Roadmap Progress
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {[
+                          { name: "Programming Fundamentals", completed: true, current: false, progress: 100 },
+                          { name: "Framework & Tools Mastery", completed: true, current: false, progress: 100 },
+                          { name: "Advanced Development", completed: false, current: true, progress: 65 },
+                          { name: "Professional Readiness", completed: false, current: false, progress: 0 }
+                        ].map((phase, index) => (
+                          <div key={index} className="space-y-2">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                                phase.completed ? 'bg-green-500' : 
+                                phase.current ? 'bg-purple-500' : 'bg-gray-300'
+                              }`} />
+                              <span className={`text-sm ${
+                                phase.completed ? 'text-green-700' :
+                                phase.current ? 'text-purple-700 font-medium' : 'text-gray-600'
+                              }`}>
+                                {phase.name}
+                              </span>
+                              {phase.current && (
+                                <Badge variant="secondary" className="text-xs">Current</Badge>
+                              )}
+                            </div>
+                            {(phase.current || phase.completed) && (
+                              <div className="ml-6">
+                                <Progress value={phase.progress} className="h-1" />
+                                <div className="text-xs text-gray-500 mt-1">{phase.progress}% complete</div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <Link href="/career-roadmap">
+                        <Button className="w-full mt-4" variant="outline" size="sm">
+                          View Full Roadmap
                         </Button>
                       </Link>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+
+                  {/* Daily Learning Byte */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Zap className="h-4 w-4" />
+                        Daily Learning Byte
+                      </CardTitle>
+                      <CardDescription>
+                        Streak: {dailyByteStreak || 5} days 🔥
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+                        <h4 className="font-medium mb-2 text-sm">
+                          {dailyByte?.title || "What is Big O Notation?"}
+                        </h4>
+                        <p className="text-xs text-gray-600 mb-4">
+                          {dailyByte?.content || "Learn about algorithm complexity analysis and why it matters for software performance."}
+                        </p>
+                        <Button size="sm" className="w-full">
+                          Take Today's Challenge
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Quick Actions */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Quick Actions</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <Link href="/ai-career-coach" className="block">
+                        <Button variant="outline" size="sm" className="w-full justify-start">
+                          <Bot className="h-4 w-4 mr-2" />
+                          AI Career Coach
+                        </Button>
+                      </Link>
+                      <Link href="/courses" className="block">
+                        <Button variant="outline" size="sm" className="w-full justify-start">
+                          <BookOpen className="h-4 w-4 mr-2" />
+                          Browse All Courses
+                        </Button>
+                      </Link>
+                      <Link href="/projects" className="block">
+                        <Button variant="outline" size="sm" className="w-full justify-start">
+                          <GitBranch className="h-4 w-4 mr-2" />
+                          All Projects
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+
+                  {/* Recent Achievements */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Award className="h-4 w-4" />
+                        Recent Achievements
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {[
+                        { name: "Course Completionist", description: "Completed 5 courses", date: "2 days ago", icon: "🎓" },
+                        { name: "Code Warrior", description: "Built 10 projects", date: "1 week ago", icon: "⚔️" },
+                        { name: "Learning Streak", description: "7 days in a row", date: "Today", icon: "🔥" }
+                      ].map((achievement, index) => (
+                        <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                          <span className="text-lg">{achievement.icon}</span>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">{achievement.name}</div>
+                            <div className="text-xs text-gray-500">{achievement.description}</div>
+                            <div className="text-xs text-gray-400">{achievement.date}</div>
+                          </div>
+                        </div>
+                      ))}
+                      <Link href="/achievements">
+                        <Button variant="outline" size="sm" className="w-full">
+                          View All Achievements
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             </TabsContent>
 
