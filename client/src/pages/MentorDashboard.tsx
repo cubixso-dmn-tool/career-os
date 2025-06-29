@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import LogoutButton from "@/components/auth/LogoutButton";
 import Layout from "@/components/layout/Layout";
+import Sidebar from "@/components/layout/Sidebar";
+import MobileSidebar from "@/components/layout/MobileSidebar";
+import MobileHeader from '@/components/ui/mobile-header';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,8 +35,53 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 
+// Simplified sidebar component for mentor dashboard
+function SimpleSidebar({ user }: { user: any }) {
+  const [location] = useLocation();
+
+  const navItems = [
+    { path: "/mentor-dashboard", icon: Settings, label: "Dashboard" },
+    { path: "/settings", icon: Settings, label: "Settings" }
+  ];
+
+  return (
+    <aside className="hidden md:flex md:w-64 bg-white border-r border-gray-200 flex-col">
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex items-center justify-center h-16 px-4 bg-purple-600">
+          <h2 className="text-xl font-bold text-white">CareerOS</h2>
+        </div>
+        
+        <nav className="flex-1 px-4 py-4 space-y-2">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location === item.path;
+            
+            return (
+              <Link key={item.path} href={item.path}>
+                <div className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-purple-100 text-purple-900'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}>
+                  <Icon className="h-5 w-5 mr-3" />
+                  {item.label}
+                </div>
+              </Link>
+            );
+          })}
+        </nav>
+        
+        <div className="p-4 border-t border-gray-200">
+          <LogoutButton />
+        </div>
+      </div>
+    </aside>
+  );
+}
+
 export default function MentorDashboard() {
   const [selectedTimeframe, setSelectedTimeframe] = useState("this_week");
+  const { user } = useAuth();
   
   // Fetch mentor's sessions data
   const { data: sessionsData, isLoading: sessionsLoading } = useQuery({
@@ -61,21 +111,39 @@ export default function MentorDashboard() {
     },
   });
 
+  const userWithDefaults = {
+    name: user?.name || 'Mentor',
+    email: user?.email || 'mentor@example.com',
+    avatar: user?.avatar || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6',
+  };
+
   if (sessionsLoading || communityLoading) {
     return (
-      <Layout title="Mentor Dashboard">
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading your mentor dashboard...</p>
+      <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
+        <SimpleSidebar user={userWithDefaults} />
+        <MobileSidebar user={userWithDefaults} />
+        <MobileHeader user={userWithDefaults} title="Mentor Dashboard" />
+        
+        <main className="flex-1 md:ml-0">
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading your mentor dashboard...</p>
+            </div>
           </div>
-        </div>
-      </Layout>
+        </main>
+      </div>
     );
   }
 
   return (
-    <Layout title="Mentor Dashboard">
+    <Layout 
+      title="Mentor Dashboard"
+      sidebarItems={[
+        { name: "Dashboard", href: "/mentor-dashboard", icon: "LayoutDashboard" },
+        { name: "Settings", href: "/settings", icon: "Settings" }
+      ]}
+    >
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-green-50">
         {/* Header Section */}
         <div className="bg-white border-b border-gray-200 px-6 py-8">
