@@ -21,7 +21,7 @@ export default function DashboardRouter() {
           navigate('/admin-dashboard', { replace: true }); // Moderators use admin dashboard
           break;
         case 'mentor':
-          navigate('/mentor-dashboard', { replace: true });
+          navigate('/mentor-journey', { replace: true });
           break;
         case 'student':
         default:
