@@ -968,6 +968,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register Dashboard routes
   app.use('/api/dashboard', dashboardRoutes);
+  
+  // Register Search routes
+  app.use('/api/search', searchRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
