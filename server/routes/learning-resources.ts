@@ -396,7 +396,7 @@ router.get("/current/:career", (req, res) => {
     // In real implementation, this would check user's actual progress
     const currentPhase = "advanced-development";
     
-    const resources = learningResourcesData[currentPhase];
+    const resources = learningResourcesData[currentPhase as keyof typeof learningResourcesData];
     
     if (!resources) {
       return res.status(404).json({
