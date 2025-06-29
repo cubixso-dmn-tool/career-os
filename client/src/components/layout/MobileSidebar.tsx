@@ -9,7 +9,8 @@ import {
   UserCheck,
   Trophy,
   X,
-  Bot
+  Bot,
+  Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LogoutButton from "@/components/auth/LogoutButton";
