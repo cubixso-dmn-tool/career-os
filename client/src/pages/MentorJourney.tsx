@@ -300,7 +300,18 @@ function OverviewContent({ journeyStages }: { journeyStages: any[] }) {
                     stage.status === 'completed' ? 'bg-green-500' :
                     stage.status === 'current' ? 'bg-purple-500' : 'bg-gray-400'
                   }`}>
-                    <stage.icon className="h-6 w-6 text-white" />
+                    {stage.icon && <stage.icon className="h-6 w-6 text-white" />}
+                    {!stage.icon && (
+                      <>
+                        {stage.id === 1 && <UserCheck className="h-6 w-6 text-white" />}
+                        {stage.id === 2 && <Settings className="h-6 w-6 text-white" />}
+                        {stage.id === 3 && <MessageSquare className="h-6 w-6 text-white" />}
+                        {stage.id === 4 && <Calendar className="h-6 w-6 text-white" />}
+                        {stage.id === 5 && <Users className="h-6 w-6 text-white" />}
+                        {stage.id === 6 && <BarChart3 className="h-6 w-6 text-white" />}
+                        {stage.id === 7 && <Award className="h-6 w-6 text-white" />}
+                      </>
+                    )}
                   </div>
                   <h3 className="font-semibold text-sm text-gray-900 mb-2">{stage.title}</h3>
                   <Badge 
