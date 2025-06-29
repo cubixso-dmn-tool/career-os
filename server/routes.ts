@@ -30,6 +30,8 @@ import coursesRoutes from "./routes/courses";
 import aiCareerCoachRoutes from "./routes/ai-career-coach";
 import industryExpertsRoutes from "./routes/industry-experts";
 import learningResourcesRoutes from "./routes/learning-resources";
+import mentorRoutes from "./routes/mentor";
+import adminRoutes from "./routes/admin";
 import { loadUserRolesMiddleware } from "./middleware/rbac";
 
 function handleZodError(error: ZodError, res: Response) {
@@ -947,6 +949,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register Learning Resources routes
   app.use('/api/learning-resources', learningResourcesRoutes);
+  
+  // Register Mentor Dashboard routes
+  app.use('/api/mentor', mentorRoutes);
+  
+  // Register Admin Dashboard routes
+  app.use('/api/admin', adminRoutes);
 
   const httpServer = createServer(app);
   return httpServer;

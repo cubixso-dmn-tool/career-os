@@ -212,6 +212,13 @@ A cutting-edge EdTech platform empowering Indian students with personalized care
 - Redesigned main dashboard as intuitive one-stop shop with quick actions, tabbed content, and personalized insights
 - Integrated proper Layout component with sidebar navigation for all major features
 - Enhanced mobile responsiveness across all pages
+- **NEW**: Created role-specific dashboards for different user journeys:
+  - **Student Dashboard**: Original dashboard focused on learning progress and career development
+  - **Mentor Dashboard**: Session management, community engagement, mentee tracking, and performance analytics
+  - **Admin Dashboard**: Platform oversight, user management, content moderation, event creation, and system analytics
+- **NEW**: Implemented smart dashboard routing that automatically directs users to appropriate dashboard based on their role
+- **NEW**: Added comprehensive backend APIs for mentor and admin functionality with proper RBAC protection
+- Consolidated Courses and Projects into unified Learning page with roadmap integration
 
 ## Next Priority Features to Implement
 1. AI-powered career guidance chatbot using OpenAI integration
