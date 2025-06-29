@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
+import Layout from "@/components/layout/Layout";
 import { 
   Card, 
   CardContent, 
@@ -40,7 +41,9 @@ import {
   Bell,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  Brain,
+  Flame
 } from "lucide-react";
 
 export default function MentorJourney() {
@@ -138,96 +141,63 @@ export default function MentorJourney() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <div className={`bg-white shadow-lg transition-all duration-300 ${sidebarOpen ? 'w-80' : 'w-20'} flex-shrink-0`}>
-        {/* Sidebar Header */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            {sidebarOpen && (
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Mentor Dashboard</h2>
-                <p className="text-sm text-gray-600">Welcome back, Alex!</p>
-              </div>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2"
+    <Layout title="Mentor Journey">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
+        {/* Welcome Header */}
+        <div className="bg-white border-b border-gray-200 px-6 py-8 mb-8">
+          <div className="max-w-7xl mx-auto">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center justify-between"
             >
-              {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-            </Button>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <Brain className="h-8 w-8 text-purple-600" />
+                  </div>
+                  Mentor Journey
+                </h1>
+                <p className="text-gray-600 mt-2">
+                  Welcome back, Alex! Ready to guide the next generation of learners?
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                <Badge variant="secondary" className="px-3 py-1">
+                  <Flame className="h-4 w-4 mr-1" />
+                  Stage 3: Community
+                </Badge>
+              </div>
+            </motion.div>
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="p-4 space-y-2">
-          {sidebarItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center ${sidebarOpen ? 'justify-start' : 'justify-center'} p-3 rounded-lg transition-all ${
-                activeTab === item.id
-                  ? 'bg-purple-100 text-purple-700 shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <item.icon className={`h-5 w-5 ${sidebarOpen ? 'mr-3' : ''}`} />
-              {sidebarOpen && (
-                <div className="text-left">
-                  <div className="font-medium">{item.title}</div>
-                  <div className="text-xs text-gray-500">{item.description}</div>
-                </div>
-              )}
-            </button>
-          ))}
-        </nav>
-
-        {/* Progress Summary in Sidebar */}
-        {sidebarOpen && (
-          <div className="p-4 mt-auto border-t border-gray-200">
-            <div className="bg-gradient-to-r from-purple-500 to-indigo-500 rounded-lg p-4 text-white">
-              <h3 className="font-semibold mb-2">Journey Progress</h3>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm">Stage 3 of 7</span>
-                <span className="text-sm font-bold">43%</span>
-              </div>
-              <Progress value={43} className="h-2 bg-white/20" />
-              <p className="text-xs mt-2 opacity-90">Community Engagement Active</p>
-            </div>
+        {/* Navigation Tabs */}
+        <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto">
+            <nav className="flex space-x-8 px-6">
+              {sidebarItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === item.id
+                      ? 'border-purple-500 text-purple-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <item.icon className="h-4 w-4" />
+                    {item.title}
+                  </div>
+                </button>
+              ))}
+            </nav>
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
-        {/* Top Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 capitalize">
-                {sidebarItems.find(item => item.id === activeTab)?.title || 'Dashboard'}
-              </h1>
-              <p className="text-gray-600">
-                {sidebarItems.find(item => item.id === activeTab)?.description}
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm">
-                <Bell className="h-4 w-4 mr-2" />
-                Notifications
-              </Button>
-              <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        {/* Content Area */}
-        <main className="p-6 overflow-y-auto h-full" style={{ height: 'calc(100vh - 120px)' }}>
+        {/* Main Content Area */}
+        <div className="max-w-7xl mx-auto px-6 py-8">
           {activeTab === "overview" && <OverviewContent journeyStages={journeyStages} />}
           {activeTab === "profile" && <ProfileContent />}
           {activeTab === "community" && <CommunityContent />}
@@ -235,9 +205,9 @@ export default function MentorJourney() {
           {activeTab === "mentorship" && <MentorshipContent />}
           {activeTab === "analytics" && <AnalyticsContent />}
           {activeTab === "achievements" && <AchievementsContent />}
-        </main>
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 }
 
