@@ -6,6 +6,77 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const MODEL = "gpt-4o";
 
+// Enhanced interfaces for AI Career Coach
+export interface CareerCoachRequest {
+  message: string;
+  conversationHistory?: Array<{ role: 'user' | 'assistant', content: string }>;
+  userId?: number;
+  coachingType: 'general' | 'interview' | 'resume' | 'learning_path';
+  userProfile?: {
+    currentRole?: string;
+    experience?: string;
+    skills?: string[];
+    goals?: string[];
+    education?: string;
+    location?: string;
+  };
+  contextData?: any;
+}
+
+export interface MockInterviewRequest {
+  role: string;
+  experience: string;
+  interviewType: 'technical' | 'behavioral' | 'system_design' | 'hr';
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  companyType?: string;
+  previousQuestions?: string[];
+}
+
+export interface ResumeAnalysisRequest {
+  resumeText: string;
+  targetRole?: string;
+  targetCompany?: string;
+  jobDescription?: string;
+}
+
+export interface LearningPathRequest {
+  currentSkills: string[];
+  targetRole: string;
+  timeframe: string;
+  learningStyle: 'visual' | 'hands-on' | 'theoretical' | 'mixed';
+  experience: string;
+}
+
+export interface InterviewQuestion {
+  question: string;
+  type: 'technical' | 'behavioral' | 'situational' | 'knowledge';
+  difficulty: 'easy' | 'medium' | 'hard';
+  expectedDuration: string;
+  hints?: string[];
+  followUpQuestions?: string[];
+}
+
+export interface ResumeAnalysis {
+  overallScore: number;
+  strengths: string[];
+  weaknesses: string[];
+  suggestions: {
+    section: string;
+    improvement: string;
+    priority: 'high' | 'medium' | 'low';
+  }[];
+  atsCompatibility: {
+    score: number;
+    issues: string[];
+    recommendations: string[];
+  };
+  keywordOptimization: {
+    missing: string[];
+    present: string[];
+    suggestions: string[];
+  };
+}
+
 // Response interfaces
 export interface CareerGuidanceResponse {
   careerSuggestions: {
@@ -298,6 +369,321 @@ export async function generatePathFinderResponse(
     console.error("Error generating PathFinder response:", error);
     throw new Error(`Failed to generate PathFinder response: ${error.message || 'Unknown error'}`);
   }
+}
+
+/**
+ * AI-Powered Career Coach - Main function for comprehensive career guidance
+ */
+export async function getCareerCoachResponse(request: CareerCoachRequest): Promise<string> {
+  try {
+    let systemPrompt = "";
+    
+    switch (request.coachingType) {
+      case 'general':
+        systemPrompt = generateGeneralCoachPrompt(request.userProfile);
+        break;
+      case 'interview':
+        systemPrompt = generateInterviewCoachPrompt(request.userProfile);
+        break;
+      case 'resume':
+        systemPrompt = generateResumeCoachPrompt(request.userProfile);
+        break;
+      case 'learning_path':
+        systemPrompt = generateLearningPathPrompt(request.userProfile);
+        break;
+    }
+
+    const messages: ChatCompletionMessageParam[] = [
+      { role: "system", content: systemPrompt },
+      ...(request.conversationHistory || []).map(msg => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content
+      })),
+      { role: "user", content: request.message }
+    ];
+
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages,
+      temperature: 0.7,
+      max_tokens: 1000,
+    });
+
+    return response.choices[0].message.content || "I'm having trouble processing your request right now. Please try again.";
+  } catch (error: any) {
+    console.error("Error in AI Career Coach:", error);
+    throw new Error(`Career coaching error: ${error.message || 'Unknown error'}`);
+  }
+}
+
+/**
+ * Generate Mock Interview Questions with AI
+ */
+export async function generateMockInterviewQuestions(request: MockInterviewRequest): Promise<InterviewQuestion[]> {
+  try {
+    const prompt = `
+      You are an expert interviewer for Indian tech companies. Generate 5 challenging but fair interview questions for:
+      
+      Role: ${request.role}
+      Experience Level: ${request.experience}
+      Interview Type: ${request.interviewType}
+      Difficulty: ${request.difficulty}
+      ${request.companyType ? `Company Type: ${request.companyType}` : ''}
+      
+      For each question, provide:
+      1. The actual question
+      2. Question type (technical/behavioral/situational/knowledge)
+      3. Difficulty level (easy/medium/hard)
+      4. Expected duration for answer
+      5. 2-3 helpful hints
+      6. 1-2 potential follow-up questions
+      
+      Focus on questions commonly asked in Indian tech interviews, including:
+      - Technical depth appropriate for the role and experience
+      - Cultural fit questions relevant to Indian workplace
+      - Problem-solving scenarios common in Indian tech companies
+      - Questions about handling pressure and teamwork
+      
+      ${request.previousQuestions ? `Avoid repeating these questions: ${request.previousQuestions.join(', ')}` : ''}
+      
+      Return as JSON array with this structure:
+      [
+        {
+          "question": "Interview question text",
+          "type": "technical|behavioral|situational|knowledge",
+          "difficulty": "easy|medium|hard",
+          "expectedDuration": "2-3 minutes",
+          "hints": ["Hint 1", "Hint 2", "Hint 3"],
+          "followUpQuestions": ["Follow-up 1", "Follow-up 2"]
+        }
+      ]
+    `;
+
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.6,
+    });
+
+    const content = response.choices[0].message.content || "[]";
+    const result = JSON.parse(content);
+    return Array.isArray(result) ? result : result.questions || [];
+  } catch (error: any) {
+    console.error("Error generating mock interview questions:", error);
+    throw new Error(`Failed to generate interview questions: ${error.message || 'Unknown error'}`);
+  }
+}
+
+/**
+ * Analyze Resume with AI and provide detailed feedback
+ */
+export async function analyzeResumeWithAI(request: ResumeAnalysisRequest): Promise<ResumeAnalysis> {
+  try {
+    const prompt = `
+      You are an expert resume reviewer and career counselor specializing in the Indian job market.
+      Analyze this resume and provide comprehensive feedback for improvement.
+      
+      Resume Content:
+      ${request.resumeText}
+      
+      ${request.targetRole ? `Target Role: ${request.targetRole}` : ''}
+      ${request.targetCompany ? `Target Company: ${request.targetCompany}` : ''}
+      ${request.jobDescription ? `Job Description: ${request.jobDescription}` : ''}
+      
+      Provide analysis in the following areas:
+      1. Overall resume score (0-100)
+      2. Key strengths of the resume
+      3. Major weaknesses that need improvement
+      4. Specific suggestions for each section with priority levels
+      5. ATS (Applicant Tracking System) compatibility analysis
+      6. Keyword optimization for Indian job market
+      
+      Consider Indian hiring practices:
+      - Format preferences of Indian recruiters
+      - Skills and qualifications valued in Indian companies
+      - Cultural considerations for Indian workplace
+      - Industry-specific requirements in India
+      
+      Return as JSON with this structure:
+      {
+        "overallScore": 75,
+        "strengths": ["Strength 1", "Strength 2"],
+        "weaknesses": ["Weakness 1", "Weakness 2"],
+        "suggestions": [
+          {
+            "section": "Experience",
+            "improvement": "Add quantifiable achievements",
+            "priority": "high"
+          }
+        ],
+        "atsCompatibility": {
+          "score": 80,
+          "issues": ["Issue 1", "Issue 2"],
+          "recommendations": ["Fix 1", "Fix 2"]
+        },
+        "keywordOptimization": {
+          "missing": ["Keyword 1", "Keyword 2"],
+          "present": ["Keyword 3", "Keyword 4"],
+          "suggestions": ["Add this", "Emphasize that"]
+        }
+      }
+    `;
+
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.3,
+    });
+
+    const content = response.choices[0].message.content || "{}";
+    return JSON.parse(content) as ResumeAnalysis;
+  } catch (error: any) {
+    console.error("Error analyzing resume:", error);
+    throw new Error(`Resume analysis failed: ${error.message || 'Unknown error'}`);
+  }
+}
+
+/**
+ * Generate Personalized Learning Path with AI
+ */
+export async function generatePersonalizedLearningPath(request: LearningPathRequest): Promise<LearningRoadmapResponse> {
+  try {
+    const prompt = `
+      Create a highly personalized learning roadmap for an Indian student/professional.
+      
+      Current Profile:
+      - Current Skills: ${request.currentSkills.join(', ')}
+      - Target Role: ${request.targetRole}
+      - Available Time: ${request.timeframe}
+      - Learning Style: ${request.learningStyle}
+      - Experience Level: ${request.experience}
+      
+      Design a learning path that:
+      1. Bridges the gap between current skills and target role requirements
+      2. Is realistic for the Indian context (available resources, typical career progression)
+      3. Includes both technical and soft skills
+      4. Provides milestone-based progression with clear checkpoints
+      5. Suggests resources accessible to Indian learners (free and paid options)
+      6. Considers the Indian job market and what employers actually look for
+      
+      Focus on:
+      - Practical, industry-relevant skills
+      - Portfolio-building projects
+      - Certification and credential opportunities
+      - Networking and community engagement
+      - Interview preparation specific to the target role
+      
+      Return as JSON with this structure:
+      {
+        "title": "Personalized Learning Path: [Current] to [Target Role]",
+        "overview": "Path overview with key focus areas",
+        "timeEstimate": "Total estimated time",
+        "milestones": [
+          {
+            "title": "Milestone name",
+            "description": "What you'll accomplish",
+            "resources": [
+              {
+                "title": "Resource name",
+                "type": "course|book|project|certification",
+                "url": "URL if available",
+                "description": "Why this resource"
+              }
+            ],
+            "timeEstimate": "Time for this milestone",
+            "skillsGained": ["Skill 1", "Skill 2"]
+          }
+        ]
+      }
+    `;
+
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.4,
+    });
+
+    const content = response.choices[0].message.content || "{}";
+    return JSON.parse(content) as LearningRoadmapResponse;
+  } catch (error: any) {
+    console.error("Error generating personalized learning path:", error);
+    throw new Error(`Learning path generation failed: ${error.message || 'Unknown error'}`);
+  }
+}
+
+// Helper functions for generating specialized coaching prompts
+function generateGeneralCoachPrompt(userProfile?: any): string {
+  return `
+    You are an AI Career Coach specializing in Indian career development.
+    You provide comprehensive career guidance including:
+    - Career path exploration and recommendations
+    - Skills development advice
+    - Industry insights and trends
+    - Salary and growth expectations
+    - Work-life balance guidance
+    
+    Keep responses practical, encouraging, and tailored to the Indian job market.
+    ${userProfile ? `User Profile: ${JSON.stringify(userProfile)}` : ''}
+    
+    Be conversational, supportive, and focus on actionable advice.
+  `;
+}
+
+function generateInterviewCoachPrompt(userProfile?: any): string {
+  return `
+    You are an expert Interview Coach for Indian job seekers.
+    You help with:
+    - Mock interview practice and feedback
+    - Common interview questions and answers
+    - Technical interview preparation
+    - Behavioral interview strategies
+    - Company-specific interview insights
+    - Salary negotiation advice
+    
+    Focus on Indian hiring practices and cultural expectations.
+    ${userProfile ? `User Profile: ${JSON.stringify(userProfile)}` : ''}
+    
+    Provide detailed, actionable interview advice.
+  `;
+}
+
+function generateResumeCoachPrompt(userProfile?: any): string {
+  return `
+    You are a Resume Writing Expert for the Indian job market.
+    You help with:
+    - Resume content optimization
+    - ATS-friendly formatting
+    - Keywords and skills highlighting
+    - Achievement quantification
+    - Industry-specific customization
+    - Cover letter writing
+    
+    Focus on what Indian recruiters and ATS systems look for.
+    ${userProfile ? `User Profile: ${JSON.stringify(userProfile)}` : ''}
+    
+    Provide specific, actionable resume improvement advice.
+  `;
+}
+
+function generateLearningPathPrompt(userProfile?: any): string {
+  return `
+    You are a Learning Path Designer for Indian professionals and students.
+    You help with:
+    - Skill gap analysis
+    - Personalized learning roadmaps
+    - Resource recommendations (courses, books, projects)
+    - Certification guidance
+    - Portfolio building strategies
+    - Timeline and milestone planning
+    
+    Focus on practical skills valued in the Indian job market.
+    ${userProfile ? `User Profile: ${JSON.stringify(userProfile)}` : ''}
+    
+    Create detailed, step-by-step learning guidance.
+  `;
 }
 
 /**
