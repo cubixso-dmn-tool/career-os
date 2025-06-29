@@ -104,6 +104,17 @@ export interface IStorage {
   getUserEvent(id: number): Promise<UserEvent | undefined>;
   getUserEventsByUser(userId: number): Promise<UserEvent[]>;
   createUserEvent(userEvent: InsertUserEvent): Promise<UserEvent>;
+
+  // Analytics operations
+  getTotalUsers(): Promise<number>;
+  getActiveUsersToday(): Promise<number>;
+  getTotalEvents(): Promise<number>;
+  getPendingModerationCount(): Promise<number>;
+  getTotalCourses(): Promise<number>;
+  getTotalProjects(): Promise<number>;
+  getTotalEnrollments(): Promise<number>;
+  getUserEngagementMetrics(): Promise<any>;
+  getCoursePerformanceMetrics(): Promise<any>;
 }
 
 // PostgreSQL implementation of the storage interface
