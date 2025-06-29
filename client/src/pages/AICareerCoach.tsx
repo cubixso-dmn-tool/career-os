@@ -1,4 +1,6 @@
 import { motion } from 'framer-motion';
+import Layout from '@/components/layout/Layout';
+import MobileNavigation from '@/components/layout/MobileNavigation';
 import AICareerCoach from '@/components/career/AICareerCoach';
 import { Bot, Sparkles, Target, FileText, GraduationCap, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,9 +35,8 @@ export default function AICareerCoachPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header Section */}
+    <>
+      <Layout title="AI Career Coach">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -163,7 +164,10 @@ export default function AICareerCoachPage() {
             discover personalized insights that can transform your professional journey.
           </p>
         </motion.div>
-      </div>
-    </div>
+      </Layout>
+      
+      {/* Mobile Navigation */}
+      <MobileNavigation />
+    </>
   );
 }
