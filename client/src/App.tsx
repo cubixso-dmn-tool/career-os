@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/Dashboard";
+import DashboardRouter, { StudentDashboard, MentorDashboard, AdminDashboard } from "@/pages/DashboardRouter";
 import CareerGuide from "@/pages/CareerGuide";
 import CareerRoadmap from "@/pages/CareerRoadmap";
 import Learning from "@/pages/Learning";
@@ -28,7 +28,22 @@ function Router() {
       <Route path="/" component={LandingPage} />
       <Route path="/dashboard">
         <ProtectedRoute>
-          <Dashboard />
+          <DashboardRouter />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/student-dashboard">
+        <ProtectedRoute>
+          <StudentDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/mentor-dashboard">
+        <ProtectedRoute>
+          <MentorDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin-dashboard">
+        <ProtectedRoute>
+          <AdminDashboard />
         </ProtectedRoute>
       </Route>
       <Route path="/career-guide">
