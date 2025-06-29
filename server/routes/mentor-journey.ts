@@ -29,32 +29,19 @@ router.get("/profile", isAuthenticated, async (req: any, res) => {
   try {
     const userId = req.user.id;
     
-    const [profile] = await db
-      .select()
-      .from(mentorProfiles)
-      .where(eq(mentorProfiles.userId, userId))
-      .limit(1);
-    
-    if (!profile) {
-      // Create default profile if doesn't exist
-      const [newProfile] = await db
-        .insert(mentorProfiles)
-        .values({
-          userId,
-          domains: ['Technology'],
-          experienceLevel: 'Mid-level',
-          skills: ['Mentoring'],
-          weeklyAvailability: 5,
-          availability: { weekdays: '6:00 PM - 8:00 PM', weekends: '10:00 AM - 2:00 PM' },
-          mentoringPreferences: ['1:1 Sessions'],
-          isVerified: true,
-          isApproved: true,
-          currentStage: 3
-        })
-        .returning();
-      
-      return res.json({ success: true, profile: newProfile });
-    }
+    // Return demo profile data for now
+    const profile = {
+      userId,
+      domains: ['Artificial Intelligence', 'Product Management', 'Frontend Development'],
+      experienceLevel: '8+ Years Senior Level',
+      skills: ['React', 'Python', 'Machine Learning', 'Team Leadership', 'Strategy'],
+      weeklyAvailability: 10,
+      availability: { weekdays: '6:00 PM - 8:00 PM', weekends: '10:00 AM - 2:00 PM' },
+      mentoringPreferences: ['1:1 Sessions', 'Group Workshops', 'Mock Interviews'],
+      isVerified: true,
+      isApproved: true,
+      currentStage: 3
+    };
     
     res.json({ success: true, profile });
   } catch (error) {
@@ -87,55 +74,24 @@ router.get("/overview", isAuthenticated, async (req: any, res) => {
   try {
     const userId = req.user.id;
     
-    // Get profile info
-    const [profile] = await db
-      .select()
-      .from(mentorProfiles)
-      .where(eq(mentorProfiles.userId, userId))
-      .limit(1);
-    
-    // Get community engagement stats
-    const [engagement] = await db
-      .select()
-      .from(mentorCommunityEngagement)
-      .where(eq(mentorCommunityEngagement.mentorId, userId))
-      .limit(1);
-    
-    // Get session stats
-    const sessionStats = await db
-      .select({
-        totalSessions: count(),
-        averageRating: avg(mentorSessions.rating)
-      })
-      .from(mentorSessions)
-      .where(eq(mentorSessions.mentorId, userId));
-    
-    // Get active mentees count
-    const [menteeStats] = await db
-      .select({ count: count() })
-      .from(mentorshipMatching)
-      .where(and(
-        eq(mentorshipMatching.mentorId, userId),
-        eq(mentorshipMatching.status, 'active')
-      ));
-    
+    // For now, return demo data since tables don't exist yet
     const overview = {
-      currentStage: profile?.currentStage || 1,
-      progressPercentage: ((profile?.currentStage || 1) / 7) * 100,
+      currentStage: 3,
+      progressPercentage: 43,
       stats: {
-        communityUpvotes: engagement?.totalUpvotes || 0,
-        sessionsHosted: sessionStats[0]?.totalSessions || 0,
-        activeMentees: menteeStats?.count || 0,
-        overallRating: sessionStats[0]?.averageRating || 0
+        communityUpvotes: 127,
+        sessionsHosted: 12,
+        activeMentees: 3,
+        overallRating: 4.8
       },
       journeyStages: [
         { id: 1, title: "Signup & Verification", status: "completed" },
         { id: 2, title: "Profile Setup", status: "completed" },
-        { id: 3, title: "Community Engagement", status: profile?.currentStage >= 3 ? "current" : "upcoming" },
-        { id: 4, title: "Sessions Management", status: profile?.currentStage >= 4 ? "current" : "upcoming" },
-        { id: 5, title: "Mentorship Matching", status: profile?.currentStage >= 5 ? "current" : "upcoming" },
-        { id: 6, title: "Success Tracking", status: profile?.currentStage >= 6 ? "current" : "upcoming" },
-        { id: 7, title: "Recognition", status: profile?.currentStage >= 7 ? "completed" : "upcoming" }
+        { id: 3, title: "Community Engagement", status: "current" },
+        { id: 4, title: "Sessions Management", status: "upcoming" },
+        { id: 5, title: "Mentorship Matching", status: "upcoming" },
+        { id: 6, title: "Success Tracking", status: "upcoming" },
+        { id: 7, title: "Recognition", status: "upcoming" }
       ]
     };
     

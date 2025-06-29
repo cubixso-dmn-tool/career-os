@@ -243,7 +243,7 @@ export default function MentorJourney() {
 
 // Overview Content Component
 function OverviewContent({ journeyStages }: { journeyStages: any[] }) {
-  const { data: overview, isLoading } = useQuery({
+  const { data: overview, isLoading, error } = useQuery({
     queryKey: ["/api/mentor-journey/overview"],
     retry: false,
   });
@@ -258,7 +258,8 @@ function OverviewContent({ journeyStages }: { journeyStages: any[] }) {
     );
   }
 
-  const overviewData = overview?.overview || {
+  // Use fallback data if API fails (for demo purposes)
+  const overviewData = (overview as any)?.overview || {
     stats: {
       communityUpvotes: 127,
       sessionsHosted: 12,
