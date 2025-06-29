@@ -57,14 +57,8 @@ export default function CareerRoadmapPage() {
   });
   const [resources, setResources] = useState<any>(null);
   const [resourcesLoading, setResourcesLoading] = useState(false);
-  
-  // Fetch user profile/career data
-  const { data: userData, isSuccess, isError } = useQuery({
-    queryKey: ['/api/users/profile']
-  });
-  
-  // Roadmap steps with enhanced metadata
-  const roadmapSteps = [
+  const [roadmapSteps, setRoadmapSteps] = useState([
+    // Default roadmap steps
     {
       id: "introduction",
       title: "Introduction",
@@ -119,14 +113,24 @@ export default function CareerRoadmapPage() {
       difficulty: "Intermediate",
       tasks: ["Join communities", "Attend events", "Find mentors"]
     }
-  ];
+  ]);
+  
+  // Fetch user profile/career data
+  const { data: userData, isSuccess, isError } = useQuery({
+    queryKey: ['/api/users/profile']
+  });
+  
+
 
   // Load career path and fetch progress
   useEffect(() => {
     const loadCareerData = async () => {
       try {
-        // Load career path from localStorage or API
+        // Load career path from localStorage (set by AI Career Guide)
         const storedCareerPath = localStorage.getItem('selectedCareerPath');
+        const careerRoadmapData = localStorage.getItem('careerRoadmapData');
+        const assessmentComplete = localStorage.getItem('careerAssessmentComplete');
+        
         if (storedCareerPath) {
           setCareerPath(storedCareerPath);
         } else if (userData && typeof userData === 'object') {
@@ -136,20 +140,57 @@ export default function CareerRoadmapPage() {
           }
         }
 
+        // If we have AI-generated roadmap data, use it to update the roadmap steps
+        if (careerRoadmapData && assessmentComplete) {
+          try {
+            const generatedRoadmap = JSON.parse(careerRoadmapData);
+            
+            // Map AI-generated phases to our roadmap steps format
+            const aiSteps = generatedRoadmap.phases?.map((phase: any, index: number) => ({
+              id: phase.phase.toLowerCase().replace(/\s+/g, '-'),
+              title: phase.phase,
+              icon: [Target, Zap, BookOpen, Code, FileText, Users][index] || BookOpen,
+              description: phase.description,
+              estimatedTime: phase.duration,
+              difficulty: index < 2 ? 'Beginner' : index < 4 ? 'Intermediate' : 'Advanced',
+              tasks: phase.milestones || []
+            })) || roadmapSteps;
+
+            // Update roadmap steps with AI-generated data
+            setRoadmapSteps(aiSteps);
+          } catch (parseError) {
+            console.error("Error parsing AI roadmap data:", parseError);
+          }
+        }
+
         // Fetch user progress
-        const progressData = await apiRequest({
-          url: "/api/career/roadmap/progress",
-          method: "GET"
-        });
-        
-        const completedCount = progressData.completedSteps?.length || 1;
-        const progressPercentage = Math.round((completedCount / 6) * 100);
-        
-        setUserProgress({
-          ...progressData,
-          totalSteps: 6,
-          progressPercentage
-        });
+        try {
+          const progressData = await apiRequest({
+            url: "/api/career/roadmap/progress",
+            method: "GET"
+          });
+          
+          const completedCount = progressData.completedSteps?.length || 1;
+          const totalSteps = roadmapSteps.length;
+          const progressPercentage = Math.round((completedCount / totalSteps) * 100);
+          
+          setUserProgress({
+            ...progressData,
+            totalSteps,
+            progressPercentage
+          });
+        } catch (progressError) {
+          // Use default progress if API fails
+          console.error("Error fetching progress:", progressError);
+          setUserProgress({
+            currentStep: 1,
+            completedSteps: ["Introduction"],
+            coursesCompleted: 0,
+            projectsCompleted: 0,
+            totalSteps: roadmapSteps.length,
+            progressPercentage: Math.round((1 / roadmapSteps.length) * 100)
+          });
+        }
 
       } catch (error) {
         console.error("Error loading career data:", error);

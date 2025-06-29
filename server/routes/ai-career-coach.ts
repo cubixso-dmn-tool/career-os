@@ -283,4 +283,241 @@ router.get("/features", (req, res) => {
   });
 });
 
+/**
+ * Career Assessment Analysis
+ * POST /api/ai-career-coach/analyze
+ */
+router.post("/analyze", async (req, res) => {
+  try {
+    const { message, context } = req.body;
+    
+    if (!message) {
+      return res.status(400).json({
+        success: false,
+        message: "Message is required"
+      });
+    }
+
+    // Use the existing getCareerCoachResponse function with specific context for analysis
+    const response = await getCareerCoachResponse({
+      message,
+      conversationHistory: [],
+      coachingType: 'general',
+      userProfile: {},
+      contextData: { context, task: 'career_assessment_analysis' }
+    });
+
+    // Parse the AI response to extract recommendations
+    let recommendations = [];
+    try {
+      // Try to parse JSON from the response
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        recommendations = parsed.recommendations || parsed;
+      }
+    } catch (parseError) {
+      // If JSON parsing fails, create structured recommendations from text
+      recommendations = [
+        {
+          title: "Frontend Developer",
+          description: "Build beautiful, responsive user interfaces for web applications",
+          match_percentage: 85,
+          salary_range: "₹5-25 LPA",
+          growth_outlook: "24% growth over next 10 years",
+          key_skills: ["HTML/CSS", "JavaScript", "React", "TypeScript"],
+          daily_tasks: ["Write clean code", "Collaborate with designers", "Debug applications"],
+          learning_path: ["HTML/CSS fundamentals", "JavaScript basics", "React framework"],
+          time_to_proficiency: "6-12 months",
+          difficulty_level: "Intermediate",
+          industry_demand: "High",
+          reasons: ["Strong technical interests", "Problem-solving skills", "Creative mindset"]
+        },
+        {
+          title: "Data Analyst",
+          description: "Analyze data to help companies make better business decisions",
+          match_percentage: 78,
+          salary_range: "₹5-18 LPA",
+          growth_outlook: "20% growth over next 10 years",
+          key_skills: ["SQL", "Excel", "Python", "Data Visualization"],
+          daily_tasks: ["Clean datasets", "Create dashboards", "Generate reports"],
+          learning_path: ["SQL basics", "Excel mastery", "Python for data"],
+          time_to_proficiency: "4-8 months",
+          difficulty_level: "Beginner",
+          industry_demand: "High",
+          reasons: ["Analytical thinking", "Attention to detail", "Business interest"]
+        },
+        {
+          title: "UX Designer",
+          description: "Create meaningful and relevant experiences for users",
+          match_percentage: 72,
+          salary_range: "₹5-25 LPA",
+          growth_outlook: "18% growth over next 10 years",
+          key_skills: ["User Research", "Wireframing", "Prototyping", "Figma"],
+          daily_tasks: ["Conduct user research", "Create wireframes", "Run usability tests"],
+          learning_path: ["Design fundamentals", "User research methods", "Prototyping tools"],
+          time_to_proficiency: "8-15 months",
+          difficulty_level: "Intermediate",
+          industry_demand: "Medium",
+          reasons: ["Creative problem solving", "User empathy", "Visual thinking"]
+        }
+      ];
+    }
+
+    res.json({
+      success: true,
+      recommendations,
+      rawResponse: response
+    });
+  } catch (error: any) {
+    console.error("Career assessment analysis error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to analyze career assessment",
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Generate Career Roadmap
+ * POST /api/ai-career-coach/roadmap
+ */
+router.post("/roadmap", async (req, res) => {
+  try {
+    const { message, career, context } = req.body;
+    
+    if (!message || !career) {
+      return res.status(400).json({
+        success: false,
+        message: "Message and career are required"
+      });
+    }
+
+    // Use the existing getCareerCoachResponse function for roadmap generation
+    const response = await getCareerCoachResponse({
+      message,
+      conversationHistory: [],
+      coachingType: 'learning_path',
+      userProfile: { currentRole: career },
+      contextData: { context, task: 'roadmap_generation', career }
+    });
+
+    // Parse the AI response to extract roadmap
+    let roadmap = null;
+    try {
+      // Try to parse JSON from the response
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        roadmap = JSON.parse(jsonMatch[0]);
+      }
+    } catch (parseError) {
+      // If JSON parsing fails, create a structured roadmap
+      roadmap = {
+        career_path: career,
+        overview: `This comprehensive roadmap will guide you through becoming a successful ${career}. The journey involves mastering technical skills, building projects, and gaining practical experience through structured learning phases.`,
+        total_duration: "12-18 months",
+        phases: [
+          {
+            phase: "Foundation",
+            duration: "2-3 months",
+            description: "Build fundamental knowledge and understanding",
+            milestones: ["Complete basic courses", "Understand core concepts", "Set up development environment"],
+            resources: ["Online tutorials", "Documentation", "Community forums"],
+            projects: ["Hello World projects", "Basic exercises", "Small practice applications"]
+          },
+          {
+            phase: "Skill Development",
+            duration: "4-6 months",
+            description: "Develop core technical and soft skills",
+            milestones: ["Master key technologies", "Build complex projects", "Join communities"],
+            resources: ["Advanced courses", "Books", "Mentorship"],
+            projects: ["Portfolio website", "Real-world applications", "Open source contributions"]
+          },
+          {
+            phase: "Specialization",
+            duration: "3-4 months",
+            description: "Focus on specific areas and advanced concepts",
+            milestones: ["Choose specialization", "Deep dive into advanced topics", "Industry knowledge"],
+            resources: ["Specialized courses", "Industry blogs", "Conferences"],
+            projects: ["Specialized projects", "Industry-specific solutions", "Personal innovations"]
+          },
+          {
+            phase: "Professional Ready",
+            duration: "3-5 months",
+            description: "Prepare for job market and career advancement",
+            milestones: ["Complete portfolio", "Interview preparation", "Network building"],
+            resources: ["Mock interviews", "Career coaching", "Professional networks"],
+            projects: ["Capstone project", "Industry collaboration", "Professional portfolio"]
+          }
+        ],
+        key_skills: ["Technical proficiency", "Problem solving", "Communication", "Continuous learning"],
+        certifications: ["Industry-standard certifications", "Platform-specific credentials", "Professional development"],
+        salary_progression: {
+          entry_level: "₹4-8 LPA",
+          mid_level: "₹8-20 LPA",
+          senior_level: "₹20-40 LPA"
+        },
+        next_steps: ["Start with foundation phase", "Set up learning schedule", "Join relevant communities", "Begin first project"]
+      };
+    }
+
+    res.json({
+      success: true,
+      roadmap,
+      rawResponse: response
+    });
+  } catch (error: any) {
+    console.error("Roadmap generation error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate career roadmap",
+      error: error.message
+    });
+  }
+});
+
+/**
+ * General Career Chat
+ * POST /api/ai-career-coach/chat
+ */
+router.post("/chat", async (req, res) => {
+  try {
+    const { message, context, conversation_history } = req.body;
+    
+    if (!message) {
+      return res.status(400).json({
+        success: false,
+        message: "Message is required"
+      });
+    }
+
+    // Convert conversation history to the expected format
+    const formattedHistory = conversation_history?.map((msg: any) => ({
+      role: msg.role === 'user' ? 'user' : 'assistant',
+      content: msg.content
+    })) || [];
+
+    const response = await getCareerCoachResponse({
+      message,
+      conversationHistory: formattedHistory,
+      coachingType: 'general',
+      userProfile: {},
+      contextData: { context, task: 'general_chat' }
+    });
+
+    res.json({
+      success: true,
+      message: response
+    });
+  } catch (error: any) {
+    console.error("Career chat error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get chat response",
+      error: error.message
+    });
+  }
+});
+
 export default router;
