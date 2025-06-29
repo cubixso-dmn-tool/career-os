@@ -487,10 +487,10 @@ export default function Dashboard() {
 
             <TabsContent value="learning" className="space-y-6">
               {/* Roadmap Integration Header */}
-              <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+              <Card className="bg-gradient-to-r from-primary/5 to-accent/10 border-primary/20">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Target className="h-5 w-5 text-purple-600" />
+                    <Target className="h-5 w-5 text-primary" />
                     Learning Journey: {careerPath || 'Software Developer'}
                   </CardTitle>
                   <CardDescription>
@@ -591,7 +591,7 @@ export default function Dashboard() {
                                       <span>{course.rating}</span>
                                     </div>
                                     <span>{course.students} students</span>
-                                    <span className="font-medium text-purple-600">{course.price}</span>
+                                    <span className="font-medium text-primary">{course.price}</span>
                                   </div>
                                 </div>
                               </div>
