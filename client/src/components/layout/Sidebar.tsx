@@ -52,6 +52,13 @@ export default function Sidebar({ user }: SidebarProps) {
       ];
     }
     
+    if (primaryRole === 'admin') {
+      return [
+        { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+        { path: "/settings", icon: Settings, label: "Settings" }
+      ];
+    }
+    
     // Default navigation for students and other roles
     return [
       { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
