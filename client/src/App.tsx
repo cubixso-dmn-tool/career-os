@@ -20,7 +20,7 @@ import LandingPage from "@/pages/LandingPage";
 import AICareerCoachPage from "@/pages/AICareerCoach";
 import IndustryExpertNetworkPage from "@/pages/IndustryExpertNetwork";
 import MentorJourney from "@/pages/MentorJourney";
-import AuthDemo from "@/pages/AuthDemo";
+
 import { AuthProvider } from "@/hooks/use-auth-context";
 import { LearningModeProvider } from "@/hooks/use-learning-mode";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -109,7 +109,7 @@ function Router() {
           <MentorJourney />
         </ProtectedRoute>
       </Route>
-      <Route path="/auth-demo" component={AuthDemo} />
+
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/how-it-works" component={HowItWorks} />
