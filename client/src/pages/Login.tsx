@@ -155,7 +155,7 @@ export default function Login() {
             <Button
               variant="outline"
               onClick={() => handleOAuthLogin("google")}
-              disabled={loading || !oauthConfig?.google?.enabled}
+              disabled={loading || !oauthConfig?.google}
               className="w-full"
             >
               <SiGoogle className="mr-2 h-4 w-4" />
@@ -164,7 +164,7 @@ export default function Login() {
             <Button
               variant="outline"
               onClick={() => handleOAuthLogin("github")}
-              disabled={loading || !oauthConfig?.github?.enabled}
+              disabled={loading || !oauthConfig?.github}
               className="w-full"
             >
               <Github className="mr-2 h-4 w-4" />
