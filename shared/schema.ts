@@ -249,6 +249,159 @@ export const moderationActions = pgTable("moderation_actions", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
+// Industry Expert Network tables
+export const industryExperts = pgTable("industry_experts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id), // Optional if expert is not a platform user
+  name: text("name").notNull(),
+  title: text("title").notNull(),
+  company: text("company").notNull(),
+  industry: text("industry").notNull(),
+  specializations: text("specializations").array().notNull(),
+  experience: integer("experience_years").notNull(),
+  bio: text("bio").notNull(),
+  avatar: text("avatar"),
+  linkedinUrl: text("linkedin_url"),
+  expertise: text("expertise").array().notNull(), // ["AI/ML", "Startups", "Product Management"]
+  rating: integer("rating").default(0), // Average rating from sessions
+  totalSessions: integer("total_sessions").default(0),
+  isActive: boolean("is_active").default(true).notNull(),
+  joinedAt: timestamp("joined_at").defaultNow().notNull()
+});
+
+export const expertSessions = pgTable("expert_sessions", {
+  id: serial("id").primaryKey(),
+  expertId: integer("expert_id").notNull().references(() => industryExperts.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  sessionType: text("session_type").notNull(), // "lecture", "qa", "workshop", "mentoring"
+  category: text("category").notNull(), // "career_guidance", "technical", "industry_insights"
+  scheduledAt: timestamp("scheduled_at").notNull(),
+  duration: integer("duration_minutes").notNull(),
+  maxAttendees: integer("max_attendees").default(100),
+  currentAttendees: integer("current_attendees").default(0),
+  meetingLink: text("meeting_link"),
+  recordingUrl: text("recording_url"),
+  status: text("status").default("scheduled").notNull(), // "scheduled", "live", "completed", "cancelled"
+  tags: text("tags").array(),
+  isRecorded: boolean("is_recorded").default(true).notNull(),
+  isFree: boolean("is_free").default(true).notNull(),
+  price: integer("price").default(0), // In rupees
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const sessionRegistrations = pgTable("session_registrations", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull().references(() => expertSessions.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  registeredAt: timestamp("registered_at").defaultNow().notNull(),
+  attended: boolean("attended").default(false),
+  rating: integer("rating"), // 1-5 stars
+  feedback: text("feedback"),
+  questions: text("questions").array() // Pre-submitted questions
+});
+
+export const expertQnaSessions = pgTable("expert_qna_sessions", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull().references(() => expertSessions.id),
+  question: text("question").notNull(),
+  askedBy: integer("asked_by").notNull().references(() => users.id),
+  answer: text("answer"),
+  answeredAt: timestamp("answered_at"),
+  upvotes: integer("upvotes").default(0),
+  isAnswered: boolean("is_answered").default(false),
+  askedAt: timestamp("asked_at").defaultNow().notNull()
+});
+
+export const careerSuccessStories = pgTable("career_success_stories", {
+  id: serial("id").primaryKey(),
+  authorId: integer("author_id").references(() => users.id), // Can be user or expert
+  expertId: integer("expert_id").references(() => industryExperts.id),
+  title: text("title").notNull(),
+  story: text("story").notNull(),
+  careerPath: text("career_path").notNull(), // "Software Engineer to Tech Lead"
+  industryFrom: text("industry_from"),
+  industryTo: text("industry_to").notNull(),
+  timeframe: text("timeframe"), // "2 years", "6 months"
+  keyLearnings: text("key_learnings").array(),
+  challenges: text("challenges").array(),
+  advice: text("advice").array(),
+  salaryGrowth: text("salary_growth"), // "3 LPA to 15 LPA"
+  companyProgression: text("company_progression").array(), // ["Startup", "Mid-size", "FAANG"]
+  skillsGained: text("skills_gained").array(),
+  certifications: text("certifications").array(),
+  isPublic: boolean("is_public").default(true).notNull(),
+  isFeatured: boolean("is_featured").default(false),
+  views: integer("views").default(0),
+  likes: integer("likes").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const networkingEvents = pgTable("networking_events", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  eventType: text("event_type").notNull(), // "virtual_meetup", "industry_mixer", "career_fair", "workshop"
+  industry: text("industry"),
+  targetAudience: text("target_audience").array(), // ["students", "freshers", "experienced", "entrepreneurs"]
+  organizer: text("organizer").notNull(),
+  organizerId: integer("organizer_id").references(() => users.id),
+  expertId: integer("expert_id").references(() => industryExperts.id),
+  scheduledAt: timestamp("scheduled_at").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  timezone: text("timezone").default("Asia/Kolkata").notNull(),
+  location: text("location"), // "Online" or physical address
+  meetingLink: text("meeting_link"),
+  maxAttendees: integer("max_attendees"),
+  currentAttendees: integer("current_attendees").default(0),
+  isOnline: boolean("is_online").default(true).notNull(),
+  isFree: boolean("is_free").default(true).notNull(),
+  registrationDeadline: timestamp("registration_deadline"),
+  tags: text("tags").array(),
+  agenda: jsonb("agenda"), // Structured agenda with time slots
+  status: text("status").default("upcoming").notNull(), // "upcoming", "live", "completed", "cancelled"
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const eventRegistrations = pgTable("event_registrations", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").notNull().references(() => networkingEvents.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  registeredAt: timestamp("registered_at").defaultNow().notNull(),
+  attended: boolean("attended").default(false),
+  rating: integer("rating"), // 1-5 stars
+  feedback: text("feedback"),
+  networkingGoals: text("networking_goals").array(), // What they hope to achieve
+  interests: text("interests").array()
+});
+
+export const expertMentorship = pgTable("expert_mentorship", {
+  id: serial("id").primaryKey(),
+  expertId: integer("expert_id").notNull().references(() => industryExperts.id),
+  menteeId: integer("mentee_id").notNull().references(() => users.id),
+  status: text("status").default("pending").notNull(), // "pending", "active", "completed", "cancelled"
+  duration: text("duration").notNull(), // "1 month", "3 months", "6 months"
+  goals: text("goals").array().notNull(),
+  meetingFrequency: text("meeting_frequency").notNull(), // "weekly", "bi-weekly", "monthly"
+  communicationMode: text("communication_mode").notNull(), // "video", "chat", "email"
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  notes: text("notes"),
+  menteeProgress: jsonb("mentee_progress"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const expertAvailability = pgTable("expert_availability", {
+  id: serial("id").primaryKey(),
+  expertId: integer("expert_id").notNull().references(() => industryExperts.id),
+  dayOfWeek: integer("day_of_week").notNull(), // 0-6 (Sunday-Saturday)
+  startTime: text("start_time").notNull(), // "09:00"
+  endTime: text("end_time").notNull(), // "17:00"
+  timezone: text("timezone").default("Asia/Kolkata").notNull(),
+  isAvailable: boolean("is_available").default(true).notNull(),
+  sessionTypes: text("session_types").array().notNull() // ["mentoring", "qa", "lecture"]
+});
+
 // Insert schemas
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
@@ -281,6 +434,17 @@ export const insertCommunityMemberSchema = createInsertSchema(communityMembers).
 export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({ id: true, likes: true, replies: true, createdAt: true, updatedAt: true, userId: true, communityId: true });
 export const insertCommunityPostCommentSchema = createInsertSchema(communityPostComments).omit({ id: true, createdAt: true, updatedAt: true, userId: true, postId: true });
 export const insertModerationActionSchema = createInsertSchema(moderationActions).omit({ id: true, createdAt: true });
+
+// Industry Expert Network schemas
+export const insertIndustryExpertSchema = createInsertSchema(industryExperts).omit({ id: true, joinedAt: true, rating: true, totalSessions: true });
+export const insertExpertSessionSchema = createInsertSchema(expertSessions).omit({ id: true, createdAt: true, currentAttendees: true });
+export const insertSessionRegistrationSchema = createInsertSchema(sessionRegistrations).omit({ id: true, registeredAt: true, attended: true });
+export const insertExpertQnaSessionSchema = createInsertSchema(expertQnaSessions).omit({ id: true, askedAt: true, answeredAt: true, upvotes: true, isAnswered: true });
+export const insertCareerSuccessStorySchema = createInsertSchema(careerSuccessStories).omit({ id: true, createdAt: true, views: true, likes: true });
+export const insertNetworkingEventSchema = createInsertSchema(networkingEvents).omit({ id: true, createdAt: true, currentAttendees: true });
+export const insertEventRegistrationSchema = createInsertSchema(eventRegistrations).omit({ id: true, registeredAt: true, attended: true });
+export const insertExpertMentorshipSchema = createInsertSchema(expertMentorship).omit({ id: true, createdAt: true });
+export const insertExpertAvailabilitySchema = createInsertSchema(expertAvailability).omit({ id: true });
 
 // Types
 
@@ -363,3 +527,31 @@ export type CommunityPostComment = typeof communityPostComments.$inferSelect;
 
 export type InsertModerationAction = z.infer<typeof insertModerationActionSchema>;
 export type ModerationAction = typeof moderationActions.$inferSelect;
+
+// Industry Expert Network types
+export type InsertIndustryExpert = z.infer<typeof insertIndustryExpertSchema>;
+export type IndustryExpert = typeof industryExperts.$inferSelect;
+
+export type InsertExpertSession = z.infer<typeof insertExpertSessionSchema>;
+export type ExpertSession = typeof expertSessions.$inferSelect;
+
+export type InsertSessionRegistration = z.infer<typeof insertSessionRegistrationSchema>;
+export type SessionRegistration = typeof sessionRegistrations.$inferSelect;
+
+export type InsertExpertQnaSession = z.infer<typeof insertExpertQnaSessionSchema>;
+export type ExpertQnaSession = typeof expertQnaSessions.$inferSelect;
+
+export type InsertCareerSuccessStory = z.infer<typeof insertCareerSuccessStorySchema>;
+export type CareerSuccessStory = typeof careerSuccessStories.$inferSelect;
+
+export type InsertNetworkingEvent = z.infer<typeof insertNetworkingEventSchema>;
+export type NetworkingEvent = typeof networkingEvents.$inferSelect;
+
+export type InsertEventRegistration = z.infer<typeof insertEventRegistrationSchema>;
+export type EventRegistration = typeof eventRegistrations.$inferSelect;
+
+export type InsertExpertMentorship = z.infer<typeof insertExpertMentorshipSchema>;
+export type ExpertMentorship = typeof expertMentorship.$inferSelect;
+
+export type InsertExpertAvailability = z.infer<typeof insertExpertAvailabilitySchema>;
+export type ExpertAvailability = typeof expertAvailability.$inferSelect;

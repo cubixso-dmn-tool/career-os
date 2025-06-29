@@ -28,6 +28,7 @@ import careerRoadmapRoutes from "./routes/career-roadmap";
 import contentManagementRoutes from "./routes/content-management";
 import coursesRoutes from "./routes/courses";
 import aiCareerCoachRoutes from "./routes/ai-career-coach";
+import industryExpertsRoutes from "./routes/industry-experts";
 import { loadUserRolesMiddleware } from "./middleware/rbac";
 
 function handleZodError(error: ZodError, res: Response) {
@@ -939,6 +940,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register AI Career Coach routes
   app.use('/api/ai-career-coach', aiCareerCoachRoutes);
+  
+  // Register Industry Expert Network routes
+  app.use('/api/industry-experts', industryExpertsRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
