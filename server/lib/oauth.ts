@@ -15,12 +15,15 @@ export interface OAuthProfile {
 
 export class OAuthManager {
   static configureStrategies() {
+    // Determine base URL for callbacks
+    const baseURL = process.env.REPLIT_URL || 'http://localhost:5000';
+    
     // Google OAuth Strategy
     if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
       passport.use(new GoogleStrategy({
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: "/api/auth/google/callback"
+        callbackURL: `${baseURL}/api/auth/google/callback`
       }, async (accessToken, refreshToken, profile, done) => {
         try {
           const oauthProfile: OAuthProfile = {
@@ -44,7 +47,7 @@ export class OAuthManager {
       passport.use(new GitHubStrategy({
         clientID: process.env.GITHUB_CLIENT_ID,
         clientSecret: process.env.GITHUB_CLIENT_SECRET,
-        callbackURL: "/api/auth/github/callback"
+        callbackURL: `${baseURL}/api/auth/github/callback`
       }, async (accessToken, refreshToken, profile, done) => {
         try {
           const oauthProfile: OAuthProfile = {
