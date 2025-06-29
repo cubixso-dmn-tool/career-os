@@ -18,6 +18,7 @@ import Register from "@/pages/Register";
 import LandingPage from "@/pages/LandingPage";
 import AICareerCoachPage from "@/pages/AICareerCoach";
 import IndustryExpertNetworkPage from "@/pages/IndustryExpertNetwork";
+import MentorJourney from "@/pages/MentorJourney";
 import { AuthProvider } from "@/hooks/use-auth-context";
 import { LearningModeProvider } from "@/hooks/use-learning-mode";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -94,6 +95,11 @@ function Router() {
       <Route path="/industry-experts">
         <ProtectedRoute>
           <IndustryExpertNetworkPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/mentor-journey">
+        <ProtectedRoute>
+          <MentorJourney />
         </ProtectedRoute>
       </Route>
       <Route path="/login" component={Login} />

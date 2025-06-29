@@ -1,4 +1,5 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date, varchar, numeric, json } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -555,3 +556,201 @@ export type ExpertMentorship = typeof expertMentorship.$inferSelect;
 
 export type InsertExpertAvailability = z.infer<typeof insertExpertAvailabilitySchema>;
 export type ExpertAvailability = typeof expertAvailability.$inferSelect;
+
+// ========================================
+// MENTOR JOURNEY TABLES & SCHEMAS
+// ========================================
+
+// Mentor Profiles Table
+export const mentorProfiles = pgTable("mentor_profiles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  domains: text("domains").array().notNull().default(sql`'{}'::text[]`),
+  experienceLevel: varchar("experience_level", { length: 50 }).notNull(),
+  skills: text("skills").array().notNull().default(sql`'{}'::text[]`),
+  weeklyAvailability: integer("weekly_availability").notNull().default(0),
+  availability: json("availability").notNull().default({}),
+  mentoringPreferences: text("mentoring_preferences").array().notNull().default(sql`'{}'::text[]`),
+  isVerified: boolean("is_verified").default(false),
+  isApproved: boolean("is_approved").default(false),
+  currentStage: integer("current_stage").default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const insertMentorProfileSchema = createInsertSchema(mentorProfiles);
+
+// Mentor Sessions Table
+export const mentorSessions = pgTable("mentor_sessions", {
+  id: serial("id").primaryKey(),
+  mentorId: integer("mentor_id").references(() => users.id).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  type: varchar("type", { length: 50 }).notNull(), // 'workshop', 'mock_interview', 'qa', 'one_on_one'
+  scheduledDate: timestamp("scheduled_date").notNull(),
+  duration: integer("duration").notNull(), // in minutes
+  maxParticipants: integer("max_participants").default(1),
+  currentParticipants: integer("current_participants").default(0),
+  isActive: boolean("is_active").default(true),
+  rating: numeric("rating", { precision: 3, scale: 2 }),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertMentorSessionSchema = createInsertSchema(mentorSessions);
+
+// Mentor Community Engagement Table
+export const mentorCommunityEngagement = pgTable("mentor_community_engagement", {
+  id: serial("id").primaryKey(),
+  mentorId: integer("mentor_id").references(() => users.id).notNull(),
+  answersPosted: integer("answers_posted").default(0),
+  postsCreated: integer("posts_created").default(0),
+  totalUpvotes: integer("total_upvotes").default(0),
+  communityRating: numeric("community_rating", { precision: 3, scale: 2 }).default(sql`0.0`),
+  monthlyGoalAnswers: integer("monthly_goal_answers").default(50),
+  currentMonthAnswers: integer("current_month_answers").default(0),
+  lastUpdated: timestamp("last_updated").defaultNow()
+});
+
+export const insertMentorCommunityEngagementSchema = createInsertSchema(mentorCommunityEngagement);
+
+// Mentor Resources Table
+export const mentorResources = pgTable("mentor_resources", {
+  id: serial("id").primaryKey(),
+  mentorId: integer("mentor_id").references(() => users.id).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  type: varchar("type", { length: 50 }).notNull(), // 'pdf', 'doc', 'template', 'checklist'
+  filePath: text("file_path"),
+  downloads: integer("downloads").default(0),
+  isPublic: boolean("is_public").default(true),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertMentorResourceSchema = createInsertSchema(mentorResources);
+
+// Mentorship Matching Table
+export const mentorshipMatching = pgTable("mentorship_matching", {
+  id: serial("id").primaryKey(),
+  mentorId: integer("mentor_id").references(() => users.id).notNull(),
+  menteeId: integer("mentee_id").references(() => users.id).notNull(),
+  status: varchar("status", { length: 50 }).default("active"), // 'active', 'completed', 'paused'
+  matchedAt: timestamp("matched_at").defaultNow(),
+  goals: text("goals").array().notNull().default(sql`'{}'::text[]`),
+  progress: integer("progress").default(0),
+  nextSessionDate: timestamp("next_session_date"),
+  totalSessions: integer("total_sessions").default(0),
+  rating: numeric("rating", { precision: 3, scale: 2 })
+});
+
+export const insertMentorshipMatchingSchema = createInsertSchema(mentorshipMatching);
+
+// Mentor Feedback Table
+export const mentorFeedback = pgTable("mentor_feedback", {
+  id: serial("id").primaryKey(),
+  mentorId: integer("mentor_id").references(() => users.id).notNull(),
+  studentId: integer("student_id").references(() => users.id).notNull(),
+  sessionId: integer("session_id").references(() => mentorSessions.id),
+  rating: integer("rating").notNull(), // 1-5 scale
+  feedback: text("feedback"),
+  isAnonymous: boolean("is_anonymous").default(false),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertMentorFeedbackSchema = createInsertSchema(mentorFeedback);
+
+// Mentor Badges Table
+export const mentorBadges = pgTable("mentor_badges", {
+  id: serial("id").primaryKey(),
+  mentorId: integer("mentor_id").references(() => users.id).notNull(),
+  badgeType: varchar("badge_type", { length: 100 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  earnedAt: timestamp("earned_at").defaultNow(),
+  isVisible: boolean("is_visible").default(true)
+});
+
+export const insertMentorBadgeSchema = createInsertSchema(mentorBadges);
+
+// Relations for mentor tables
+export const mentorProfilesRelations = relations(mentorProfiles, ({ one }) => ({
+  user: one(users, {
+    fields: [mentorProfiles.userId],
+    references: [users.id]
+  })
+}));
+
+export const mentorSessionsRelations = relations(mentorSessions, ({ one }) => ({
+  mentor: one(users, {
+    fields: [mentorSessions.mentorId],
+    references: [users.id]
+  })
+}));
+
+export const mentorCommunityEngagementRelations = relations(mentorCommunityEngagement, ({ one }) => ({
+  mentor: one(users, {
+    fields: [mentorCommunityEngagement.mentorId],
+    references: [users.id]
+  })
+}));
+
+export const mentorResourcesRelations = relations(mentorResources, ({ one }) => ({
+  mentor: one(users, {
+    fields: [mentorResources.mentorId],
+    references: [users.id]
+  })
+}));
+
+export const mentorshipMatchingRelations = relations(mentorshipMatching, ({ one }) => ({
+  mentor: one(users, {
+    fields: [mentorshipMatching.mentorId],
+    references: [users.id]
+  }),
+  mentee: one(users, {
+    fields: [mentorshipMatching.menteeId], 
+    references: [users.id]
+  })
+}));
+
+export const mentorFeedbackRelations = relations(mentorFeedback, ({ one }) => ({
+  mentor: one(users, {
+    fields: [mentorFeedback.mentorId],
+    references: [users.id]
+  }),
+  student: one(users, {
+    fields: [mentorFeedback.studentId],
+    references: [users.id]
+  }),
+  session: one(mentorSessions, {
+    fields: [mentorFeedback.sessionId],
+    references: [mentorSessions.id]
+  })
+}));
+
+export const mentorBadgesRelations = relations(mentorBadges, ({ one }) => ({
+  mentor: one(users, {
+    fields: [mentorBadges.mentorId],
+    references: [users.id]
+  })
+}));
+
+// Mentor journey types
+export type InsertMentorProfile = z.infer<typeof insertMentorProfileSchema>;
+export type MentorProfile = typeof mentorProfiles.$inferSelect;
+
+export type InsertMentorSession = z.infer<typeof insertMentorSessionSchema>;
+export type MentorSession = typeof mentorSessions.$inferSelect;
+
+export type InsertMentorCommunityEngagement = z.infer<typeof insertMentorCommunityEngagementSchema>;
+export type MentorCommunityEngagement = typeof mentorCommunityEngagement.$inferSelect;
+
+export type InsertMentorResource = z.infer<typeof insertMentorResourceSchema>;
+export type MentorResource = typeof mentorResources.$inferSelect;
+
+export type InsertMentorshipMatching = z.infer<typeof insertMentorshipMatchingSchema>;
+export type MentorshipMatching = typeof mentorshipMatching.$inferSelect;
+
+export type InsertMentorFeedback = z.infer<typeof insertMentorFeedbackSchema>;
+export type MentorFeedback = typeof mentorFeedback.$inferSelect;
+
+export type InsertMentorBadge = z.infer<typeof insertMentorBadgeSchema>;
+export type MentorBadge = typeof mentorBadges.$inferSelect;
