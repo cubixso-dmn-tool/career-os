@@ -88,7 +88,7 @@ export default function Dashboard() {
   // Fetch current learning resources based on career path
   const selectedCareerPath = localStorage.getItem('selectedCareerPath') || 'Software Developer';
   const { data: currentLearningResources, isLoading: isLearningLoading } = useQuery({
-    queryKey: [`/api/learning-resources/current/${encodeURIComponent(selectedCareerPath)}`],
+    queryKey: [`/api/learning-resources/${encodeURIComponent(selectedCareerPath)}/advanced-development`],
     queryFn: async ({ queryKey }) => {
       try {
         const response = await fetch(queryKey[0] as string, {
