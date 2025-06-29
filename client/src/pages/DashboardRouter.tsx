@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useUserRole } from "@/hooks/use-user-role";
-import Dashboard from "./Dashboard";
+import StudentDashboard from "./StudentDashboard";
 import MentorDashboard from "./MentorDashboard";
 import AdminDashboard from "./AdminDashboard";
 import Layout from "@/components/layout/Layout";
@@ -49,6 +49,6 @@ export default function DashboardRouter() {
 }
 
 // Export role-specific dashboard components
-export { Dashboard as StudentDashboard };
+export { StudentDashboard };
 export { MentorDashboard };
 export { AdminDashboard };

@@ -6,12 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Shield, 
   Users, 
   Calendar, 
-  MessageSquare, 
+  Database, 
   BarChart3, 
   Settings, 
   AlertTriangle,
@@ -21,7 +20,6 @@ import {
   TrendingUp,
   TrendingDown,
   Activity,
-  Database,
   FileText,
   UserPlus,
   Trash2,
@@ -32,12 +30,18 @@ import {
   Download,
   Upload,
   Search,
-  Filter
+  Filter,
+  Server,
+  Zap,
+  Monitor,
+  HardDrive,
+  Cpu,
+  Wifi
 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [selectedPeriod, setSelectedPeriod] = useState("24h");
   
   // Fetch platform analytics
   const { data: platformAnalytics, isLoading: analyticsLoading } = useQuery({
@@ -96,537 +100,465 @@ export default function AdminDashboard() {
 
   return (
     <Layout title="Admin Dashboard">
-      <div className="px-4 py-6 md:px-8 pb-20 md:pb-6">
-        {/* Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                <Shield className="h-8 w-8 text-primary" />
-                Admin Dashboard
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Manage platform operations, users, and content moderation.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="bg-red-100 text-red-800">
-                Admin Access
-              </Badge>
-              <Link href="/settings">
-                <Button variant="outline" size="sm">
-                  <Settings className="h-4 w-4 mr-2" />
-                  System Settings
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
+        {/* Header Section */}
+        <div className="bg-gray-800 border-b border-gray-700 px-6 py-8">
+          <div className="max-w-7xl mx-auto">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center justify-between"
+            >
+              <div>
+                <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+                  <div className="p-2 bg-red-600 rounded-lg">
+                    <Shield className="h-8 w-8 text-white" />
+                  </div>
+                  System Control Center
+                </h1>
+                <p className="text-gray-300 mt-2">
+                  Full platform oversight and administrative control
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                <Badge variant="secondary" className="bg-red-600 text-white border-red-500">
+                  Administrator
+                </Badge>
+                <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white">
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Emergency Mode
                 </Button>
-              </Link>
-            </div>
+              </div>
+            </motion.div>
           </div>
+        </div>
 
-          {/* System Health Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-            <Card>
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          {/* System Status */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8"
+          >
+            <Card className="bg-green-600 text-white border-0">
               <CardContent className="p-4">
-                <div className="flex items-center">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-green-100 text-sm">System Status</p>
+                    <p className="text-2xl font-bold">Online</p>
                   </div>
-                  <div className="ml-3">
-                    <p className="text-lg font-bold text-green-600">99.9%</p>
-                    <p className="text-xs text-gray-500">System Uptime</p>
-                  </div>
+                  <CheckCircle2 className="h-8 w-8 text-green-200" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-blue-600 text-white border-0">
               <CardContent className="p-4">
-                <div className="flex items-center">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Users className="h-5 w-5 text-blue-600" />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-blue-100 text-sm">Active Users</p>
+                    <p className="text-2xl font-bold">2,847</p>
                   </div>
-                  <div className="ml-3">
-                    <p className="text-lg font-bold text-blue-600">2,847</p>
-                    <p className="text-xs text-gray-500">Total Users</p>
-                  </div>
+                  <Users className="h-8 w-8 text-blue-200" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-yellow-600 text-white border-0">
               <CardContent className="p-4">
-                <div className="flex items-center">
-                  <div className="p-2 bg-yellow-100 rounded-lg">
-                    <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-yellow-100 text-sm">Pending Alerts</p>
+                    <p className="text-2xl font-bold">7</p>
                   </div>
-                  <div className="ml-3">
-                    <p className="text-lg font-bold text-yellow-600">7</p>
-                    <p className="text-xs text-gray-500">Pending Reports</p>
-                  </div>
+                  <AlertTriangle className="h-8 w-8 text-yellow-200" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-purple-600 text-white border-0">
               <CardContent className="p-4">
-                <div className="flex items-center">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <Activity className="h-5 w-5 text-purple-600" />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-purple-100 text-sm">Server Load</p>
+                    <p className="text-2xl font-bold">23%</p>
                   </div>
-                  <div className="ml-3">
-                    <p className="text-lg font-bold text-purple-600">156</p>
-                    <p className="text-xs text-gray-500">Active Sessions</p>
-                  </div>
+                  <Server className="h-8 w-8 text-purple-200" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-orange-600 text-white border-0">
               <CardContent className="p-4">
-                <div className="flex items-center">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <Database className="h-5 w-5 text-orange-600" />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-orange-100 text-sm">DB Size</p>
+                    <p className="text-2xl font-bold">8.2GB</p>
                   </div>
-                  <div className="ml-3">
-                    <p className="text-lg font-bold text-orange-600">8.2GB</p>
-                    <p className="text-xs text-gray-500">Database Size</p>
-                  </div>
+                  <Database className="h-8 w-8 text-orange-200" />
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Users
-            </TabsTrigger>
-            <TabsTrigger value="moderation" className="flex items-center gap-2">
-              <Flag className="h-4 w-4" />
-              Moderation
-            </TabsTrigger>
-            <TabsTrigger value="content" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Content
-            </TabsTrigger>
-            <TabsTrigger value="events" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Events
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Analytics
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column - Recent Activity */}
-              <div className="lg:col-span-2 space-y-6">
-                {/* Platform Activity */}
-                <Card>
-                  <CardHeader>
+          {/* Main Control Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Left Column - System Monitoring */}
+            <div className="lg:col-span-3 space-y-6">
+              {/* Real-time Monitoring */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Card className="bg-gray-800 text-white border-gray-700">
+                  <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-t-lg">
                     <CardTitle className="flex items-center gap-2">
-                      <Activity className="h-5 w-5" />
-                      Recent Platform Activity
+                      <Monitor className="h-5 w-5" />
+                      Real-time System Monitoring
                     </CardTitle>
-                    <CardDescription>
-                      Latest system events and user activities
+                    <CardDescription className="text-blue-100">
+                      Live system performance and health metrics
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {[
-                      {
-                        id: 1,
-                        type: "user_registration",
-                        description: "25 new users registered today",
-                        time: "2 minutes ago",
-                        status: "success"
-                      },
-                      {
-                        id: 2,
-                        type: "content_flagged",
-                        description: "Community post flagged for review",
-                        time: "15 minutes ago",
-                        status: "warning"
-                      },
-                      {
-                        id: 3,
-                        type: "expert_session",
-                        description: "Expert session completed successfully",
-                        time: "1 hour ago",
-                        status: "success"
-                      },
-                      {
-                        id: 4,
-                        type: "system_backup",
-                        description: "Daily system backup completed",
-                        time: "3 hours ago",
-                        status: "success"
-                      }
-                    ].map((activity) => (
-                      <div key={activity.id} className="flex items-center gap-3 p-3 border rounded-lg">
-                        <div className={`p-2 rounded-lg ${
-                          activity.status === 'success' ? 'bg-green-100' :
-                          activity.status === 'warning' ? 'bg-yellow-100' : 'bg-red-100'
-                        }`}>
-                          {activity.status === 'success' ? (
-                            <CheckCircle2 className={`h-4 w-4 ${activity.status === 'success' ? 'text-green-600' : ''}`} />
-                          ) : (
-                            <AlertTriangle className={`h-4 w-4 ${activity.status === 'warning' ? 'text-yellow-600' : 'text-red-600'}`} />
-                          )}
+                  <CardContent className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {/* CPU Usage */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Cpu className="h-4 w-4 text-blue-400" />
+                            <span className="text-sm text-gray-300">CPU Usage</span>
+                          </div>
+                          <span className="text-lg font-bold text-green-400">23%</span>
                         </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{activity.description}</p>
-                          <p className="text-xs text-gray-500">{activity.time}</p>
-                        </div>
+                        <Progress value={23} className="h-3 bg-gray-700" />
+                        <div className="text-xs text-gray-400">4 cores available</div>
                       </div>
-                    ))}
-                  </CardContent>
-                </Card>
 
-                {/* Quick Stats */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5" />
-                      Platform Statistics
-                    </CardTitle>
-                    <CardDescription>
-                      Key metrics for the past 30 days
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center p-4 bg-blue-50 rounded-lg">
-                        <div className="flex items-center justify-center gap-1 mb-2">
-                          <TrendingUp className="h-4 w-4 text-blue-600" />
-                          <span className="text-2xl font-bold text-blue-600">847</span>
+                      {/* Memory Usage */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <HardDrive className="h-4 w-4 text-purple-400" />
+                            <span className="text-sm text-gray-300">Memory</span>
+                          </div>
+                          <span className="text-lg font-bold text-yellow-400">67%</span>
                         </div>
-                        <div className="text-sm text-blue-600">New Users</div>
-                        <div className="text-xs text-green-600">+12% vs last month</div>
+                        <Progress value={67} className="h-3 bg-gray-700" />
+                        <div className="text-xs text-gray-400">16GB total</div>
                       </div>
-                      
-                      <div className="text-center p-4 bg-green-50 rounded-lg">
-                        <div className="flex items-center justify-center gap-1 mb-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-600" />
-                          <span className="text-2xl font-bold text-green-600">1,234</span>
+
+                      {/* Network */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Wifi className="h-4 w-4 text-green-400" />
+                            <span className="text-sm text-gray-300">Network</span>
+                          </div>
+                          <span className="text-lg font-bold text-green-400">Active</span>
                         </div>
-                        <div className="text-sm text-green-600">Course Enrollments</div>
-                        <div className="text-xs text-green-600">+8% vs last month</div>
+                        <Progress value={85} className="h-3 bg-gray-700" />
+                        <div className="text-xs text-gray-400">156 active connections</div>
                       </div>
-                      
-                      <div className="text-center p-4 bg-purple-50 rounded-lg">
-                        <div className="flex items-center justify-center gap-1 mb-2">
-                          <MessageSquare className="h-4 w-4 text-purple-600" />
-                          <span className="text-2xl font-bold text-purple-600">456</span>
-                        </div>
-                        <div className="text-sm text-purple-600">Community Posts</div>
-                        <div className="text-xs text-red-600">-3% vs last month</div>
-                      </div>
-                      
-                      <div className="text-center p-4 bg-orange-50 rounded-lg">
-                        <div className="flex items-center justify-center gap-1 mb-2">
-                          <Calendar className="h-4 w-4 text-orange-600" />
-                          <span className="text-2xl font-bold text-orange-600">89</span>
-                        </div>
-                        <div className="text-sm text-orange-600">Expert Sessions</div>
-                        <div className="text-xs text-green-600">+15% vs last month</div>
+                    </div>
+
+                    {/* Recent System Events */}
+                    <div className="mt-6 pt-6 border-t border-gray-700">
+                      <h4 className="text-sm font-semibold text-gray-300 mb-4">Recent System Events</h4>
+                      <div className="space-y-2">
+                        {[
+                          { time: "14:23", event: "User authentication spike detected", status: "info" },
+                          { time: "14:15", event: "Database backup completed successfully", status: "success" },
+                          { time: "13:45", event: "Memory usage exceeded 80% threshold", status: "warning" },
+                          { time: "13:30", event: "New deployment rolled out to production", status: "info" }
+                        ].map((log, index) => (
+                          <div key={index} className="flex items-center gap-3 text-sm">
+                            <span className="text-gray-500 font-mono">{log.time}</span>
+                            <div className={`w-2 h-2 rounded-full ${
+                              log.status === 'success' ? 'bg-green-500' :
+                              log.status === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+                            }`}></div>
+                            <span className="text-gray-300">{log.event}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              </div>
+              </motion.div>
 
-              {/* Right Column - Quick Actions & Alerts */}
-              <div className="space-y-6">
-                {/* Quick Actions */}
-                <Card>
+              {/* User & Content Management */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* User Management */}
+                  <Card className="bg-gray-800 text-white border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <Users className="h-5 w-5 text-blue-400" />
+                        User Management
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div className="text-center p-3 bg-blue-900/50 rounded-lg">
+                          <div className="text-2xl font-bold text-blue-400">2,534</div>
+                          <div className="text-xs text-gray-400">Students</div>
+                        </div>
+                        <div className="text-center p-3 bg-purple-900/50 rounded-lg">
+                          <div className="text-2xl font-bold text-purple-400">89</div>
+                          <div className="text-xs text-gray-400">Mentors</div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <Button variant="outline" size="sm" className="w-full border-gray-600 text-gray-300 hover:bg-gray-700">
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Create User
+                        </Button>
+                        <Button variant="outline" size="sm" className="w-full border-gray-600 text-gray-300 hover:bg-gray-700">
+                          <Edit3 className="h-4 w-4 mr-2" />
+                          Manage Roles
+                        </Button>
+                        <Button variant="outline" size="sm" className="w-full border-gray-600 text-gray-300 hover:bg-gray-700">
+                          <Download className="h-4 w-4 mr-2" />
+                          Export Data
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Content Moderation */}
+                  <Card className="bg-gray-800 text-white border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <Flag className="h-5 w-5 text-red-400" />
+                        Content Moderation
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <div className="space-y-4 mb-6">
+                        {[
+                          { type: "Flagged Posts", count: 7, color: "red" },
+                          { type: "User Reports", count: 3, color: "yellow" },
+                          { type: "Pending Reviews", count: 12, color: "blue" }
+                        ].map((item, index) => (
+                          <div key={index} className="flex items-center justify-between p-2 bg-gray-700/50 rounded-lg">
+                            <span className="text-sm text-gray-300">{item.type}</span>
+                            <Badge variant="secondary" className={`bg-${item.color}-600 text-white`}>
+                              {item.count}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <Button variant="outline" size="sm" className="w-full border-gray-600 text-gray-300 hover:bg-gray-700">
+                          <Eye className="h-4 w-4 mr-2" />
+                          Review Queue
+                        </Button>
+                        <Button variant="outline" size="sm" className="w-full border-gray-600 text-gray-300 hover:bg-gray-700">
+                          <Settings className="h-4 w-4 mr-2" />
+                          Moderation Rules
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </motion.div>
+
+              {/* Platform Analytics */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Card className="bg-gray-800 text-white border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-green-400" />
+                      Platform Analytics Overview
+                    </CardTitle>
+                    <CardDescription className="text-gray-400">
+                      Key performance indicators and growth metrics
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-green-400 mb-1">↑12%</div>
+                        <div className="text-sm text-gray-400">User Growth</div>
+                        <div className="text-xs text-green-400">vs last month</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-blue-400 mb-1">1,234</div>
+                        <div className="text-sm text-gray-400">Course Enrollments</div>
+                        <div className="text-xs text-blue-400">this month</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-purple-400 mb-1">85%</div>
+                        <div className="text-sm text-gray-400">Session Success Rate</div>
+                        <div className="text-xs text-purple-400">mentor sessions</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-orange-400 mb-1">₹45.6k</div>
+                        <div className="text-sm text-gray-400">Revenue</div>
+                        <div className="text-xs text-orange-400">this month</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+
+            {/* Right Column - Quick Actions & Alerts */}
+            <div className="space-y-6">
+              {/* Emergency Controls */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Card className="bg-red-900 text-white border-red-700">
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Zap className="h-4 w-4" />
+                      Emergency Controls
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-3">
+                    <Button variant="destructive" size="sm" className="w-full bg-red-600 hover:bg-red-700">
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Emergency Shutdown
+                    </Button>
+                    <Button variant="outline" size="sm" className="w-full border-red-600 text-red-300 hover:bg-red-800">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Maintenance Mode
+                    </Button>
+                    <Button variant="outline" size="sm" className="w-full border-red-600 text-red-300 hover:bg-red-800">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Force Backup
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Active Alerts */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Card className="bg-gray-800 text-white border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-yellow-400" />
+                      Active Alerts
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-3">
+                    {[
+                      { level: "warning", message: "High memory usage detected", time: "5m ago" },
+                      { level: "info", message: "Database backup in progress", time: "15m ago" },
+                      { level: "error", message: "Failed login attempts spike", time: "1h ago" }
+                    ].map((alert, index) => (
+                      <div key={index} className={`p-3 rounded-lg border-l-4 ${
+                        alert.level === 'error' ? 'bg-red-900/30 border-red-500' :
+                        alert.level === 'warning' ? 'bg-yellow-900/30 border-yellow-500' :
+                        'bg-blue-900/30 border-blue-500'
+                      }`}>
+                        <div className="text-xs font-medium text-gray-300">{alert.message}</div>
+                        <div className="text-xs text-gray-500 mt-1">{alert.time}</div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Quick Actions */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <Card className="bg-gray-800 text-white border-gray-700">
                   <CardHeader>
                     <CardTitle className="text-base">Quick Actions</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2">
-                    <Button className="w-full justify-start" size="sm">
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Create User Account
-                    </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Schedule Event
-                    </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Moderate Content
-                    </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start">
-                      <Download className="h-4 w-4 mr-2" />
-                      Export Data
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {/* Pending Reviews */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4" />
-                      Pending Reviews
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {[
-                      { type: "User Report", count: 3, urgency: "high" },
-                      { type: "Content Flags", count: 7, urgency: "medium" },
-                      { type: "Expert Applications", count: 2, urgency: "low" },
-                      { type: "Course Submissions", count: 4, urgency: "medium" }
-                    ].map((item, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                        <div>
-                          <div className="text-sm font-medium">{item.type}</div>
-                          <div className="text-xs text-gray-500">{item.count} pending</div>
-                        </div>
-                        <Badge variant={
-                          item.urgency === 'high' ? 'destructive' :
-                          item.urgency === 'medium' ? 'default' : 'secondary'
-                        }>
-                          {item.urgency}
-                        </Badge>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-
-                {/* System Health */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Database className="h-4 w-4" />
-                      System Health
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Server Load</span>
-                        <span>23%</span>
-                      </div>
-                      <Progress value={23} className="h-2" />
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Database Usage</span>
-                        <span>67%</span>
-                      </div>
-                      <Progress value={67} className="h-2" />
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Memory Usage</span>
-                        <span>45%</span>
-                      </div>
-                      <Progress value={45} className="h-2" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Users Tab */}
-          <TabsContent value="users" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">User Management</h3>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm">
-                  <Search className="h-4 w-4 mr-2" />
-                  Search Users
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter
-                </Button>
-                <Button size="sm">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Add User
-                </Button>
-              </div>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>User Statistics</CardTitle>
-                <CardDescription>
-                  Overview of user roles and activity
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">2,534</div>
-                    <div className="text-sm text-blue-600">Students</div>
-                  </div>
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">89</div>
-                    <div className="text-sm text-green-600">Mentors</div>
-                  </div>
-                  <div className="text-center p-4 bg-purple-50 rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">45</div>
-                    <div className="text-sm text-purple-600">Experts</div>
-                  </div>
-                  <div className="text-center p-4 bg-orange-50 rounded-lg">
-                    <div className="text-2xl font-bold text-orange-600">12</div>
-                    <div className="text-sm text-orange-600">Moderators</div>
-                  </div>
-                </div>
-
-                <div className="text-center py-8 text-gray-500">
-                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg mb-2">User Management Interface</p>
-                  <p className="text-sm mb-4">Search, filter, and manage user accounts and roles</p>
-                  <Link href="/settings">
-                    <Button variant="outline">Manage User Roles</Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Moderation Tab */}
-          <TabsContent value="moderation" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Content Moderation</h3>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm">
-                  <Eye className="h-4 w-4 mr-2" />
-                  Review Queue
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Moderation Rules
-                </Button>
-              </div>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Moderation Queue</CardTitle>
-                <CardDescription>
-                  Review flagged content and user reports
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <Flag className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg mb-2">Content Moderation</p>
-                  <p className="text-sm mb-4">Review and moderate community content</p>
-                  <div className="flex gap-2 justify-center">
-                    <Button>Review Flagged Content</Button>
-                    <Button variant="outline">View Reports</Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Content Tab */}
-          <TabsContent value="content" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Content Management</CardTitle>
-                <CardDescription>
-                  Manage courses, projects, and platform content
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg mb-2">Content Management</p>
-                  <p className="text-sm mb-4">Create and manage platform content</p>
-                  <div className="flex gap-2 justify-center">
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Content
-                    </Button>
-                    <Button variant="outline">Manage Library</Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Events Tab */}
-          <TabsContent value="events" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Event Management</h3>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Event
-              </Button>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Platform Events</CardTitle>
-                <CardDescription>
-                  Manage workshops, webinars, and community events
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg mb-2">Event Management</p>
-                  <p className="text-sm mb-4">Schedule and manage platform events</p>
-                  <div className="flex gap-2 justify-center">
-                    <Button>
+                  <CardContent className="p-4 space-y-3">
+                    <Button variant="outline" size="sm" className="w-full border-gray-600 text-gray-300 hover:bg-gray-700">
                       <Plus className="h-4 w-4 mr-2" />
                       Create Event
                     </Button>
-                    <Button variant="outline">View Calendar</Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Platform Analytics</CardTitle>
-                <CardDescription>
-                  Comprehensive analytics and reporting dashboard
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg mb-2">Analytics Dashboard</p>
-                  <p className="text-sm mb-4">View detailed platform analytics and insights</p>
-                  <div className="flex gap-2 justify-center">
-                    <Button>View Full Analytics</Button>
-                    <Button variant="outline">
-                      <Download className="h-4 w-4 mr-2" />
-                      Export Report
+                    <Button variant="outline" size="sm" className="w-full border-gray-600 text-gray-300 hover:bg-gray-700">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Generate Report
                     </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                    <Button variant="outline" size="sm" className="w-full border-gray-600 text-gray-300 hover:bg-gray-700">
+                      <Database className="h-4 w-4 mr-2" />
+                      Database Query
+                    </Button>
+                    <Button variant="outline" size="sm" className="w-full border-gray-600 text-gray-300 hover:bg-gray-700">
+                      <Settings className="h-4 w-4 mr-2" />
+                      System Config
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* System Health */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Card className="bg-gray-800 text-white border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-green-400" />
+                      System Health
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-4">
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-gray-300">Uptime</span>
+                        <span className="text-green-400 font-semibold">99.9%</span>
+                      </div>
+                      <Progress value={99.9} className="h-2 bg-gray-700" />
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-gray-300">Response Time</span>
+                        <span className="text-blue-400 font-semibold">245ms</span>
+                      </div>
+                      <Progress value={75} className="h-2 bg-gray-700" />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-gray-300">Error Rate</span>
+                        <span className="text-green-400 font-semibold">0.1%</span>
+                      </div>
+                      <Progress value={1} className="h-2 bg-gray-700" />
+                    </div>
+
+                    <div className="pt-2 border-t border-gray-700 text-center">
+                      <div className="text-lg font-bold text-green-400">Excellent</div>
+                      <div className="text-xs text-gray-500">Overall Health</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+          </div>
+        </div>
       </div>
     </Layout>
   );
