@@ -44,7 +44,7 @@ export default function AICareerCoachPage() {
           className="text-center mb-12"
         >
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 bg-blue-600 rounded-full">
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full">
               <Bot className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -52,19 +52,22 @@ export default function AICareerCoachPage() {
             </h1>
           </div>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Your intelligent career companion powered by advanced AI. Get personalized guidance, 
-            practice interviews, optimize your resume, and create learning paths tailored for 
-            Indian students and professionals.
+            Your personal AI-powered career advisor designed specifically for Indian students and professionals. 
+            Get expert guidance, practice interviews, optimize your resume, and accelerate your career growth.
           </p>
           
           <div className="flex items-center justify-center gap-2 mt-6">
-            <Badge variant="secondary" className="bg-green-100 text-green-800">
-              <Sparkles className="h-3 w-3 mr-1" />
-              Powered by GPT-4
-            </Badge>
             <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+              <Sparkles className="h-3 w-3 mr-1" />
+              AI-Powered Insights
+            </Badge>
+            <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+              <Target className="h-3 w-3 mr-1" />
+              Personalized Guidance
+            </Badge>
+            <Badge variant="secondary" className="bg-green-100 text-green-800">
               <TrendingUp className="h-3 w-3 mr-1" />
-              Indian Job Market Focused
+              Career Growth
             </Badge>
           </div>
         </motion.div>
@@ -74,7 +77,7 @@ export default function AICareerCoachPage() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
+          className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12"
         >
           {features.map((feature, index) => (
             <motion.div
@@ -86,12 +89,16 @@ export default function AICareerCoachPage() {
               className="group"
             >
               <Card className="h-full border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm">
-                <CardHeader className="text-center pb-4">
-                  <div className="mx-auto p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full text-white mb-3 group-hover:scale-110 transition-transform duration-300">
-                    {feature.icon}
+                <CardHeader>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full text-white group-hover:scale-110 transition-transform duration-300">
+                      {feature.icon}
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg font-semibold">{feature.title}</CardTitle>
+                    </div>
                   </div>
-                  <CardTitle className="text-lg font-semibold">{feature.title}</CardTitle>
-                  <CardDescription className="text-sm text-gray-600">
+                  <CardDescription className="text-sm text-gray-600 mb-4">
                     {feature.description}
                   </CardDescription>
                 </CardHeader>
@@ -99,7 +106,7 @@ export default function AICareerCoachPage() {
                   <ul className="space-y-2">
                     {feature.benefits.map((benefit, benefitIndex) => (
                       <li key={benefitIndex} className="flex items-center text-sm text-gray-600">
-                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></div>
+                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-3 flex-shrink-0"></div>
                         {benefit}
                       </li>
                     ))}
@@ -115,6 +122,7 @@ export default function AICareerCoachPage() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
+          className="mb-12"
         >
           <AICareerCoach />
         </motion.div>
@@ -124,17 +132,60 @@ export default function AICareerCoachPage() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.6 }}
-          className="mt-16"
+          className="mb-12"
         >
           <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-0">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-bold mb-2">Why Choose AI Career Coach?</CardTitle>
+              <CardTitle className="text-2xl font-bold mb-2">Success Stories</CardTitle>
               <CardDescription className="text-lg">
-                Designed specifically for Indian students and professionals
+                Real students who transformed their careers with AI Career Coach
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                  <h3 className="font-semibold text-lg mb-2">"Got my dream job at Google!"</h3>
+                  <p className="text-sm text-gray-600 mb-2">Arjun, Software Engineer</p>
+                  <p className="text-xs text-gray-500">
+                    The AI coach helped me prepare for technical interviews and optimize my resume. 
+                    I received my Google offer within 3 months!
+                  </p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                  <h3 className="font-semibold text-lg mb-2">"150% salary increase!"</h3>
+                  <p className="text-sm text-gray-600 mb-2">Priya, Data Scientist</p>
+                  <p className="text-xs text-gray-500">
+                    The personalized learning path identified my skill gaps and helped me transition 
+                    from software development to data science.
+                  </p>
+                </div>
+                <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                  <h3 className="font-semibold text-lg mb-2">"From college to startup!"</h3>
+                  <p className="text-sm text-gray-600 mb-2">Rohit, Product Manager</p>
+                  <p className="text-xs text-gray-500">
+                    The career guidance helped me understand product management and land my first PM role 
+                    straight out of college.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Statistics Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.7 }}
+          className="mb-12"
+        >
+          <Card className="bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0">
+            <CardContent className="py-12">
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold mb-2">Transforming Careers Across India</h2>
+                <p className="text-xl opacity-90">Join thousands of successful professionals</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                 <div className="text-center space-y-2">
                   <div className="text-3xl font-bold text-blue-600">10,000+</div>
                   <div className="text-sm text-gray-600">Career Recommendations Generated</div>

@@ -1,4 +1,6 @@
 import { motion } from 'framer-motion';
+import Layout from '@/components/layout/Layout';
+import MobileNavigation from '@/components/layout/MobileNavigation';
 import IndustryExpertNetwork from '@/components/experts/IndustryExpertNetwork';
 import { Users, Video, BookOpen, Calendar, Star, TrendingUp, MessageCircle, Award } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,8 +56,8 @@ export default function IndustryExpertNetworkPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-      <div className="container mx-auto px-4 py-8">
+    <>
+      <Layout title="Industry Expert Network">
         {/* Header Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -203,7 +205,10 @@ export default function IndustryExpertNetworkPage() {
             </CardContent>
           </Card>
         </motion.div>
-      </div>
-    </div>
+      </Layout>
+      
+      {/* Mobile Navigation */}
+      <MobileNavigation />
+    </>
   );
 }
