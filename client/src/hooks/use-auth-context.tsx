@@ -125,7 +125,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Small delay to ensure role data is loaded before redirect
         setTimeout(() => {
           navigate('/dashboard');
-        }, 100);
+        }, 200);
         return { success: true };
       } else {
         const error = await response.json();
