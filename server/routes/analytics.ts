@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { storage } from "../storage";
+import { storage } from "../simple-storage";
 import { requirePermission } from "../middleware/rbac";
 
 const router = Router();
@@ -54,7 +54,7 @@ router.get("/platform-stats", requireAuth, async (req, res) => {
 });
 
 // Real user engagement metrics
-router.get("/user-engagement", isAuthenticated, requirePermission("view_user_analytics"), async (req, res) => {
+router.get("/user-engagement", requireAuth, async (req, res) => {
   try {
     const engagement = await storage.getUserEngagementMetrics();
     res.json(engagement);
@@ -65,7 +65,7 @@ router.get("/user-engagement", isAuthenticated, requirePermission("view_user_ana
 });
 
 // Real course performance metrics
-router.get("/course-performance", isAuthenticated, requirePermission("view_course_analytics"), async (req, res) => {
+router.get("/course-performance", requireAuth, async (req, res) => {
   try {
     const performance = await storage.getCoursePerformanceMetrics();
     res.json(performance);

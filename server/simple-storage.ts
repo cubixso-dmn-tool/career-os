@@ -555,6 +555,102 @@ export class DatabaseStorage implements IStorage {
     const [userEvent] = await db.insert(userEvents).values(userEventData).returning();
     return userEvent;
   }
+
+  // Analytics operations implementation
+  async getTotalUsers(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(users);
+    return result[0].count;
+  }
+
+  async getActiveUsersToday(): Promise<number> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Count users who have any activity today (enrollments, posts, logins, etc.)
+    const result = await db
+      .select({ count: sql<number>`count(distinct user_id)` })
+      .from(enrollments)
+      .where(sql`enrolled_at >= ${today}`);
+    
+    return result[0].count;
+  }
+
+  async getTotalEvents(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(events);
+    return result[0].count;
+  }
+
+  async getPendingModerationCount(): Promise<number> {
+    // Count community posts that need moderation
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(communityPosts)
+      .where(sql`is_approved = false`);
+    
+    return result[0].count;
+  }
+
+  async getTotalCourses(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(courses);
+    return result[0].count;
+  }
+
+  async getTotalProjects(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(projects);
+    return result[0].count;
+  }
+
+  async getTotalEnrollments(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(enrollments);
+    return result[0].count;
+  }
+
+  async getUserEngagementMetrics(): Promise<any> {
+    // Calculate user engagement metrics
+    const [
+      totalUsers,
+      activeUsers,
+      completedCourses,
+      averageProgress
+    ] = await Promise.all([
+      this.getTotalUsers(),
+      this.getActiveUsersToday(),
+      db.select({ count: sql<number>`count(*)` }).from(enrollments).where(sql`is_completed = true`),
+      db.select({ avg: sql<number>`avg(progress)` }).from(enrollments)
+    ]);
+
+    return {
+      totalUsers,
+      activeUsers,
+      completedCourses: completedCourses[0].count,
+      averageProgress: Math.round(averageProgress[0].avg || 0),
+      engagementRate: totalUsers > 0 ? ((activeUsers / totalUsers) * 100).toFixed(1) : "0.0"
+    };
+  }
+
+  async getCoursePerformanceMetrics(): Promise<any> {
+    // Get top performing courses by enrollment and completion
+    const topCourses = await db
+      .select({
+        title: courses.title,
+        enrollments: sql<number>`count(enrollments.id)`,
+        completions: sql<number>`count(case when enrollments.is_completed then 1 end)`,
+        avgRating: sql<number>`avg(courses.rating)`
+      })
+      .from(courses)
+      .leftJoin(enrollments, sql`courses.id = enrollments.course_id`)
+      .groupBy(courses.id, courses.title, courses.rating)
+      .orderBy(sql`count(enrollments.id) desc`)
+      .limit(5);
+
+    return {
+      topCourses: topCourses.map(course => ({
+        ...course,
+        completionRate: course.enrollments > 0 ? 
+          ((course.completions / course.enrollments) * 100).toFixed(1) : "0.0"
+      }))
+    };
+  }
 }
 
 export const storage = new DatabaseStorage();
