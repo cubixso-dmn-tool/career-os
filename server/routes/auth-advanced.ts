@@ -324,6 +324,9 @@ router.get("/google/callback",
   }
 );
 
+// Google OAuth routes
+router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+
 // GitHub OAuth routes
 router.get("/github", passport.authenticate("github"));
 

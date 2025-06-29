@@ -8,6 +8,7 @@ import { Strategy as LocalStrategy } from "passport-local";
 import { storage } from "./storage";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
+import { OAuthManager } from "./lib/oauth";
 
 const PgSession = connectPgSimple(session);
 
@@ -39,6 +40,9 @@ passport.deserializeUser(async (id: number, done) => {
     done(err);
   }
 });
+
+// Configure OAuth strategies
+OAuthManager.configureStrategies();
 
 const app = express();
 app.use(cors({
