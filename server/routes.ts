@@ -37,8 +37,11 @@ import analyticsRoutes from "./routes/analytics";
 import dashboardRoutes from "./routes/dashboard";
 import searchRoutes from "./routes/search";
 import uploadRoutes from "./routes/upload";
+import authAdvancedRoutes from "./routes/auth-advanced";
+import adminLogsRoutes from "./routes/admin-logs";
 import { loadUserRolesMiddleware } from "./middleware/rbac";
 import { sanitizeInput, rateLimit, validateSqlInjection, securityHeaders } from "./middleware/validation";
+import { AdminLogger } from "./lib/admin-logs";
 
 function handleZodError(error: ZodError, res: Response) {
   return res.status(400).json({
@@ -976,6 +979,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register Upload routes
   app.use('/api/upload', uploadRoutes);
+  
+  // Register Advanced Authentication routes
+  app.use('/api/auth', authAdvancedRoutes);
+  
+  // Register Admin Logs routes
+  app.use('/api/admin-logs', adminLogsRoutes);
+
+  // Initialize admin logging for system startup
+  AdminLogger.logSystem(
+    "SYSTEM_STARTUP",
+    "CareerOS server started successfully",
+    undefined,
+    { nodeEnv: process.env.NODE_ENV, port: process.env.PORT || 5000 }
+  );
 
   const httpServer = createServer(app);
   return httpServer;
