@@ -29,7 +29,7 @@ export default function NotFound() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Go Back
           </Button>
-          <Button onClick={() => navigate('/')} className="flex items-center">
+          <Button onClick={() => navigate('/dashboard')} className="flex items-center">
             <Home className="h-4 w-4 mr-2" />
             Home
           </Button>
