@@ -155,18 +155,18 @@ export default function Learning() {
           </div>
 
           {/* Progress Overview */}
-          <Card className="bg-gradient-to-r from-primary/5 to-accent/10 border-primary/20">
+          <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="flex-1">
                   <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-foreground/80">Current Phase: Advanced Development</span>
-                    <span className="font-medium text-primary">65%</span>
+                    <span>Current Phase: Advanced Development</span>
+                    <span className="font-medium">65%</span>
                   </div>
-                  <Progress value={65} className="h-3 bg-accent/20" />
+                  <Progress value={65} className="h-3" />
                 </div>
                 <Link href="/career-roadmap">
-                  <Button variant="outline" size="sm" className="border-primary/30 text-primary hover:bg-primary/10">
+                  <Button variant="outline" size="sm">
                     <Target className="h-4 w-4 mr-2" />
                     View Roadmap
                   </Button>
@@ -208,35 +208,35 @@ export default function Learning() {
                   transition={{ delay: index * 0.1 }}
                 >
                   <Card className={`hover:shadow-lg transition-shadow ${
-                    phase.phase === "Advanced Development" ? "ring-2 ring-primary bg-primary/5" : ""
+                    phase.phase === "Advanced Development" ? "ring-2 ring-purple-500 bg-purple-50" : ""
                   }`}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="flex items-center gap-2">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
-                            index === 0 ? "bg-accent" : 
-                            index === 1 ? "bg-accent" : 
-                            index === 2 ? "bg-primary" : "bg-muted-foreground"
+                            index === 0 ? "bg-green-500" : 
+                            index === 1 ? "bg-green-500" : 
+                            index === 2 ? "bg-purple-500" : "bg-gray-400"
                           }`}>
                             {index + 1}
                           </div>
                           {phase.phase}
                         </CardTitle>
                         {phase.phase === "Advanced Development" && (
-                          <Badge variant="default" className="bg-primary">Current</Badge>
+                          <Badge variant="default" className="bg-purple-600">Current</Badge>
                         )}
                       </div>
                       <CardDescription>{phase.description}</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div className="text-center p-3 bg-primary/10 rounded-lg">
-                          <div className="text-2xl font-bold text-primary">{phase.coursesCount}</div>
-                          <div className="text-sm text-primary/70">Courses</div>
+                        <div className="text-center p-3 bg-blue-50 rounded-lg">
+                          <div className="text-2xl font-bold text-blue-600">{phase.coursesCount}</div>
+                          <div className="text-sm text-blue-600">Courses</div>
                         </div>
-                        <div className="text-center p-3 bg-accent/20 rounded-lg">
-                          <div className="text-2xl font-bold text-accent-foreground">{phase.projectsCount}</div>
-                          <div className="text-sm text-accent-foreground/70">Projects</div>
+                        <div className="text-center p-3 bg-green-50 rounded-lg">
+                          <div className="text-2xl font-bold text-green-600">{phase.projectsCount}</div>
+                          <div className="text-sm text-green-600">Projects</div>
                         </div>
                       </div>
                       <Link href={`/learning?phase=${phase.phaseKey}`}>
@@ -265,21 +265,21 @@ export default function Learning() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-primary/10 rounded-lg">
-                    <div className="text-2xl font-bold text-primary">{learningPath?.totalCourses || 12}</div>
-                    <div className="text-sm text-primary/70">Total Courses</div>
+                  <div className="text-center p-4 bg-purple-50 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">{learningPath?.totalCourses || 12}</div>
+                    <div className="text-sm text-purple-600">Total Courses</div>
                   </div>
-                  <div className="text-center p-4 bg-accent/20 rounded-lg">
-                    <div className="text-2xl font-bold text-accent-foreground">{learningPath?.totalProjects || 12}</div>
-                    <div className="text-sm text-accent-foreground/70">Total Projects</div>
+                  <div className="text-center p-4 bg-green-50 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">{learningPath?.totalProjects || 12}</div>
+                    <div className="text-sm text-green-600">Total Projects</div>
                   </div>
-                  <div className="text-center p-4 bg-chart-3/20 rounded-lg">
-                    <div className="text-2xl font-bold text-chart-3">8</div>
-                    <div className="text-sm text-chart-3/70">Completed</div>
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">8</div>
+                    <div className="text-sm text-blue-600">Completed</div>
                   </div>
-                  <div className="text-center p-4 bg-chart-4/20 rounded-lg">
-                    <div className="text-2xl font-bold text-chart-4">16</div>
-                    <div className="text-sm text-chart-4/70">In Progress</div>
+                  <div className="text-center p-4 bg-orange-50 rounded-lg">
+                    <div className="text-2xl font-bold text-orange-600">16</div>
+                    <div className="text-sm text-orange-600">In Progress</div>
                   </div>
                 </div>
               </CardContent>

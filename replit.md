@@ -212,9 +212,6 @@ A cutting-edge EdTech platform empowering Indian students with personalized care
 - Redesigned main dashboard as intuitive one-stop shop with quick actions, tabbed content, and personalized insights
 - Integrated proper Layout component with sidebar navigation for all major features
 - Enhanced mobile responsiveness across all pages
-- Consolidated Courses and Projects into unified Learning page with roadmap integration
-- Updated comprehensive brand theme with professional blue primary color and cohesive accent colors
-- Fixed navigation warnings and implemented modern color scheme across all components
 
 ## Next Priority Features to Implement
 1. AI-powered career guidance chatbot using OpenAI integration

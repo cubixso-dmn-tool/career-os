@@ -77,22 +77,24 @@ export default function Sidebar({ user }: SidebarProps) {
         <ul className="space-y-1 px-2">
           {navItems.map((item) => (
             <li key={item.path}>
-              <Link href={item.path} className={cn(
-                "flex items-center rounded-md py-2 px-3 text-sm font-medium transition-colors",
-                isCollapsed ? "justify-center" : "",
-                location === item.path
-                  ? "text-sidebar-primary-foreground bg-sidebar-accent"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-primary-foreground"
-              )}>
-                <item.icon 
-                  className={cn(
-                    isCollapsed ? "h-5 w-5" : "h-5 w-5 mr-3",
-                    location === item.path
-                      ? "text-sidebar-primary-foreground"
-                      : "text-sidebar-accent-foreground"
-                  )}
-                />
-                {!isCollapsed && <span>{item.label}</span>}
+              <Link href={item.path}>
+                <a className={cn(
+                  "flex items-center rounded-md py-2 px-3 text-sm font-medium transition-colors",
+                  isCollapsed ? "justify-center" : "",
+                  location === item.path
+                    ? "text-primary bg-indigo-50"
+                    : "text-gray-600 hover:bg-indigo-50 hover:text-primary"
+                )}>
+                  <item.icon 
+                    className={cn(
+                      isCollapsed ? "h-5 w-5" : "h-5 w-5 mr-3",
+                      location === item.path
+                        ? "text-primary"
+                        : "text-gray-500 group-hover:text-primary"
+                    )}
+                  />
+                  {!isCollapsed && <span>{item.label}</span>}
+                </a>
               </Link>
             </li>
           ))}
