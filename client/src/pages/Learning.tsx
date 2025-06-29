@@ -265,21 +265,21 @@ export default function Learning() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-purple-50 rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">{learningPath?.totalCourses || 12}</div>
-                    <div className="text-sm text-purple-600">Total Courses</div>
+                  <div className="text-center p-4 bg-primary/10 rounded-lg">
+                    <div className="text-2xl font-bold text-primary">{learningPath?.totalCourses || 12}</div>
+                    <div className="text-sm text-primary/70">Total Courses</div>
                   </div>
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">{learningPath?.totalProjects || 12}</div>
-                    <div className="text-sm text-green-600">Total Projects</div>
+                  <div className="text-center p-4 bg-accent/20 rounded-lg">
+                    <div className="text-2xl font-bold text-accent-foreground">{learningPath?.totalProjects || 12}</div>
+                    <div className="text-sm text-accent-foreground/70">Total Projects</div>
                   </div>
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">8</div>
-                    <div className="text-sm text-blue-600">Completed</div>
+                  <div className="text-center p-4 bg-chart-3/20 rounded-lg">
+                    <div className="text-2xl font-bold text-chart-3">8</div>
+                    <div className="text-sm text-chart-3/70">Completed</div>
                   </div>
-                  <div className="text-center p-4 bg-orange-50 rounded-lg">
-                    <div className="text-2xl font-bold text-orange-600">16</div>
-                    <div className="text-sm text-orange-600">In Progress</div>
+                  <div className="text-center p-4 bg-chart-4/20 rounded-lg">
+                    <div className="text-2xl font-bold text-chart-4">16</div>
+                    <div className="text-sm text-chart-4/70">In Progress</div>
                   </div>
                 </div>
               </CardContent>

@@ -158,7 +158,7 @@ export default function Dashboard() {
       description: "Get personalized career guidance",
       icon: <Bot className="h-6 w-6" />,
       href: "/ai-career-coach",
-      color: "from-blue-500 to-purple-600",
+      color: "from-primary to-accent",
       badge: "AI Powered"
     },
     {
@@ -166,7 +166,7 @@ export default function Dashboard() {
       description: "Connect with industry leaders",
       icon: <Users className="h-6 w-6" />,
       href: "/industry-experts",
-      color: "from-purple-500 to-pink-600",
+      color: "from-accent to-primary",
       badge: "Live Sessions"
     },
     {
@@ -205,7 +205,7 @@ export default function Dashboard() {
       label: "Projects Built",
       completed: `${progress?.projects?.completed || 0}/${progress?.projects?.total || 2}`,
       icon: <GitBranch className="h-5 w-5" />,
-      color: "text-purple-600"
+      color: "text-primary"
     },
     {
       label: "Overall Progress",
@@ -299,7 +299,7 @@ export default function Dashboard() {
               </p>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-purple-600">{progress?.percentage || 70}%</div>
+              <div className="text-2xl font-bold text-primary">{progress?.percentage || 70}%</div>
               <div className="text-sm text-gray-500">Profile Complete</div>
             </div>
           </div>
@@ -308,7 +308,7 @@ export default function Dashboard() {
           <div className="bg-white rounded-lg p-6 shadow-sm border">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-gray-900">Your Progress</h3>
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+              <Badge variant="secondary" className="bg-primary/10 text-primary">
                 Level {Math.floor((progress?.percentage || 70) / 25) + 1}
               </Badge>
             </div>
@@ -348,7 +348,7 @@ export default function Dashboard() {
                   </div>
                   <h3 className="font-semibold text-gray-900 mb-2">{action.title}</h3>
                   <p className="text-sm text-gray-600 mb-3">{action.description}</p>
-                  <div className="flex items-center text-sm font-medium text-purple-600 group-hover:text-purple-700">
+                  <div className="flex items-center text-sm font-medium text-primary group-hover:text-primary/80">
                     Get Started <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </CardContent>
