@@ -12,8 +12,8 @@ const requireAuth = (req: any, res: any, next: any) => {
   next();
 };
 
-// Get personalized dashboard metrics for current user
-router.get("/metrics", requireAuth, async (req: any, res) => {
+// Get personalized dashboard metrics for current user with caching
+router.get("/metrics", requireAuth, cacheMiddleware(300), async (req: any, res) => {
   try {
     const userId = req.user.id;
     const metrics = await storage.getDashboardMetrics(userId);

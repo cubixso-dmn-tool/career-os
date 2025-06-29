@@ -106,7 +106,8 @@ export function optimizeConnectionPool() {
   // For production, consider additional connection pool settings
 }
 
-if (require.main === module) {
+// Run optimization if this file is executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
   createPerformanceIndexes()
     .then(() => analyzeQueryPerformance())
     .then(() => optimizeConnectionPool())

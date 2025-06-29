@@ -36,7 +36,9 @@ import adminRoutes from "./routes/admin";
 import analyticsRoutes from "./routes/analytics";
 import dashboardRoutes from "./routes/dashboard";
 import searchRoutes from "./routes/search";
+import uploadRoutes from "./routes/upload";
 import { loadUserRolesMiddleware } from "./middleware/rbac";
+import { sanitizeInput, rateLimit, validateSqlInjection, securityHeaders } from "./middleware/validation";
 
 function handleZodError(error: ZodError, res: Response) {
   return res.status(400).json({
@@ -971,6 +973,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register Search routes
   app.use('/api/search', searchRoutes);
+  
+  // Register Upload routes
+  app.use('/api/upload', uploadRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
