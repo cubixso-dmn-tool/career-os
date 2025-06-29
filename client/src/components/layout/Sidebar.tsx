@@ -10,7 +10,8 @@ import {
   Trophy,
   ChevronLeft,
   ChevronRight,
-  Settings
+  Settings,
+  Bot
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LogoutButton from "@/components/auth/LogoutButton";
@@ -33,6 +34,7 @@ export default function Sidebar({ user }: SidebarProps) {
 
   const navItems = [
     { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { path: "/ai-career-coach", icon: Bot, label: "AI Career Coach" },
     { path: "/career-guide", icon: Compass, label: "Career Guide" },
     { path: "/career-roadmap", icon: GitBranch, label: "Career Roadmap" },
     { path: "/courses", icon: BookOpen, label: "Courses" },

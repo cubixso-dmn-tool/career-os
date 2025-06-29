@@ -936,6 +936,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register Course features routes
   app.use('/api/courses', coursesRoutes);
+  
+  // Register AI Career Coach routes
+  app.use('/api/ai-career-coach', aiCareerCoachRoutes);
 
   const httpServer = createServer(app);
   return httpServer;

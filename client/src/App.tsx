@@ -17,6 +17,7 @@ import HowItWorks from "@/pages/HowItWorks";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import LandingPage from "@/pages/LandingPage";
+import AICareerCoachPage from "@/pages/AICareerCoach";
 import { AuthProvider } from "@/hooks/use-auth-context";
 import { LearningModeProvider } from "@/hooks/use-learning-mode";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -73,6 +74,11 @@ function Router() {
       <Route path="/settings">
         <ProtectedRoute>
           <Settings />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/ai-career-coach">
+        <ProtectedRoute>
+          <AICareerCoachPage />
         </ProtectedRoute>
       </Route>
       <Route path="/login" component={Login} />
