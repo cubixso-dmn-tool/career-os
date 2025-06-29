@@ -176,12 +176,13 @@ export default function Settings() {
 
   // Update profile data when user data loads
   useEffect(() => {
-    if (user) {
+    if (user && typeof user === 'object') {
+      const userObj = user as any;
       setProfileForm({
-        name: user.name || "",
-        email: user.email || "",
-        bio: user.bio || "",
-        avatar: user.avatar || "",
+        name: userObj.name || "",
+        email: userObj.email || "",
+        bio: userObj.bio || "",
+        avatar: userObj.avatar || "",
       });
     }
   }, [user]);
@@ -448,7 +449,7 @@ export default function Settings() {
                   
                   <Separator className="my-4" />
                   
-                  <PermissionGate allowedRoles={['admin']}>
+                  <PermissionGate roles={[1]}>
                     <div className="px-4 py-2">
                       <h4 className="text-sm font-semibold text-gray-900 mb-2">Admin Settings</h4>
                     </div>
@@ -924,7 +925,7 @@ export default function Settings() {
             )}
 
             {/* Content Management (Admin Only) */}
-            <PermissionGate allowedRoles={['admin']}>
+            <PermissionGate roles={[1]}>
               {activeSection === 'content' && (
                 <div className="space-y-6">
                   {/* Course Management */}
@@ -991,7 +992,7 @@ export default function Settings() {
                         </Button>
                       </form>
 
-                      {courses && courses.length > 0 && (
+                      {Array.isArray(courses) && courses.length > 0 && (
                         <div className="mt-6">
                           <h4 className="font-medium mb-3">Existing Courses ({courses.length})</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1065,7 +1066,7 @@ export default function Settings() {
                         </Button>
                       </form>
 
-                      {projects && projects.length > 0 && (
+                      {Array.isArray(projects) && projects.length > 0 && (
                         <div className="mt-6">
                           <h4 className="font-medium mb-3">Existing Projects ({projects.length})</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1158,11 +1159,11 @@ export default function Settings() {
                         </Button>
                       </form>
 
-                      {communities && communities.length > 0 && (
+                      {Array.isArray(communities) && communities.length > 0 && (
                         <div className="mt-6">
                           <h4 className="font-medium mb-3">Existing Communities ({communities.length})</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {communities.map((community: any) => (
+                            {Array.isArray(communities) && communities.map((community: any) => (
                               <div key={community.id} className="border rounded-lg p-3">
                                 <h5 className="font-medium">{community.name}</h5>
                                 <p className="text-sm text-gray-600">{community.type}</p>
