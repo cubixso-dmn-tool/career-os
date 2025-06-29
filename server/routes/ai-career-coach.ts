@@ -448,8 +448,7 @@ router.post("/analyze", async (req, res) => {
 
     res.json({
       success: true,
-      recommendations,
-      rawResponse: response
+      recommendations
     });
   } catch (error: any) {
     console.error("Career assessment analysis error:", error);
@@ -520,9 +519,16 @@ router.post("/roadmap", async (req, res) => {
       } = {
         overview: "",
         duration: "12-18 months",
-        skills: [],
-        certifications: [],
-        phases: []
+        skills: [] as string[],
+        certifications: [] as string[],
+        phases: [] as Array<{
+          phase: string;
+          duration: string;
+          description: string;
+          milestones: string[];
+          resources: string[];
+          projects: string[];
+        }>
       };
       
       if (careerLower.includes('developer') || careerLower.includes('software') || careerLower.includes('frontend') || careerLower.includes('backend')) {
