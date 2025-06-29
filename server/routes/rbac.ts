@@ -205,7 +205,7 @@ router.get("/my-info", async (req, res) => {
       permissions: req.user.permissions || []
     };
     
-    console.log(`User ${req.user.username} (ID: ${req.user.id}) has roles:`, req.user.roles, 'and permissions:', req.user.permissions);
+
     
     res.status(200).json(userInfo);
   } catch (error) {

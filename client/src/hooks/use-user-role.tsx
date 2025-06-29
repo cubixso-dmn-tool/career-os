@@ -23,31 +23,17 @@ export function useUserRole() {
   // Determine the primary role (highest priority role)
   const getPrimaryRole = () => {
     if (!roleData?.roles || roleData.roles.length === 0) {
-      console.log('No role data found, defaulting to student');
       return 'student'; // Default role
     }
 
     // Role hierarchy: admin > moderator > mentor > student
-    // Note: In the actual implementation, you'd fetch role names from the API
-    // For now, we'll use role IDs with known mappings:
-    // 1 = admin, 2 = moderator, 3 = mentor, 4 = student
+    // Role mappings: 1 = admin, 2 = moderator, 3 = mentor, 4 = student
     
     const roleIds = roleData.roles;
-    console.log('User role IDs:', roleIds, 'Role data:', roleData);
     
-    if (roleIds.includes(1)) {
-      console.log('User is admin');
-      return 'admin';
-    }
-    if (roleIds.includes(2)) {
-      console.log('User is moderator');
-      return 'moderator';
-    }
-    if (roleIds.includes(3)) {
-      console.log('User is mentor');
-      return 'mentor';
-    }
-    console.log('User is student (default or role ID 4)');
+    if (roleIds.includes(1)) return 'admin';
+    if (roleIds.includes(2)) return 'moderator';
+    if (roleIds.includes(3)) return 'mentor';
     return 'student';
   };
 

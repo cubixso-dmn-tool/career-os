@@ -11,26 +11,20 @@ export default function DashboardRouter() {
   const [, navigate] = useLocation();
 
   useEffect(() => {
-    console.log('DashboardRouter: isLoading =', isLoading, 'primaryRole =', primaryRole);
     if (!isLoading && primaryRole) {
-      console.log('Redirecting user with role:', primaryRole);
       // Auto-redirect based on primary role
       switch (primaryRole) {
         case 'admin':
-          console.log('Navigating to admin dashboard');
           navigate('/admin-dashboard', { replace: true });
           break;
         case 'moderator':
-          console.log('Navigating to admin dashboard (moderator)');
           navigate('/admin-dashboard', { replace: true }); // Moderators use admin dashboard
           break;
         case 'mentor':
-          console.log('Navigating to mentor dashboard');
           navigate('/mentor-dashboard', { replace: true });
           break;
         case 'student':
         default:
-          console.log('Navigating to student dashboard');
           navigate('/student-dashboard', { replace: true });
           break;
       }
