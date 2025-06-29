@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { storage } from "../simple-storage";
+import { cache, cacheMiddleware } from "../lib/cache";
 import { requirePermission } from "../middleware/rbac";
 
 const router = Router();
@@ -12,8 +13,8 @@ const requireAuth = (req: any, res: any, next: any) => {
   next();
 };
 
-// Real analytics data for admin dashboard
-router.get("/platform-stats", requireAuth, async (req, res) => {
+// Real analytics data for admin dashboard with caching
+router.get("/platform-stats", requireAuth, cacheMiddleware(180), async (req, res) => {
   try {
     const [
       totalUsers,
@@ -53,8 +54,8 @@ router.get("/platform-stats", requireAuth, async (req, res) => {
   }
 });
 
-// Real user engagement metrics
-router.get("/user-engagement", requireAuth, async (req, res) => {
+// Real user engagement metrics with caching
+router.get("/user-engagement", requireAuth, cacheMiddleware(300), async (req, res) => {
   try {
     const engagement = await storage.getUserEngagementMetrics();
     res.json(engagement);

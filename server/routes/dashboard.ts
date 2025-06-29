@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { storage } from "../simple-storage";
+import { cacheMiddleware } from "../lib/cache";
 
 const router = Router();
 
