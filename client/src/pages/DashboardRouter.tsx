@@ -11,23 +11,26 @@ export default function DashboardRouter() {
   const [, navigate] = useLocation();
 
   useEffect(() => {
+    // Wait for role data to be fully loaded before redirecting
     if (!isLoading && primaryRole) {
-      // Auto-redirect based on primary role
-      switch (primaryRole) {
-        case 'admin':
-          navigate('/admin-dashboard', { replace: true });
-          break;
-        case 'moderator':
-          navigate('/moderator-dashboard', { replace: true });
-          break;
-        case 'mentor':
-          navigate('/mentor-dashboard', { replace: true });
-          break;
-        case 'student':
-        default:
-          navigate('/student-dashboard', { replace: true });
-          break;
-      }
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        switch (primaryRole) {
+          case 'admin':
+            navigate('/admin-dashboard', { replace: true });
+            break;
+          case 'moderator':
+            navigate('/moderator-dashboard', { replace: true });
+            break;
+          case 'mentor':
+            navigate('/mentor-dashboard', { replace: true });
+            break;
+          case 'student':
+          default:
+            navigate('/student-dashboard', { replace: true });
+            break;
+        }
+      });
     }
   }, [primaryRole, isLoading, navigate]);
 
