@@ -122,7 +122,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Load roles and permissions after successful login
         await loadUserRolesAndPermissions();
         
-        navigate('/dashboard');
+        // Small delay to ensure role data is loaded before redirect
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 100);
         return { success: true };
       } else {
         const error = await response.json();
