@@ -32,11 +32,29 @@ export default function Login() {
     queryKey: ["/api/auth/oauth-config"],
   });
 
-  // Handle OAuth callback status
+  // Handle OAuth callback status and tokens
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const status = urlParams.get('status');
     const message = urlParams.get('message');
+    const accessToken = urlParams.get('access_token');
+    const refreshToken = urlParams.get('refresh_token');
+    
+    // Handle development OAuth tokens
+    if (accessToken && refreshToken) {
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome to CareerOS!",
+      });
+      
+      // Clear URL parameters and reload to refresh auth state
+      window.history.replaceState({}, document.title, window.location.pathname);
+      window.location.reload();
+      return;
+    }
     
     if (status === 'success') {
       toast({
@@ -84,7 +102,12 @@ export default function Login() {
       title: "Redirecting...",
       description: `Connecting to ${provider} for secure authentication`,
     });
-    window.location.href = `/api/auth/${provider}`;
+    
+    // Use development OAuth routes when in development
+    const isDevelopment = import.meta.env.DEV || window.location.hostname === 'localhost';
+    const route = isDevelopment ? `/api/auth/dev-oauth/${provider}` : `/api/auth/${provider}`;
+    
+    window.location.href = route;
   };
 
   return (

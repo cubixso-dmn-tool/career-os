@@ -507,9 +507,64 @@ router.post("/setup-2fa", jwtAuthMiddleware, async (req: any, res) => {
   }
 });
 
+// Development OAuth simulation (localhost only)
+router.get("/dev-oauth/:provider", async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: "Not found" });
+  }
+
+  const { provider } = req.params;
+  
+  if (!['google', 'github'].includes(provider)) {
+    return res.status(400).json({ error: "Invalid provider" });
+  }
+
+  try {
+    // Simulate OAuth user data
+    const mockUser = {
+      email: `test@${provider}.com`,
+      username: `${provider}_user`,
+      name: `Test ${provider.charAt(0).toUpperCase() + provider.slice(1)} User`,
+      avatar: `https://via.placeholder.com/150?text=${provider.charAt(0).toUpperCase()}`
+    };
+
+    // Check if user exists, create if not
+    let user = await storage.getUserByEmail(mockUser.email);
+    if (!user) {
+      user = await storage.createUser({
+        ...mockUser,
+        password: 'oauth_user' // Not used for OAuth users
+      });
+    }
+
+    // Create JWT tokens
+    const roles = ['user'];
+    const tokens = JWTManager.createTokenPair(user, roles);
+
+    await AdminLogger.logAuth(
+      "DEV_OAUTH_LOGIN",
+      `Development OAuth login via ${provider}: ${user.email}`,
+      user.id,
+      user.email,
+      { provider, isDevelopment: true }
+    );
+
+    // Redirect with tokens
+    res.redirect(`/?access_token=${tokens.accessToken}&refresh_token=${tokens.refreshToken}`);
+  } catch (error) {
+    console.error("Development OAuth error:", error);
+    res.redirect("/login?error=dev_oauth_error");
+  }
+});
+
 // OAuth configuration status
 router.get("/oauth-config", (req, res) => {
   const config = isOAuthConfigured();
+  // In development, always show as available for testing
+  if (process.env.NODE_ENV !== 'production') {
+    config.google = true;
+    config.github = true;
+  }
   res.json(config);
 });
 
