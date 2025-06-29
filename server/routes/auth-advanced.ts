@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import passport from "passport";
 import { storage } from "../simple-storage";
 import { JWTManager, jwtAuthMiddleware } from "../lib/jwt";
-import { OAuthManager } from "../lib/oauth";
+import { OAuthManager, isOAuthConfigured } from "../lib/oauth";
 import { EmailManager } from "../lib/email";
 import { AdminLogger, LogLevel, LogCategory } from "../lib/admin-logs";
 import speakeasy from "speakeasy";
@@ -506,7 +506,7 @@ router.post("/setup-2fa", jwtAuthMiddleware, async (req: any, res) => {
 
 // OAuth configuration status
 router.get("/oauth-config", (req, res) => {
-  const config = OAuthManager.isOAuthConfigured();
+  const config = isOAuthConfigured();
   res.json(config);
 });
 
