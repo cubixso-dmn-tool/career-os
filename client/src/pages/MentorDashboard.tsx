@@ -2,8 +2,6 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import LogoutButton from "@/components/auth/LogoutButton";
-import Layout from "@/components/layout/Layout";
-import Sidebar from "@/components/layout/Sidebar";
 import MobileSidebar from "@/components/layout/MobileSidebar";
 import MobileHeader from '@/components/ui/mobile-header';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,7 +29,8 @@ import {
   Timer,
   Heart,
   Zap,
-  FileText
+  FileText,
+  LayoutDashboard
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -40,7 +39,7 @@ function SimpleSidebar({ user }: { user: any }) {
   const [location] = useLocation();
 
   const navItems = [
-    { path: "/mentor-dashboard", icon: Settings, label: "Dashboard" },
+    { path: "/mentor-dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/settings", icon: Settings, label: "Settings" }
   ];
 
@@ -137,13 +136,12 @@ export default function MentorDashboard() {
   }
 
   return (
-    <Layout 
-      title="Mentor Dashboard"
-      sidebarItems={[
-        { name: "Dashboard", href: "/mentor-dashboard", icon: "LayoutDashboard" },
-        { name: "Settings", href: "/settings", icon: "Settings" }
-      ]}
-    >
+    <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
+      <SimpleSidebar user={userWithDefaults} />
+      <MobileSidebar user={userWithDefaults} />
+      <MobileHeader user={userWithDefaults} title="Mentor Dashboard" />
+      
+      <main className="flex-1 md:ml-0">
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-green-50">
         {/* Header Section */}
         <div className="bg-white border-b border-gray-200 px-6 py-8">
@@ -574,6 +572,7 @@ export default function MentorDashboard() {
           </div>
         </div>
       </div>
-    </Layout>
+      </main>
+    </div>
   );
 }

@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
-import Layout from "@/components/layout/Layout";
+import { Link, useLocation } from "wouter";
+import LogoutButton from "@/components/auth/LogoutButton";
+import MobileSidebar from "@/components/layout/MobileSidebar";
+import MobileHeader from '@/components/ui/mobile-header';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
