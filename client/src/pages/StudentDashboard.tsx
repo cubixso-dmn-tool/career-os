@@ -31,37 +31,52 @@ import {
 import { motion } from "framer-motion";
 
 export default function StudentDashboard() {
-  const [activeStreak, setActiveStreak] = useState(7);
   
-  // Fetch student's dashboard data
-  const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
-    queryKey: ['/api/users/1/dashboard'],
-    queryFn: async () => {
-      const response = await fetch('/api/users/1/dashboard', {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      return response.json();
-    },
+  // Fetch dashboard metrics
+  const { data: dashboardMetrics, isLoading: dashboardLoading } = useQuery({
+    queryKey: ['/api/dashboard/metrics'],
   });
 
-  // Fetch learning resources
-  const { data: learningData, isLoading: learningLoading } = useQuery({
-    queryKey: ['/api/learning-resources/Software%20Developer/advanced-development'],
-    queryFn: async () => {
-      const response = await fetch('/api/learning-resources/Software%20Developer/advanced-development', {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      return response.json();
-    },
+  // Fetch user progress
+  const { data: progressData, isLoading: progressLoading } = useQuery({
+    queryKey: ['/api/dashboard/progress'],
   });
 
-  if (dashboardLoading || learningLoading) {
+  // Fetch user activity
+  const { data: activityData, isLoading: activityLoading } = useQuery({
+    queryKey: ['/api/dashboard/activity'],
+  });
+
+  // Fetch courses
+  const { data: coursesData, isLoading: coursesLoading } = useQuery({
+    queryKey: ['/api/courses'],
+  });
+
+  // Fetch projects
+  const { data: projectsData, isLoading: projectsLoading } = useQuery({
+    queryKey: ['/api/projects'],
+  });
+
+  // Fetch events
+  const { data: eventsData, isLoading: eventsLoading } = useQuery({
+    queryKey: ['/api/events'],
+  });
+
+  // Fetch achievements
+  const { data: achievementsData, isLoading: achievementsLoading } = useQuery({
+    queryKey: ['/api/achievements'],
+  });
+
+  // Fetch learning streak
+  const { data: streakData, isLoading: streakLoading } = useQuery({
+    queryKey: ['/api/courses/streak'],
+  });
+
+  const isLoading = dashboardLoading || progressLoading || activityLoading || 
+                   coursesLoading || projectsLoading || eventsLoading || 
+                   achievementsLoading || streakLoading;
+
+  if (isLoading) {
     return (
       <Layout title="Student Dashboard">
         <div className="min-h-screen flex items-center justify-center">
@@ -74,8 +89,16 @@ export default function StudentDashboard() {
     );
   }
 
-  const progressData = dashboardData?.progress || {};
-  const careerPath = dashboardData?.careerPath || {};
+  // Extract data with safe defaults
+  const progress = progressData || {};
+  const metrics = dashboardMetrics || {};
+  const activity = activityData || [];
+  const courses = coursesData || [];
+  const projects = projectsData || [];
+  const events = eventsData || [];
+  const achievements = achievementsData || [];
+  const streak = streakData || { currentStreak: 0, longestStreak: 0 };
+  const activeStreak = (streak as any)?.currentStreak || 0;
 
   return (
     <Layout title="Student Dashboard">
@@ -96,7 +119,7 @@ export default function StudentDashboard() {
                   Learning Journey
                 </h1>
                 <p className="text-gray-600 mt-2">
-                  Welcome back! Ready to continue your path to becoming a {careerPath.title || 'Software Developer'}?
+                  Welcome back! Ready to continue your path to becoming a Software Developer?
                 </p>
               </div>
               <div className="flex items-center gap-4">
@@ -128,7 +151,7 @@ export default function StudentDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-blue-100">Overall Progress</p>
-                    <p className="text-3xl font-bold">{progressData.percentage || 65}%</p>
+                    <p className="text-3xl font-bold">{progress.overallProgress || 0}%</p>
                   </div>
                   <Target className="h-10 w-10 text-blue-200" />
                 </div>
@@ -140,7 +163,7 @@ export default function StudentDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-green-100">Courses Completed</p>
-                    <p className="text-3xl font-bold">{progressData.coreCourses?.completed || 3}</p>
+                    <p className="text-3xl font-bold">{progress.coursesCompleted || 0}</p>
                   </div>
                   <BookOpen className="h-10 w-10 text-green-200" />
                 </div>
@@ -152,7 +175,7 @@ export default function StudentDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-purple-100">Projects Built</p>
-                    <p className="text-3xl font-bold">{progressData.projects?.completed || 2}</p>
+                    <p className="text-3xl font-bold">{progress.projectsCompleted || 0}</p>
                   </div>
                   <Code className="h-10 w-10 text-purple-200" />
                 </div>
@@ -164,7 +187,7 @@ export default function StudentDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-orange-100">Achievements</p>
-                    <p className="text-3xl font-bold">{dashboardData?.achievements?.length || 5}</p>
+                    <p className="text-3xl font-bold">{achievements.length || 0}</p>
                   </div>
                   <Trophy className="h-10 w-10 text-orange-200" />
                 </div>
