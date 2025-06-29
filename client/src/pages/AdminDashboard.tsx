@@ -42,10 +42,17 @@ import {
 } from "lucide-react";
 
 export default function AdminDashboard() {
-  const { data: adminData, isLoading } = useQuery({
-    queryKey: ["/api/admin/overview"],
+  const { data: platformStats, isLoading: statsLoading } = useQuery({
+    queryKey: ["/api/analytics/platform-stats"],
     retry: false,
   });
+
+  const { data: userEngagement, isLoading: engagementLoading } = useQuery({
+    queryKey: ["/api/analytics/user-engagement"],
+    retry: false,
+  });
+
+  const isLoading = statsLoading || engagementLoading;
 
   if (isLoading) {
     return (
@@ -60,15 +67,20 @@ export default function AdminDashboard() {
     );
   }
 
-  // Use fallback data for demo
+  // Use real analytics data
   const data = {
     stats: {
-      totalUsers: adminData?.stats?.totalUsers || 15847,
-      activeToday: adminData?.stats?.activeToday || 2341,
-      totalEvents: adminData?.stats?.totalEvents || 156,
-      pendingModeration: adminData?.stats?.pendingModeration || 23
+      totalUsers: platformStats?.totalUsers || 0,
+      activeToday: platformStats?.activeToday || 0,
+      totalEvents: platformStats?.totalEvents || 0,
+      pendingModeration: platformStats?.pendingModeration || 0
     },
-    metrics: adminData?.metrics || {}
+    metrics: {
+      conversionRate: platformStats?.conversionRate || "0.0%",
+      growthRate: platformStats?.growthRate || "0.0%", 
+      retentionRate: platformStats?.retentionRate || "0.0%",
+      engagementRate: userEngagement?.engagementRate || "0.0%"
+    }
   };
 
   const adminJourneyStages = [
