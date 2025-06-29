@@ -380,9 +380,11 @@ export default function Dashboard() {
                             <div className="text-xs text-gray-500">{item.time}</div>
                           </div>
                         </div>
-                        <Button size="sm" variant="outline">
-                          {item.action}
-                        </Button>
+                        <Link href={item.type === 'session' ? '/industry-experts' : item.type === 'course' ? '/courses' : '/ai-career-coach'}>
+                          <Button size="sm" variant="outline">
+                            {item.action}
+                          </Button>
+                        </Link>
                       </div>
                     ))}
                     {todayHighlights.length === 0 && (
@@ -447,7 +449,9 @@ export default function Dashboard() {
                           <span>{session.time}</span>
                           <span>{session.attendees} registered</span>
                         </div>
-                        <Button size="sm" className="w-full mt-3">Register</Button>
+                        <Link href="/industry-experts">
+                          <Button size="sm" className="w-full mt-3">Register</Button>
+                        </Link>
                       </div>
                     ))}
                   </div>
@@ -490,9 +494,11 @@ export default function Dashboard() {
                             <Progress value={course.progress} className="h-2" />
                           </div>
                         ) : null}
-                        <Button size="sm" className="w-full">
-                          {course.progress > 0 ? 'Continue' : 'Start Course'}
-                        </Button>
+                        <Link href="/courses">
+                          <Button size="sm" className="w-full">
+                            {course.progress > 0 ? 'Continue' : 'Start Course'}
+                          </Button>
+                        </Link>
                       </div>
                     ))}
                   </CardContent>
@@ -517,9 +523,11 @@ export default function Dashboard() {
                       <p className="text-sm text-gray-600 mb-4">
                         {dailyByte?.content || "Learn about variable declarations and their scoping rules in modern JavaScript development."}
                       </p>
-                      <Button size="sm">
-                        Take Today's Challenge
-                      </Button>
+                      <Link href="/courses">
+                        <Button size="sm">
+                          Take Today's Challenge
+                        </Button>
+                      </Link>
                     </div>
                   </CardContent>
                 </Card>
@@ -561,10 +569,12 @@ export default function Dashboard() {
                         </div>
                       </div>
                     ))}
-                    <Button variant="outline" className="w-full">
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Start a Discussion
-                    </Button>
+                    <Link href="/community">
+                      <Button variant="outline" className="w-full">
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Start a Discussion
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
 
@@ -650,9 +660,11 @@ export default function Dashboard() {
                         <Badge variant="outline">Upcoming</Badge>
                       </div>
                     </div>
-                    <Button className="w-full mt-4">
-                      View Full Roadmap
-                    </Button>
+                    <Link href="/career-roadmap">
+                      <Button className="w-full mt-4">
+                        View Full Roadmap
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
 
@@ -671,17 +683,21 @@ export default function Dashboard() {
                         <FileText className="h-8 w-8 mx-auto mb-2 text-blue-600" />
                         <h4 className="font-medium text-sm mb-1">Resume Builder</h4>
                         <p className="text-xs text-gray-600 mb-3">ATS-optimized templates</p>
-                        <Button size="sm" variant="outline" className="w-full">
-                          Build Resume
-                        </Button>
+                        <Link href="/resume-builder">
+                          <Button size="sm" variant="outline" className="w-full">
+                            Build Resume
+                          </Button>
+                        </Link>
                       </div>
                       <div className="p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg text-center">
                         <Bot className="h-8 w-8 mx-auto mb-2 text-purple-600" />
                         <h4 className="font-medium text-sm mb-1">Mock Interviews</h4>
                         <p className="text-xs text-gray-600 mb-3">AI-powered practice</p>
-                        <Button size="sm" variant="outline" className="w-full">
-                          Practice Now
-                        </Button>
+                        <Link href="/ai-career-coach">
+                          <Button size="sm" variant="outline" className="w-full">
+                            Practice Now
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                     <div className="p-4 border rounded-lg">
