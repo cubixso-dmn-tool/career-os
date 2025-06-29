@@ -18,9 +18,11 @@ export default function CareerRecommendationCard({ careerPath }: CareerRecommend
       <div className="bg-gradient-to-br from-primary to-indigo-700 rounded-xl shadow-md p-6 text-white col-span-1 md:col-span-2">
         <h2 className="text-lg font-semibold mb-4">Discover Your Ideal Career Path</h2>
         <p className="mb-6">Take our AI-powered career assessment to find the perfect match for your skills and interests.</p>
-        <Button variant="secondary" className="bg-white text-primary hover:bg-indigo-50">
-          Start Career Assessment
-        </Button>
+        <Link href="/career-guide">
+          <Button variant="secondary" className="bg-white text-primary hover:bg-indigo-50">
+            Start Career Assessment
+          </Button>
+        </Link>
       </div>
     );
   }
@@ -47,9 +49,11 @@ export default function CareerRecommendationCard({ careerPath }: CareerRecommend
           ))}
         </div>
       </div>
-      <Button variant="secondary" className="bg-white text-primary hover:bg-indigo-50">
-        View Detailed Report
-      </Button>
+      <Link href="/career-roadmap">
+        <Button variant="secondary" className="bg-white text-primary hover:bg-indigo-50">
+          View Detailed Report
+        </Button>
+      </Link>
     </div>
   );
 }

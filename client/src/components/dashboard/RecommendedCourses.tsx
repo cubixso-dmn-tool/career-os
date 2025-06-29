@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Star, Users } from "lucide-react";
 import { Link } from "wouter";
 
@@ -70,7 +71,7 @@ export default function RecommendedCourses({ courses }: RecommendedCoursesProps)
               
               <p className="text-sm text-gray-600 mb-3 line-clamp-2">{course.description}</p>
               
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mb-3">
                 <span className="text-primary font-semibold">
                   {course.isFree ? "Free" : `₹${course.price}`}
                 </span>
@@ -79,6 +80,12 @@ export default function RecommendedCourses({ courses }: RecommendedCoursesProps)
                   {formatEnrolledCount(course.enrolledCount)} enrolled
                 </div>
               </div>
+              
+              <Link href={`/courses/${course.id}`}>
+                <Button className="w-full bg-primary hover:bg-primary/90" size="sm">
+                  {course.isFree ? "Enroll Now" : "View Course"}
+                </Button>
+              </Link>
             </div>
           </Card>
         ))}

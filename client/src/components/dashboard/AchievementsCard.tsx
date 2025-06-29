@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Star, Award, Lock } from "lucide-react";
+import { Link } from "wouter";
 
 interface Achievement {
   id: number;
@@ -81,7 +82,9 @@ export default function AchievementsCard({ achievements }: AchievementsCardProps
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg font-semibold text-gray-900">Achievements</CardTitle>
-          <span className="text-sm text-primary font-medium hover:underline cursor-pointer">View All</span>
+          <Link href="/achievements">
+            <span className="text-sm text-primary font-medium hover:underline cursor-pointer">View All</span>
+          </Link>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
