@@ -85,7 +85,30 @@ export default function Dashboard() {
     },
   });
 
-  if (isLoading) {
+  // Fetch current learning resources based on career path
+  const selectedCareerPath = localStorage.getItem('selectedCareerPath') || 'Software Developer';
+  const { data: currentLearningResources, isLoading: isLearningLoading } = useQuery({
+    queryKey: [`/api/learning-resources/current/${encodeURIComponent(selectedCareerPath)}`],
+    queryFn: async ({ queryKey }) => {
+      try {
+        const response = await fetch(queryKey[0] as string, {
+          credentials: "include",
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error("Learning resources fetch error:", error);
+        throw error;
+      }
+    },
+  });
+
+  if (isLoading || isLearningLoading) {
     return (
       <Layout title="Dashboard">
         <div className="min-h-screen flex items-center justify-center">
@@ -115,7 +138,7 @@ export default function Dashboard() {
   const { 
     user, 
     progress, 
-    careerPath, 
+    careerPath: dashboardCareerPath, 
     achievements,
     recommendedCourses,
     recommendedProject,
@@ -124,6 +147,9 @@ export default function Dashboard() {
     dailyByte,
     dailyByteStreak
   } = dashboardData || {};
+
+  // Use career path from AI Career Guide or dashboard fallback
+  const careerPath = selectedCareerPath || dashboardCareerPath || 'Software Developer';
 
   // Quick actions for easy access
   const quickActions = [

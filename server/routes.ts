@@ -944,6 +944,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register Industry Expert Network routes
   app.use('/api/industry-experts', industryExpertsRoutes);
+  
+  // Register Learning Resources routes
+  app.use('/api/learning-resources', learningResourcesRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
