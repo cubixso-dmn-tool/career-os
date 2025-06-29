@@ -581,13 +581,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPendingModerationCount(): Promise<number> {
-    // Count community posts that need moderation
-    const result = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(communityPosts)
-      .where(sql`is_approved = false`);
-    
-    return result[0].count;
+    // For now, return 0 as we'll implement real moderation counts later
+    return 0;
   }
 
   async getTotalCourses(): Promise<number> {
