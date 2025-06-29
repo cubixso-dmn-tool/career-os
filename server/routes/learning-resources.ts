@@ -302,6 +302,69 @@ const careerLearningPaths = {
 };
 
 /**
+ * Get complete learning path for a career
+ * GET /api/learning-resources/:career/complete-path
+ */
+router.get("/:career/complete-path", (req, res) => {
+  try {
+    const { career } = req.params;
+    
+    // Define the learning phases for the career
+    const phases = [
+      {
+        phaseKey: "programming-fundamentals",
+        phase: "Programming Fundamentals",
+        description: "Master core programming concepts and basic development tools",
+        coursesCount: 3,
+        projectsCount: 3
+      },
+      {
+        phaseKey: "framework-tools-mastery", 
+        phase: "Framework & Tools Mastery",
+        description: "Learn frameworks, libraries, and development tools",
+        coursesCount: 3,
+        projectsCount: 3
+      },
+      {
+        phaseKey: "advanced-development",
+        phase: "Advanced Development", 
+        description: "Dive into advanced concepts and specialization areas",
+        coursesCount: 3,
+        projectsCount: 3
+      },
+      {
+        phaseKey: "professional-readiness",
+        phase: "Professional Readiness",
+        description: "Prepare for the job market and career advancement", 
+        coursesCount: 3,
+        projectsCount: 3
+      }
+    ];
+
+    // Calculate totals
+    const totalCourses = phases.reduce((sum, phase) => sum + phase.coursesCount, 0);
+    const totalProjects = phases.reduce((sum, phase) => sum + phase.projectsCount, 0);
+
+    res.json({
+      success: true,
+      data: {
+        career,
+        phases,
+        totalCourses,
+        totalProjects
+      }
+    });
+  } catch (error: any) {
+    console.error("Error fetching complete learning path:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch complete learning path",
+      error: error.message
+    });
+  }
+});
+
+/**
  * Get learning resources for a specific career and phase
  * GET /api/learning-resources/:career/:phase
  */
@@ -487,5 +550,7 @@ router.get("/featured/projects", (req, res) => {
     });
   }
 });
+
+
 
 export default router;
