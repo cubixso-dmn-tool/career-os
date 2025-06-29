@@ -89,16 +89,16 @@ export default function StudentDashboard() {
     );
   }
 
-  // Extract data with safe defaults
-  const progress = progressData || {};
-  const metrics = dashboardMetrics || {};
-  const activity = activityData || [];
-  const courses = coursesData || [];
-  const projects = projectsData || [];
-  const events = eventsData || [];
-  const achievements = achievementsData || [];
-  const streak = streakData || { currentStreak: 0, longestStreak: 0 };
-  const activeStreak = (streak as any)?.currentStreak || 0;
+  // Extract data with safe defaults and proper typing
+  const progress = progressData as any || {};
+  const metrics = dashboardMetrics as any || {};
+  const activity = Array.isArray(activityData) ? activityData : [];
+  const courses = Array.isArray(coursesData) ? coursesData : [];
+  const projects = Array.isArray(projectsData) ? projectsData : [];
+  const events = Array.isArray(eventsData) ? eventsData : [];
+  const achievements = Array.isArray(achievementsData) ? achievementsData : [];
+  const streak = streakData as any || { currentStreak: 0, longestStreak: 0 };
+  const activeStreak = streak.currentStreak || 0;
 
   return (
     <Layout title="Student Dashboard">
@@ -212,7 +212,7 @@ export default function StudentDashboard() {
                       Your Learning Roadmap
                     </CardTitle>
                     <CardDescription className="text-blue-100">
-                      Continue your journey to become a {careerPath.title || 'Software Developer'}
+                      Continue your journey to become a Software Developer
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-6">
@@ -220,35 +220,30 @@ export default function StudentDashboard() {
                     <div className="mb-6">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium">Career Progress</span>
-                        <span className="text-sm font-bold text-blue-600">{progressData.percentage || 65}%</span>
+                        <span className="text-sm font-bold text-blue-600">{progress.overallProgress || 0}%</span>
                       </div>
-                      <Progress value={progressData.percentage || 65} className="h-3" />
-                      <div className="text-xs text-gray-500 mt-1">Advanced Development Phase</div>
+                      <Progress value={progress.overallProgress || 0} className="h-3" />
+                      <div className="text-xs text-gray-500 mt-1">Development Phase</div>
                     </div>
 
                     {/* Learning Milestones */}
                     <div className="space-y-4">
                       <h4 className="font-semibold text-gray-900">Current Milestones</h4>
-                      {[
-                        { 
-                          title: "Master React State Management", 
-                          progress: 75, 
-                          status: "in_progress",
-                          type: "course"
-                        },
-                        { 
-                          title: "Build Portfolio Website", 
-                          progress: 40, 
-                          status: "in_progress",
-                          type: "project"
-                        },
-                        { 
-                          title: "Complete System Design Basics", 
-                          progress: 0, 
-                          status: "upcoming",
-                          type: "course"
-                        }
-                      ].map((milestone, index) => (
+                      {(courses.slice(0, 2).map((course: any, index: number) => ({
+                        title: course.title,
+                        progress: Math.round(Math.random() * 100), // Will be replaced with real progress
+                        status: "in_progress",
+                        type: "course",
+                        id: course.id
+                      })).concat(
+                        projects.slice(0, 1).map((project: any, index: number) => ({
+                          title: project.title,
+                          progress: Math.round(Math.random() * 100), // Will be replaced with real progress
+                          status: "in_progress", 
+                          type: "project",
+                          id: project.id
+                        }))
+                      )).map((milestone, index) => (
                         <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
                           <div className={`p-2 rounded-lg ${
                             milestone.type === 'course' ? 'bg-blue-100' : 'bg-purple-100'
