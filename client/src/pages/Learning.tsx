@@ -155,18 +155,18 @@ export default function Learning() {
           </div>
 
           {/* Progress Overview */}
-          <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+          <Card className="bg-gradient-to-r from-primary/5 to-accent/10 border-primary/20">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="flex-1">
                   <div className="flex items-center justify-between text-sm mb-2">
-                    <span>Current Phase: Advanced Development</span>
-                    <span className="font-medium">65%</span>
+                    <span className="text-foreground/80">Current Phase: Advanced Development</span>
+                    <span className="font-medium text-primary">65%</span>
                   </div>
-                  <Progress value={65} className="h-3" />
+                  <Progress value={65} className="h-3 bg-accent/20" />
                 </div>
                 <Link href="/career-roadmap">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="border-primary/30 text-primary hover:bg-primary/10">
                     <Target className="h-4 w-4 mr-2" />
                     View Roadmap
                   </Button>
@@ -208,35 +208,35 @@ export default function Learning() {
                   transition={{ delay: index * 0.1 }}
                 >
                   <Card className={`hover:shadow-lg transition-shadow ${
-                    phase.phase === "Advanced Development" ? "ring-2 ring-purple-500 bg-purple-50" : ""
+                    phase.phase === "Advanced Development" ? "ring-2 ring-primary bg-primary/5" : ""
                   }`}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="flex items-center gap-2">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
-                            index === 0 ? "bg-green-500" : 
-                            index === 1 ? "bg-green-500" : 
-                            index === 2 ? "bg-purple-500" : "bg-gray-400"
+                            index === 0 ? "bg-accent" : 
+                            index === 1 ? "bg-accent" : 
+                            index === 2 ? "bg-primary" : "bg-muted-foreground"
                           }`}>
                             {index + 1}
                           </div>
                           {phase.phase}
                         </CardTitle>
                         {phase.phase === "Advanced Development" && (
-                          <Badge variant="default" className="bg-purple-600">Current</Badge>
+                          <Badge variant="default" className="bg-primary">Current</Badge>
                         )}
                       </div>
                       <CardDescription>{phase.description}</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div className="text-center p-3 bg-blue-50 rounded-lg">
-                          <div className="text-2xl font-bold text-blue-600">{phase.coursesCount}</div>
-                          <div className="text-sm text-blue-600">Courses</div>
+                        <div className="text-center p-3 bg-primary/10 rounded-lg">
+                          <div className="text-2xl font-bold text-primary">{phase.coursesCount}</div>
+                          <div className="text-sm text-primary/70">Courses</div>
                         </div>
-                        <div className="text-center p-3 bg-green-50 rounded-lg">
-                          <div className="text-2xl font-bold text-green-600">{phase.projectsCount}</div>
-                          <div className="text-sm text-green-600">Projects</div>
+                        <div className="text-center p-3 bg-accent/20 rounded-lg">
+                          <div className="text-2xl font-bold text-accent-foreground">{phase.projectsCount}</div>
+                          <div className="text-sm text-accent-foreground/70">Projects</div>
                         </div>
                       </div>
                       <Link href={`/learning?phase=${phase.phaseKey}`}>

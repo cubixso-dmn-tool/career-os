@@ -75,24 +75,27 @@ export default function MobileSidebar({ user }: MobileSidebarProps) {
         
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
-            <Link key={item.path} href={item.path} onClick={closeSidebar}>
-              <a className={cn(
+            <Link 
+              key={item.path} 
+              href={item.path} 
+              onClick={closeSidebar}
+              className={cn(
                 "flex items-center px-4 py-2 rounded-md group transition-colors",
                 location === item.path
-                  ? "text-primary bg-indigo-50"
-                  : "text-gray-600 hover:bg-indigo-50 hover:text-primary"
-              )}>
-                <item.icon 
-                  className={cn(
-                    "mr-3",
-                    location === item.path
-                      ? "text-primary"
-                      : "text-gray-500 group-hover:text-primary"
-                  )}
-                  size={18} 
-                />
-                <span className="font-medium">{item.label}</span>
-              </a>
+                  ? "text-primary bg-accent/20"
+                  : "text-gray-600 hover:bg-accent/10 hover:text-primary"
+              )}
+            >
+              <item.icon 
+                className={cn(
+                  "mr-3",
+                  location === item.path
+                    ? "text-primary"
+                    : "text-gray-500 group-hover:text-primary"
+                )}
+                size={18} 
+              />
+              <span className="font-medium">{item.label}</span>
             </Link>
           ))}
         </nav>
