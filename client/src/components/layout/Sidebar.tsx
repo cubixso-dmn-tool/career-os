@@ -44,6 +44,14 @@ export default function Sidebar({ user }: SidebarProps) {
       ];
     }
     
+    if (primaryRole === 'moderator') {
+      return [
+        { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+        { path: "/community", icon: MessageSquare, label: "Community" },
+        { path: "/settings", icon: Settings, label: "Settings" }
+      ];
+    }
+    
     // Default navigation for students and other roles
     return [
       { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },

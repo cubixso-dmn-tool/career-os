@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import DashboardRouter, { StudentDashboard, MentorDashboard, AdminDashboard } from "@/pages/DashboardRouter";
+import ModeratorDashboard from "@/pages/ModeratorDashboard";
 import CareerGuide from "@/pages/CareerGuide";
 import CareerRoadmap from "@/pages/CareerRoadmap";
 import Learning from "@/pages/Learning";
@@ -45,6 +46,11 @@ function Router() {
       <Route path="/admin-dashboard">
         <ProtectedRoute>
           <AdminDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/moderator-dashboard">
+        <ProtectedRoute>
+          <ModeratorDashboard />
         </ProtectedRoute>
       </Route>
       <Route path="/career-guide">
