@@ -126,39 +126,7 @@ export default function MentorJourney() {
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto">
-            <nav className="flex space-x-8 px-6">
-              <button
-                onClick={() => setActiveTab("dashboard")}
-                className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === "dashboard"
-                    ? 'border-purple-500 text-purple-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  Dashboard
-                </div>
-              </button>
-              <button
-                onClick={() => setActiveTab("settings")}
-                className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === "settings"
-                    ? 'border-purple-500 text-purple-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  Settings
-                </div>
-              </button>
-            </nav>
-          </div>
-        </div>
+
 
         {/* Main Content Area */}
         <div className="max-w-7xl mx-auto px-6 py-8">
