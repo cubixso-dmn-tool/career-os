@@ -31,6 +31,7 @@ import aiCareerCoachRoutes from "./routes/ai-career-coach";
 import industryExpertsRoutes from "./routes/industry-experts";
 import learningResourcesRoutes from "./routes/learning-resources";
 import mentorRoutes from "./routes/mentor";
+import mentorJourneyRoutes from "./routes/mentor-journey";
 import adminRoutes from "./routes/admin";
 import { loadUserRolesMiddleware } from "./middleware/rbac";
 
@@ -952,6 +953,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register Mentor Dashboard routes
   app.use('/api/mentor', mentorRoutes);
+  
+  // Register Mentor Journey routes
+  app.use('/api/mentor-journey', mentorJourneyRoutes);
   
   // Register Admin Dashboard routes
   app.use('/api/admin', adminRoutes);
