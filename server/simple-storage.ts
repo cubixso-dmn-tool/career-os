@@ -115,6 +115,8 @@ export interface IStorage {
   getTotalEnrollments(): Promise<number>;
   getUserEngagementMetrics(): Promise<any>;
   getCoursePerformanceMetrics(): Promise<any>;
+  getDashboardMetrics(userId: number): Promise<any>;
+  getRecentUserActivity(userId: number): Promise<any[]>;
 }
 
 // PostgreSQL implementation of the storage interface
@@ -630,7 +632,7 @@ export class DatabaseStorage implements IStorage {
         title: courses.title,
         enrollments: sql<number>`count(enrollments.id)`,
         completions: sql<number>`count(case when enrollments.is_completed then 1 end)`,
-        avgRating: sql<number>`avg(courses.rating)`
+        avgRating: sql<number>`coalesce(avg(courses.rating), 0)`
       })
       .from(courses)
       .leftJoin(enrollments, sql`courses.id = enrollments.course_id`)
@@ -645,6 +647,53 @@ export class DatabaseStorage implements IStorage {
           ((course.completions / course.enrollments) * 100).toFixed(1) : "0.0"
       }))
     };
+  }
+
+  // Additional analytics methods for comprehensive data
+  async getDashboardMetrics(userId: number): Promise<any> {
+    const [
+      userCourses,
+      userProjects,
+      userAchievements,
+      recentActivity
+    ] = await Promise.all([
+      this.getEnrollmentsByUser(userId),
+      this.getUserProjectsByUser(userId),
+      this.getUserAchievementsByUser(userId),
+      this.getRecentUserActivity(userId)
+    ]);
+
+    return {
+      courses: {
+        enrolled: userCourses.length,
+        completed: userCourses.filter(c => c.isCompleted).length,
+        inProgress: userCourses.filter(c => !c.isCompleted && c.progress > 0).length
+      },
+      projects: {
+        total: userProjects.length,
+        completed: userProjects.filter(p => p.isCompleted).length,
+        inProgress: userProjects.filter(p => !p.isCompleted && p.progress > 0).length
+      },
+      achievements: userAchievements.length,
+      recentActivity
+    };
+  }
+
+  async getRecentUserActivity(userId: number): Promise<any[]> {
+    // Get recent enrollments, project updates, and achievements
+    const recentEnrollments = await db
+      .select({
+        type: sql<string>`'enrollment'`,
+        title: courses.title,
+        date: enrollments.enrolledAt
+      })
+      .from(enrollments)
+      .innerJoin(courses, sql`enrollments.course_id = courses.id`)
+      .where(sql`enrollments.user_id = ${userId}`)
+      .orderBy(sql`enrollments.enrolled_at desc`)
+      .limit(5);
+
+    return recentEnrollments;
   }
 }
 

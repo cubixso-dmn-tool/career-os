@@ -34,6 +34,8 @@ import mentorRoutes from "./routes/mentor";
 import mentorJourneyRoutes from "./routes/mentor-journey";
 import adminRoutes from "./routes/admin";
 import analyticsRoutes from "./routes/analytics";
+import dashboardRoutes from "./routes/dashboard";
+import searchRoutes from "./routes/search";
 import { loadUserRolesMiddleware } from "./middleware/rbac";
 
 function handleZodError(error: ZodError, res: Response) {
@@ -963,6 +965,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register Analytics routes
   app.use('/api/analytics', analyticsRoutes);
+  
+  // Register Dashboard routes
+  app.use('/api/dashboard', dashboardRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
