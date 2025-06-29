@@ -28,7 +28,15 @@ import {
   Heart,
   Zap,
   FileText,
-  LayoutDashboard
+  LayoutDashboard,
+  Edit3,
+  BarChart3,
+  Send,
+  Search,
+  Filter,
+  Download,
+  AlertCircle,
+  User
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -160,10 +168,16 @@ export default function MentorDashboard() {
                   <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
                     Active Mentor
                   </Badge>
-                  <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Schedule Session
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <Button size="sm" variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-50">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      View Calendar
+                    </Button>
+                    <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Schedule Session
+                    </Button>
+                  </div>
                 </div>
               </motion.div>
             </div>
@@ -218,10 +232,18 @@ export default function MentorDashboard() {
                               >
                                 {session.priority} priority
                               </Badge>
-                              <Button size="sm" variant="outline">
-                                <Video className="h-4 w-4 mr-1" />
-                                Join
-                              </Button>
+                              <div className="flex items-center space-x-1">
+                                <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                                  <Edit3 className="h-3 w-3" />
+                                </Button>
+                                <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                                  <FileText className="h-3 w-3" />
+                                </Button>
+                                <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+                                  <Video className="h-4 w-4 mr-1" />
+                                  Join
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -353,6 +375,249 @@ export default function MentorDashboard() {
                 </Card>
               </motion.div>
             </div>
+
+            {/* Mentee Management Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="mt-8"
+            >
+              <Card className="shadow-lg border-0">
+                <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-t-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        Active Mentees
+                      </CardTitle>
+                      <CardDescription className="text-indigo-100">
+                        Track progress and manage individual mentoring relationships
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" className="border-white text-white hover:bg-white hover:text-indigo-600">
+                        <Search className="h-4 w-4 mr-2" />
+                        Search
+                      </Button>
+                      <Button size="sm" variant="outline" className="border-white text-white hover:bg-white hover:text-indigo-600">
+                        <Filter className="h-4 w-4 mr-2" />
+                        Filter
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[
+                      {
+                        name: "Arjun Patel",
+                        role: "Frontend Developer",
+                        progress: 75,
+                        nextSession: "Tomorrow 2:00 PM",
+                        goals: ["Master React Hooks", "Build Portfolio", "Interview Prep"],
+                        status: "On Track",
+                        avatar: "AP"
+                      },
+                      {
+                        name: "Priya Sharma",
+                        role: "Full Stack Developer", 
+                        progress: 60,
+                        nextSession: "Friday 10:00 AM",
+                        goals: ["Learn Node.js", "Database Design", "API Development"],
+                        status: "Needs Support",
+                        avatar: "PS"
+                      },
+                      {
+                        name: "Rohan Kumar",
+                        role: "Data Scientist",
+                        progress: 90,
+                        nextSession: "Next Monday 3:00 PM",
+                        goals: ["Machine Learning", "Python Advanced", "Deploy ML Models"],
+                        status: "Excellent",
+                        avatar: "RK"
+                      }
+                    ].map((mentee, index) => (
+                      <div key={index} className="p-4 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                              <span className="text-white font-semibold text-sm">{mentee.avatar}</span>
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-gray-900">{mentee.name}</h4>
+                              <p className="text-sm text-gray-600">{mentee.role}</p>
+                            </div>
+                          </div>
+                          <Badge 
+                            variant={mentee.status === 'Excellent' ? 'default' : 
+                                    mentee.status === 'On Track' ? 'secondary' : 'destructive'}
+                            className={
+                              mentee.status === 'Excellent' ? 'bg-green-100 text-green-800' :
+                              mentee.status === 'On Track' ? 'bg-blue-100 text-blue-800' : 
+                              'bg-yellow-100 text-yellow-800'
+                            }
+                          >
+                            {mentee.status}
+                          </Badge>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-sm text-gray-600">Overall Progress</span>
+                              <span className="text-sm font-semibold text-gray-900">{mentee.progress}%</span>
+                            </div>
+                            <Progress value={mentee.progress} className="h-2" />
+                          </div>
+                          
+                          <div>
+                            <p className="text-sm text-gray-600 mb-2">Current Goals:</p>
+                            <div className="space-y-1">
+                              {mentee.goals.slice(0, 2).map((goal, goalIndex) => (
+                                <div key={goalIndex} className="flex items-center text-xs text-gray-700">
+                                  <Target className="h-3 w-3 mr-1 text-purple-500" />
+                                  {goal}
+                                </div>
+                              ))}
+                              {mentee.goals.length > 2 && (
+                                <div className="text-xs text-gray-500">+{mentee.goals.length - 2} more goals</div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Clock className="h-4 w-4 mr-1" />
+                            Next: {mentee.nextSession}
+                          </div>
+                          
+                          <div className="flex items-center space-x-2 pt-2">
+                            <Button size="sm" variant="outline" className="h-8 flex-1">
+                              <MessageSquare className="h-3 w-3 mr-1" />
+                              Message
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-8 flex-1">
+                              <FileText className="h-3 w-3 mr-1" />
+                              Notes
+                            </Button>
+                            <Button size="sm" className="h-8 bg-purple-600 hover:bg-purple-700 text-white">
+                              <BarChart3 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Quick Actions & Resource Library */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8"
+            >
+              {/* Resource Library */}
+              <Card className="shadow-lg border-0">
+                <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-t-lg">
+                  <CardTitle className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5" />
+                    Resource Library
+                  </CardTitle>
+                  <CardDescription className="text-green-100">
+                    Share materials and templates with mentees
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    {[
+                      { name: "React Best Practices Guide", type: "PDF", downloads: 23, icon: FileText },
+                      { name: "Interview Questions Template", type: "DOC", downloads: 15, icon: FileText },
+                      { name: "Career Roadmap Template", type: "PDF", downloads: 31, icon: Target },
+                      { name: "Code Review Checklist", type: "PDF", downloads: 18, icon: CheckCircle2 }
+                    ].map((resource, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-green-100 rounded-lg">
+                            <resource.icon className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{resource.name}</p>
+                            <p className="text-sm text-gray-600">{resource.type} • {resource.downloads} downloads</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                            <Send className="h-3 w-3" />
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                            <Download className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <Button className="w-full mt-4 bg-green-600 hover:bg-green-700">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Upload New Resource
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Communication Center */}
+              <Card className="shadow-lg border-0">
+                <CardHeader className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-t-lg">
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    Communication Center
+                  </CardTitle>
+                  <CardDescription className="text-blue-100">
+                    Messages and announcements for your mentees
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                          <Bell className="h-4 w-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">Unread Messages</p>
+                          <p className="text-sm text-gray-600">3 new messages from mentees</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-blue-600 text-white">3</Badge>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Button className="w-full bg-blue-600 hover:bg-blue-700" variant="default">
+                        <Send className="h-4 w-4 mr-2" />
+                        Send Group Announcement
+                      </Button>
+                      <Button className="w-full" variant="outline">
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        View All Messages
+                      </Button>
+                    </div>
+                    
+                    <div className="pt-4 border-t border-gray-200">
+                      <h4 className="font-medium text-gray-900 mb-2">Quick Templates</h4>
+                      <div className="space-y-2">
+                        {["Session Reminder", "Goal Update", "Resource Share", "Motivational Message"].map((template, index) => (
+                          <Button key={index} size="sm" variant="outline" className="w-full justify-start">
+                            <FileText className="h-3 w-3 mr-2" />
+                            {template}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </div>
       </main>
