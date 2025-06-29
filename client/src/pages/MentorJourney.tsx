@@ -243,6 +243,31 @@ export default function MentorJourney() {
 
 // Overview Content Component
 function OverviewContent({ journeyStages }: { journeyStages: any[] }) {
+  const { data: overview, isLoading } = useQuery({
+    queryKey: ["/api/mentor-journey/overview"],
+    retry: false,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-64 bg-gray-200 rounded-lg"></div>
+        </div>
+      </div>
+    );
+  }
+
+  const overviewData = overview?.overview || {
+    stats: {
+      communityUpvotes: 127,
+      sessionsHosted: 12,
+      activeMentees: 3,
+      overallRating: 4.8
+    },
+    journeyStages: journeyStages
+  };
+
   return (
     <div className="space-y-6">
       {/* Journey Stages Overview */}
@@ -258,7 +283,7 @@ function OverviewContent({ journeyStages }: { journeyStages: any[] }) {
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4">
-            {journeyStages.map((stage, index) => (
+            {(overviewData.journeyStages || journeyStages).map((stage: any, index: number) => (
               <div
                 key={stage.id}
                 className={`p-4 rounded-lg border-2 transition-all ${
@@ -299,7 +324,7 @@ function OverviewContent({ journeyStages }: { journeyStages: any[] }) {
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
           <CardContent className="p-6 text-center">
             <ThumbsUp className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-gray-900">127</p>
+            <p className="text-2xl font-bold text-gray-900">{overviewData.stats.communityUpvotes}</p>
             <p className="text-sm text-gray-600">Community Upvotes</p>
           </CardContent>
         </Card>
@@ -307,7 +332,7 @@ function OverviewContent({ journeyStages }: { journeyStages: any[] }) {
         <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200">
           <CardContent className="p-6 text-center">
             <Calendar className="h-8 w-8 text-green-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-gray-900">12</p>
+            <p className="text-2xl font-bold text-gray-900">{overviewData.stats.sessionsHosted}</p>
             <p className="text-sm text-gray-600">Sessions Hosted</p>
           </CardContent>
         </Card>
@@ -315,7 +340,7 @@ function OverviewContent({ journeyStages }: { journeyStages: any[] }) {
         <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200">
           <CardContent className="p-6 text-center">
             <Users className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-gray-900">3</p>
+            <p className="text-2xl font-bold text-gray-900">{overviewData.stats.activeMentees}</p>
             <p className="text-sm text-gray-600">Active Mentees</p>
           </CardContent>
         </Card>
@@ -323,7 +348,7 @@ function OverviewContent({ journeyStages }: { journeyStages: any[] }) {
         <Card className="bg-gradient-to-br from-orange-50 to-yellow-50 border border-orange-200">
           <CardContent className="p-6 text-center">
             <Star className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-gray-900">4.8</p>
+            <p className="text-2xl font-bold text-gray-900">{overviewData.stats.overallRating}</p>
             <p className="text-sm text-gray-600">Overall Rating</p>
           </CardContent>
         </Card>
