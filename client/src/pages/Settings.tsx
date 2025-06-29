@@ -1200,7 +1200,7 @@ export default function Settings() {
                           className="w-full border rounded-lg px-3 py-2"
                         >
                           <option value="">Choose a user...</option>
-                          {users?.map((user: any) => (
+                          {Array.isArray(users) && users.map((user: any) => (
                             <option key={user.id} value={user.id}>
                               {user.name || user.username} ({user.email})
                             </option>
@@ -1216,7 +1216,7 @@ export default function Settings() {
                           className="w-full border rounded-lg px-3 py-2"
                         >
                           <option value="">Choose a role...</option>
-                          {roles?.map((role: any) => (
+                          {Array.isArray(roles) && roles.map((role: any) => (
                             <option key={role.id} value={role.id}>
                               {role.name}
                             </option>
@@ -1241,7 +1241,7 @@ export default function Settings() {
                       </div>
                     )}
 
-                    {selectedUserId && userRoles && (
+                    {selectedUserId && Array.isArray(userRoles) && (
                       <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                         <h4 className="font-medium mb-3">Current Roles for Selected User</h4>
                         <div className="flex flex-wrap gap-2">
