@@ -253,7 +253,7 @@ export default function IndustryExpertNetwork() {
     return matchesSearch && matchesIndustry;
   });
 
-  const industries = [...new Set(experts.map(expert => expert.industry))];
+  const industries = Array.from(new Set(experts.map(expert => expert.industry)));
 
   if (loading) {
     return (

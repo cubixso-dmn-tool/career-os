@@ -35,6 +35,7 @@ export default function MobileSidebar({ user }: MobileSidebarProps) {
   const navItems = [
     { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/ai-career-coach", icon: Bot, label: "AI Career Coach" },
+    { path: "/industry-experts", icon: Users, label: "Expert Network" },
     { path: "/career-guide", icon: Compass, label: "Career Guide" },
     { path: "/courses", icon: BookOpen, label: "Courses" },
     { path: "/projects", icon: GitBranch, label: "Projects" },

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, BookOpen, GitBranch, MessageSquare, Bot } from "lucide-react";
+import { LayoutDashboard, BookOpen, GitBranch, MessageSquare, Bot, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function MobileNavigation() {
@@ -8,6 +8,7 @@ export default function MobileNavigation() {
   const navItems = [
     { path: "/", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/ai-career-coach", icon: Bot, label: "AI Coach" },
+    { path: "/industry-experts", icon: Users, label: "Experts" },
     { path: "/courses", icon: BookOpen, label: "Courses" },
     { path: "/projects", icon: GitBranch, label: "Projects" },
     { path: "/community", icon: MessageSquare, label: "Community" }
