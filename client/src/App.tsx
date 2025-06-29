@@ -6,8 +6,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import CareerGuide from "@/pages/CareerGuide";
 import CareerRoadmap from "@/pages/CareerRoadmap";
-import Courses from "@/pages/Courses";
-import Projects from "@/pages/Projects";
+import Learning from "@/pages/Learning";
 import Community from "@/pages/Community";
 import ResumeBuilder from "@/pages/ResumeBuilder";
 import SoftSkills from "@/pages/SoftSkills";
@@ -42,14 +41,9 @@ function Router() {
           <CareerRoadmap />
         </ProtectedRoute>
       </Route>
-      <Route path="/courses">
+      <Route path="/learning">
         <ProtectedRoute>
-          <Courses />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/projects">
-        <ProtectedRoute>
-          <Projects />
+          <Learning />
         </ProtectedRoute>
       </Route>
       <Route path="/community">

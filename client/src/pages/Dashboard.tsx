@@ -406,7 +406,7 @@ export default function Dashboard() {
                             <div className="text-xs text-gray-500">{item.time}</div>
                           </div>
                         </div>
-                        <Link href={item.type === 'session' ? '/industry-experts' : item.type === 'course' ? '/courses' : '/ai-career-coach'}>
+                        <Link href={item.type === 'session' ? '/industry-experts' : item.type === 'course' ? '/learning' : '/ai-career-coach'}>
                           <Button size="sm" variant="outline">
                             {item.action}
                           </Button>
@@ -797,16 +797,10 @@ export default function Dashboard() {
                           AI Career Coach
                         </Button>
                       </Link>
-                      <Link href="/courses" className="block">
+                      <Link href="/learning" className="block">
                         <Button variant="outline" size="sm" className="w-full justify-start">
                           <BookOpen className="h-4 w-4 mr-2" />
-                          Browse All Courses
-                        </Button>
-                      </Link>
-                      <Link href="/projects" className="block">
-                        <Button variant="outline" size="sm" className="w-full justify-start">
-                          <GitBranch className="h-4 w-4 mr-2" />
-                          All Projects
+                          Browse Learning Resources
                         </Button>
                       </Link>
                     </CardContent>
