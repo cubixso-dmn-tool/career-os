@@ -51,6 +51,35 @@ function handleZodError(error: ZodError, res: Response) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Apply security middleware
+  app.use(sanitizeInput);
+  app.use(rateLimit(100, 60000)); // 100 requests per minute
+  app.use(validateSqlInjection);
+  app.use(securityHeaders);
+  
+  // Register specific route modules first to avoid conflicts
+  app.use('/api/courses', coursesRoutes);
+  app.use('/api/career', careerRoutes);
+  app.use('/api/career/roadmap', careerRoadmapRoutes);
+  app.use('/api/content-management', contentManagementRoutes);
+  app.use('/api/ai-career-coach', aiCareerCoachRoutes);
+  app.use('/api/industry-experts', industryExpertsRoutes);
+  app.use('/api/learning-resources', learningResourcesRoutes);
+  app.use('/api/mentor', mentorRoutes);
+  app.use('/api/mentor-journey', mentorJourneyRoutes);
+  app.use('/api/admin', adminRoutes);
+  app.use('/api/analytics', analyticsRoutes);
+  app.use('/api/dashboard', dashboardRoutes);
+  app.use('/api/search', searchRoutes);
+  app.use('/api/upload', uploadRoutes);
+  app.use('/api/auth-advanced', authAdvancedRoutes);
+  app.use('/api/admin-logs', adminLogsRoutes);
+  app.use('/api/rbac', rbacRoutes);
+  app.use('/api/community', communityRoutes);
+  
+  // Load user roles middleware
+  app.use(loadUserRolesMiddleware);
+  
   // USERS
   app.post("/api/users", async (req, res) => {
     try {
@@ -171,57 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // COURSES
-  app.get("/api/courses", async (req, res) => {
-    try {
-      const { category, tags, isFree } = req.query;
-      
-      let parsedTags: string[] | undefined;
-      if (tags && typeof tags === 'string') {
-        parsedTags = tags.split(',');
-      }
-      
-      let parsedIsFree: boolean | undefined;
-      if (isFree !== undefined) {
-        parsedIsFree = isFree === 'true';
-      }
-      
-      const courses = await storage.getFilteredCourses(
-        category as string | undefined,
-        parsedTags,
-        parsedIsFree
-      );
-      
-      res.json(courses);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to get courses" });
-    }
-  });
-
-  app.get("/api/courses/:id", async (req, res) => {
-    try {
-      const courseId = parseInt(req.params.id);
-      const course = await storage.getCourse(courseId);
-      
-      if (!course) {
-        return res.status(404).json({ message: "Course not found" });
-      }
-      
-      res.json(course);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to get course" });
-    }
-  });
-
-  app.get("/api/users/:userId/recommended-courses", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const courses = await storage.getRecommendedCourses(userId);
-      res.json(courses);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to get recommended courses" });
-    }
-  });
+  // COURSES - Now handled by courses router module
 
   // ENROLLMENTS
   app.post("/api/enrollments", async (req, res) => {
@@ -929,44 +908,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Apply RBAC middleware to all routes
-  app.use(loadUserRolesMiddleware);
-
-  // Register community routes
-  app.use('/api/communities', communityRoutes);
-
-  // Register RBAC (roles and permissions) routes
-  app.use('/api/rbac', rbacRoutes);
-  
-  // Register Career Guide and PathFinder routes
-  app.use('/api/career', careerRoutes);
-  
-  // Register Career Roadmap routes
-  app.use('/api/career/roadmap', careerRoadmapRoutes);
-  
-  // Register Content Management routes
-  app.use('/api/content-management', contentManagementRoutes);
-  
-  // Register Course features routes
-  app.use('/api/courses', coursesRoutes);
-  
-  // Register AI Career Coach routes
-  app.use('/api/ai-career-coach', aiCareerCoachRoutes);
-  
-  // Register Industry Expert Network routes
-  app.use('/api/industry-experts', industryExpertsRoutes);
-  
-  // Register Learning Resources routes
-  app.use('/api/learning-resources', learningResourcesRoutes);
-  
-  // Register Mentor Dashboard routes
-  app.use('/api/mentor', mentorRoutes);
-  
-  // Register Mentor Journey routes
-  app.use('/api/mentor-journey', mentorJourneyRoutes);
-  
-  // Register Admin Dashboard routes
-  app.use('/api/admin', adminRoutes);
+  // Route modules registered at the top to avoid conflicts
+  // Additional RBAC middleware for specific routes if needed
   
   // Register Analytics routes
   app.use('/api/analytics', analyticsRoutes);

@@ -3,6 +3,7 @@ import { createClient, RedisClientType } from 'redis';
 class CacheManager {
   private client: RedisClientType | null = null;
   private isConnected = false;
+  private hasLoggedError = false;
 
   async connect() {
     if (this.isConnected && this.client) {
@@ -12,7 +13,6 @@ class CacheManager {
     try {
       // For development, use in-memory store if Redis not available
       if (process.env.NODE_ENV === 'development' && !process.env.REDIS_URL) {
-        console.log("📦 Using in-memory cache for development");
         return null;
       }
 
@@ -21,19 +21,38 @@ class CacheManager {
       });
 
       this.client.on('error', (err) => {
-        console.error('Redis Client Error:', err);
+        // Silently handle Redis errors in development
+        if (process.env.NODE_ENV !== 'production') {
+          // Only log once to avoid spam
+          if (!this.hasLoggedError) {
+            console.log('📦 Redis unavailable, using in-memory fallback for development');
+            this.hasLoggedError = true;
+          }
+        } else {
+          console.error('Redis Client Error:', err);
+        }
         this.isConnected = false;
+        this.client = null;
       });
 
       this.client.on('connect', () => {
         console.log('✅ Redis connected successfully');
         this.isConnected = true;
+        this.hasLoggedError = false;
       });
 
       await this.client.connect();
       return this.client;
     } catch (error) {
-      console.error('❌ Redis connection failed, falling back to in-memory cache:', error);
+      // Silently handle connection failures in development
+      if (process.env.NODE_ENV !== 'production') {
+        if (!this.hasLoggedError) {
+          console.log('📦 Redis unavailable, using in-memory fallback for development');
+          this.hasLoggedError = true;
+        }
+      } else {
+        console.error('❌ Redis connection failed, falling back to in-memory cache:', error);
+      }
       return null;
     }
   }
