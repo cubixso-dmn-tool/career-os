@@ -51,11 +51,11 @@ function handleZodError(error: ZodError, res: Response) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Apply security middleware
-  app.use(sanitizeInput);
-  app.use(rateLimit(100, 60000)); // 100 requests per minute
-  app.use(validateSqlInjection);
-  app.use(securityHeaders);
+  // Apply security middleware only to API routes
+  app.use('/api', sanitizeInput);
+  app.use('/api', rateLimit(100, 60000)); // 100 requests per minute
+  app.use('/api', validateSqlInjection);
+  app.use('/api', securityHeaders);
   
   // Register specific route modules first to avoid conflicts
   app.use('/api/courses', coursesRoutes);

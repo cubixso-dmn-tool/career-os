@@ -107,20 +107,22 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  // Add global error handling
-  app.use(GlobalErrorHandler.middleware());
-  
-  // 404 handler for unknown routes
-  app.use(GlobalErrorHandler.notFoundHandler());
-
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
+  console.log("Current environment:", app.get("env"));
+  console.log("NODE_ENV:", process.env.NODE_ENV);
+  
   if (app.get("env") === "development") {
+    console.log("Setting up Vite middleware for development");
     await setupVite(app, server);
   } else {
+    console.log("Setting up static file serving for production");
     serveStatic(app);
   }
+
+  // Add global error handling after Vite setup
+  app.use(GlobalErrorHandler.middleware());
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
