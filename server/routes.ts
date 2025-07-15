@@ -75,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/auth-advanced', authAdvancedRoutes);
   app.use('/api/admin-logs', adminLogsRoutes);
   app.use('/api/rbac', rbacRoutes);
-  app.use('/api/community', communityRoutes);
+  app.use('/api', communityRoutes);
   
   // Load user roles middleware
   app.use(loadUserRolesMiddleware);

@@ -11,7 +11,7 @@ export default function MobileNavigation() {
     { path: "/industry-experts", icon: Users, label: "Experts" },
     { path: "/courses", icon: BookOpen, label: "Courses" },
     { path: "/projects", icon: GitBranch, label: "Projects" },
-    { path: "/community", icon: MessageSquare, label: "Community" }
+    { path: "/community-hub", icon: MessageSquare, label: "Community" }
   ];
 
   return (

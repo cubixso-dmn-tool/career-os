@@ -67,7 +67,7 @@ export default function Sidebar({ user }: SidebarProps) {
       { path: "/career-guide", icon: Compass, label: "Career Guide" },
       { path: "/career-roadmap", icon: GitBranch, label: "Career Roadmap" },
       { path: "/learning", icon: BookOpen, label: "Learning" },
-      { path: "/community", icon: MessageSquare, label: "Community" },
+      { path: "/community-hub", icon: MessageSquare, label: "Community Hub" },
       { path: "/resume-builder", icon: FileText, label: "Resume Builder" },
       { path: "/soft-skills", icon: UserCheck, label: "Soft Skills" },
       { path: "/achievements", icon: Trophy, label: "Achievements" },

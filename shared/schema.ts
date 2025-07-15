@@ -205,6 +205,16 @@ export const communities = pgTable("communities", {
   icon: text("icon"),
   createdBy: integer("created_by").notNull().references(() => users.id),
   isPrivate: boolean("is_private").default(false).notNull(),
+  // New fields for enhanced community features
+  communityType: text("community_type").notNull().default("general"), // "general", "group_channel", "project_collab", "college_fest", "competition", "local_event"
+  interests: text("interests").array(), // Filter by interests
+  domain: text("domain"), // Filter by domain/field
+  region: text("region"), // Filter by region
+  college: text("college"), // College affiliation
+  maxMembers: integer("max_members").default(0), // 0 = unlimited
+  currentMembers: integer("current_members").default(0),
+  tags: text("tags").array(),
+  settings: jsonb("settings"), // Additional community settings
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
@@ -403,6 +413,204 @@ export const expertAvailability = pgTable("expert_availability", {
   sessionTypes: text("session_types").array().notNull() // ["mentoring", "qa", "lecture"]
 });
 
+// Project Collaboration Tables
+export const communityProjects = pgTable("community_projects", {
+  id: serial("id").primaryKey(),
+  communityId: integer("community_id").notNull().references(() => communities.id),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  projectType: text("project_type").notNull(), // "web", "mobile", "ai", "blockchain", "iot", "research"
+  techStack: text("tech_stack").array().notNull(),
+  difficulty: text("difficulty").notNull(), // "beginner", "intermediate", "advanced"
+  estimatedDuration: text("estimated_duration").notNull(), // "1 week", "1 month", "3 months"
+  maxCollaborators: integer("max_collaborators").default(5),
+  currentCollaborators: integer("current_collaborators").default(1),
+  status: text("status").default("open").notNull(), // "open", "in_progress", "completed", "cancelled"
+  isPublic: boolean("is_public").default(true).notNull(),
+  requirements: text("requirements").array(),
+  expectedOutcome: text("expected_outcome").notNull(),
+  githubRepo: text("github_repo"),
+  liveDemo: text("live_demo"),
+  figmaDesign: text("figma_design"),
+  resources: jsonb("resources"), // Links and resources
+  deadline: timestamp("deadline"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const projectCollaborators = pgTable("project_collaborators", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => communityProjects.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  role: text("role").notNull(), // "owner", "lead", "developer", "designer", "tester", "contributor"
+  skills: text("skills").array(),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  status: text("status").default("active").notNull(), // "active", "inactive", "left"
+  contributionScore: integer("contribution_score").default(0),
+  isInvited: boolean("is_invited").default(false).notNull(),
+  invitedBy: integer("invited_by").references(() => users.id),
+  invitedAt: timestamp("invited_at")
+});
+
+export const projectTasks = pgTable("project_tasks", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => communityProjects.id),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  priority: text("priority").default("medium").notNull(), // "low", "medium", "high", "urgent"
+  status: text("status").default("todo").notNull(), // "todo", "in_progress", "review", "done"
+  category: text("category").notNull(), // "frontend", "backend", "design", "testing", "documentation"
+  estimatedHours: integer("estimated_hours"),
+  actualHours: integer("actual_hours"),
+  dueDate: timestamp("due_date"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const projectUpdates = pgTable("project_updates", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => communityProjects.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  updateType: text("update_type").notNull(), // "progress", "milestone", "blocker", "announcement"
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  attachments: text("attachments").array(),
+  mentions: integer("mentions").array(), // User IDs mentioned
+  isImportant: boolean("is_important").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const projectShowcase = pgTable("project_showcase", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => communityProjects.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  screenshots: text("screenshots").array(),
+  videoDemo: text("video_demo"),
+  liveUrl: text("live_url"),
+  githubUrl: text("github_url"),
+  techStack: text("tech_stack").array(),
+  challenges: text("challenges").array(),
+  learnings: text("learnings").array(),
+  futureEnhancements: text("future_enhancements").array(),
+  isPublic: boolean("is_public").default(true).notNull(),
+  isFeatured: boolean("is_featured").default(false).notNull(),
+  views: integer("views").default(0),
+  likes: integer("likes").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+// College Events and Competitions
+export const collegeEvents = pgTable("college_events", {
+  id: serial("id").primaryKey(),
+  communityId: integer("community_id").references(() => communities.id),
+  organizerId: integer("organizer_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  eventType: text("event_type").notNull(), // "college_fest", "competition", "workshop", "seminar", "cultural", "technical"
+  category: text("category").notNull(), // "inter_college", "intra_college", "national", "international"
+  college: text("college"),
+  venue: text("venue"),
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  isOnline: boolean("is_online").default(false).notNull(),
+  meetingLink: text("meeting_link"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  registrationDeadline: timestamp("registration_deadline"),
+  maxParticipants: integer("max_participants"),
+  currentParticipants: integer("current_participants").default(0),
+  entryFee: integer("entry_fee").default(0),
+  prizes: jsonb("prizes"), // Prize structure
+  rules: text("rules").array(),
+  requirements: text("requirements").array(),
+  contacts: jsonb("contacts"), // Contact information
+  sponsors: text("sponsors").array(),
+  tags: text("tags").array(),
+  banner: text("banner"),
+  status: text("status").default("upcoming").notNull(), // "upcoming", "ongoing", "completed", "cancelled"
+  isApproved: boolean("is_approved").default(false).notNull(),
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const collegeEventRegistrations = pgTable("college_event_registrations", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").notNull().references(() => collegeEvents.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  teamName: text("team_name"),
+  teamMembers: jsonb("team_members"), // Array of team member details
+  college: text("college"),
+  year: text("year"), // Academic year
+  phone: text("phone"),
+  emergencyContact: text("emergency_contact"),
+  specialRequirements: text("special_requirements"),
+  paymentStatus: text("payment_status").default("pending").notNull(), // "pending", "paid", "failed"
+  paymentId: text("payment_id"),
+  registrationData: jsonb("registration_data"), // Additional event-specific data
+  status: text("status").default("registered").notNull(), // "registered", "approved", "rejected", "attended"
+  registeredAt: timestamp("registered_at").defaultNow().notNull()
+});
+
+// Local Events and Meetups
+export const localEvents = pgTable("local_events", {
+  id: serial("id").primaryKey(),
+  communityId: integer("community_id").references(() => communities.id),
+  organizerId: integer("organizer_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  eventType: text("event_type").notNull(), // "meetup", "workshop", "networking", "study_group", "hackathon"
+  category: text("category").notNull(), // "tech", "career", "social", "academic", "cultural"
+  venue: text("venue").notNull(),
+  address: text("address").notNull(),
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  coordinates: jsonb("coordinates"), // Lat/long for map
+  date: timestamp("date").notNull(),
+  duration: text("duration").notNull(), // "2 hours", "1 day"
+  maxAttendees: integer("max_attendees").default(50),
+  currentAttendees: integer("current_attendees").default(0),
+  entryFee: integer("entry_fee").default(0),
+  ageRestriction: text("age_restriction"), // "18+", "all ages"
+  requirements: text("requirements").array(),
+  whatToBring: text("what_to_bring").array(),
+  agenda: jsonb("agenda"), // Detailed agenda
+  speakers: jsonb("speakers"), // Speaker information
+  sponsors: text("sponsors").array(),
+  tags: text("tags").array(),
+  images: text("images").array(),
+  contactInfo: jsonb("contact_info"),
+  isApproved: boolean("is_approved").default(false).notNull(),
+  approvedBy: integer("approved_by").references(() => users.id),
+  status: text("status").default("upcoming").notNull(), // "upcoming", "ongoing", "completed", "cancelled"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const localEventAttendees = pgTable("local_event_attendees", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").notNull().references(() => localEvents.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  attendeeType: text("attendee_type").default("participant").notNull(), // "participant", "volunteer", "speaker"
+  specialRequests: text("special_requests"),
+  emergencyContact: text("emergency_contact"),
+  paymentStatus: text("payment_status").default("pending").notNull(),
+  paymentId: text("payment_id"),
+  checkInTime: timestamp("check_in_time"),
+  checkOutTime: timestamp("check_out_time"),
+  feedback: text("feedback"),
+  rating: integer("rating"), // 1-5 stars
+  status: text("status").default("registered").notNull(), // "registered", "confirmed", "attended", "no_show"
+  registeredAt: timestamp("registered_at").defaultNow().notNull()
+});
+
 // Insert schemas
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
@@ -422,6 +630,18 @@ export const insertEventSchema = createInsertSchema(events).omit({ id: true });
 export const insertUserEventSchema = createInsertSchema(userEvents).omit({ id: true, registeredAt: true });
 export const insertDailyByteSchema = createInsertSchema(dailyBytes).omit({ id: true, createdAt: true });
 export const insertUserDailyByteSchema = createInsertSchema(userDailyBytes).omit({ id: true, completedAt: true });
+
+// Community project schemas
+export const insertCommunityProjectSchema = createInsertSchema(communityProjects).omit({ id: true, createdAt: true, updatedAt: true, currentCollaborators: true });
+export const insertProjectCollaboratorSchema = createInsertSchema(projectCollaborators).omit({ id: true, joinedAt: true, contributionScore: true });
+export const insertProjectTaskSchema = createInsertSchema(projectTasks).omit({ id: true, createdAt: true, updatedAt: true, completedAt: true });
+export const insertProjectUpdateSchema = createInsertSchema(projectUpdates).omit({ id: true, createdAt: true });
+export const insertProjectShowcaseSchema = createInsertSchema(projectShowcase).omit({ id: true, createdAt: true, views: true, likes: true });
+
+// Event schemas
+export const insertCollegeEventSchema = createInsertSchema(collegeEvents).omit({ id: true, createdAt: true, updatedAt: true, currentParticipants: true, isApproved: true, approvedBy: true, approvedAt: true });
+export const insertLocalEventSchema = createInsertSchema(localEvents).omit({ id: true, createdAt: true, updatedAt: true, currentAttendees: true, isApproved: true, approvedBy: true });
+export const insertLocalEventAttendeeSchema = createInsertSchema(localEventAttendees).omit({ id: true, registeredAt: true, checkInTime: true, checkOutTime: true });
 
 // RBAC schemas
 export const insertRoleSchema = createInsertSchema(roles).omit({ id: true, createdAt: true });
@@ -443,7 +663,7 @@ export const insertSessionRegistrationSchema = createInsertSchema(sessionRegistr
 export const insertExpertQnaSessionSchema = createInsertSchema(expertQnaSessions).omit({ id: true, askedAt: true, answeredAt: true, upvotes: true, isAnswered: true });
 export const insertCareerSuccessStorySchema = createInsertSchema(careerSuccessStories).omit({ id: true, createdAt: true, views: true, likes: true });
 export const insertNetworkingEventSchema = createInsertSchema(networkingEvents).omit({ id: true, createdAt: true, currentAttendees: true });
-export const insertEventRegistrationSchema = createInsertSchema(eventRegistrations).omit({ id: true, registeredAt: true, attended: true });
+export const insertCollegeEventRegistrationSchema = createInsertSchema(collegeEventRegistrations).omit({ id: true, registeredAt: true });
 export const insertExpertMentorshipSchema = createInsertSchema(expertMentorship).omit({ id: true, createdAt: true });
 export const insertExpertAvailabilitySchema = createInsertSchema(expertAvailability).omit({ id: true });
 
@@ -754,3 +974,32 @@ export type MentorFeedback = typeof mentorFeedback.$inferSelect;
 
 export type InsertMentorBadge = z.infer<typeof insertMentorBadgeSchema>;
 export type MentorBadge = typeof mentorBadges.$inferSelect;
+
+// Community Project Types
+export type InsertCommunityProject = z.infer<typeof insertCommunityProjectSchema>;
+export type CommunityProject = typeof communityProjects.$inferSelect;
+
+export type InsertProjectCollaborator = z.infer<typeof insertProjectCollaboratorSchema>;
+export type ProjectCollaborator = typeof projectCollaborators.$inferSelect;
+
+export type InsertProjectTask = z.infer<typeof insertProjectTaskSchema>;
+export type ProjectTask = typeof projectTasks.$inferSelect;
+
+export type InsertProjectUpdate = z.infer<typeof insertProjectUpdateSchema>;
+export type ProjectUpdate = typeof projectUpdates.$inferSelect;
+
+export type InsertProjectShowcase = z.infer<typeof insertProjectShowcaseSchema>;
+export type ProjectShowcase = typeof projectShowcase.$inferSelect;
+
+// Event Types
+export type InsertCollegeEvent = z.infer<typeof insertCollegeEventSchema>;
+export type CollegeEvent = typeof collegeEvents.$inferSelect;
+
+export type InsertCollegeEventRegistration = z.infer<typeof insertCollegeEventRegistrationSchema>;
+export type CollegeEventRegistration = typeof collegeEventRegistrations.$inferSelect;
+
+export type InsertLocalEvent = z.infer<typeof insertLocalEventSchema>;
+export type LocalEvent = typeof localEvents.$inferSelect;
+
+export type InsertLocalEventAttendee = z.infer<typeof insertLocalEventAttendeeSchema>;
+export type LocalEventAttendee = typeof localEventAttendees.$inferSelect;

@@ -9,6 +9,7 @@ import CareerGuide from "@/pages/CareerGuide";
 import CareerRoadmap from "@/pages/CareerRoadmap";
 import Learning from "@/pages/Learning";
 import Community from "@/pages/Community";
+import CommunityHub from "@/pages/CommunityHub";
 import ResumeBuilder from "@/pages/ResumeBuilder";
 import SoftSkills from "@/pages/SoftSkills";
 import Achievements from "@/pages/Achievements";
@@ -72,6 +73,11 @@ function Router() {
       <Route path="/community">
         <ProtectedRoute>
           <Community />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/community-hub">
+        <ProtectedRoute>
+          <CommunityHub />
         </ProtectedRoute>
       </Route>
       <Route path="/resume-builder">

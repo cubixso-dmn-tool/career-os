@@ -39,7 +39,7 @@ export default function MobileSidebar({ user }: MobileSidebarProps) {
     { path: "/industry-experts", icon: Users, label: "Expert Network" },
     { path: "/career-guide", icon: Compass, label: "Career Guide" },
     { path: "/learning", icon: BookOpen, label: "Learning" },
-    { path: "/community", icon: MessageSquare, label: "Community" },
+    { path: "/community-hub", icon: MessageSquare, label: "Community Hub" },
     { path: "/resume-builder", icon: FileText, label: "Resume Builder" },
     { path: "/soft-skills", icon: UserCheck, label: "Soft Skills" },
     { path: "/achievements", icon: Trophy, label: "Achievements" }

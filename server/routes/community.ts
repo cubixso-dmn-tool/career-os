@@ -1,659 +1,568 @@
-import { Router } from "express";
-import { storage } from "../storage";
+import { Router } from 'express';
+import { z } from 'zod';
+import { db } from '../db';
 import { 
-  loadUserRolesMiddleware, 
-  requirePermission, 
-  requireCommunityModerator, 
-  requireCommunityOwner 
-} from "../middleware/rbac";
-import { 
-  insertCommunitySchema, 
-  insertCommunityPostSchema, 
-  insertCommunityPostCommentSchema 
-} from "@shared/schema";
+  communities, 
+  communityMembers, 
+  communityProjects, 
+  projectCollaborators, 
+  projectTasks, 
+  projectUpdates, 
+  projectShowcase,
+  collegeEvents,
+  collegeEventRegistrations,
+  localEvents,
+  localEventAttendees,
+  users
+} from '../../shared/schema';
+import { eq, and, or, like, desc, asc } from 'drizzle-orm';
+// Authentication middleware
+const isAuthenticated = (req: any, res: any, next: any) => {
+  if (!req.isAuthenticated() || !req.user) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+  next();
+};
 
-// Create router
 const router = Router();
 
-// Apply middleware to load user roles and permissions
-router.use(loadUserRolesMiddleware);
-
-// Community routes
-
-// Get all communities
-router.get("/", async (req, res) => {
+// Get communities with enhanced filtering
+router.get('/communities', isAuthenticated, async (req, res) => {
   try {
-    const communities = await storage.getAllCommunities();
-    res.status(200).json(communities);
+    const { interest, domain, region, communityType, search } = req.query;
+    
+    let query = db.select().from(communities);
+    
+    // Apply filters
+    const conditions = [];
+    
+    if (interest) {
+      conditions.push(like(communities.interests, `%${interest}%`));
+    }
+    
+    if (domain) {
+      conditions.push(eq(communities.domain, domain as string));
+    }
+    
+    if (region) {
+      conditions.push(eq(communities.region, region as string));
+    }
+    
+    if (communityType) {
+      conditions.push(eq(communities.communityType, communityType as string));
+    }
+    
+    if (search) {
+      conditions.push(
+        or(
+          like(communities.name, `%${search}%`),
+          like(communities.description, `%${search}%`)
+        )
+      );
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    const result = await query.orderBy(desc(communities.createdAt));
+    
+    res.json(result);
   } catch (error) {
-    console.error("Error fetching communities:", error);
-    res.status(500).json({ message: "Failed to fetch communities" });
+    console.error('Error fetching communities:', error);
+    res.status(500).json({ error: 'Failed to fetch communities' });
   }
 });
 
-// Get a specific community
-router.get("/:communityId", async (req, res) => {
+// Get community projects
+router.get('/community-projects', isAuthenticated, async (req, res) => {
   try {
-    const communityId = parseInt(req.params.communityId);
-    if (isNaN(communityId)) {
-      return res.status(400).json({ message: "Invalid community ID" });
+    const { communityId, status, projectType, difficulty } = req.query;
+    
+    let query = db.select({
+      id: communityProjects.id,
+      title: communityProjects.title,
+      description: communityProjects.description,
+      projectType: communityProjects.projectType,
+      techStack: communityProjects.techStack,
+      difficulty: communityProjects.difficulty,
+      estimatedDuration: communityProjects.estimatedDuration,
+      maxCollaborators: communityProjects.maxCollaborators,
+      currentCollaborators: communityProjects.currentCollaborators,
+      status: communityProjects.status,
+      isPublic: communityProjects.isPublic,
+      requirements: communityProjects.requirements,
+      expectedOutcome: communityProjects.expectedOutcome,
+      githubRepo: communityProjects.githubRepo,
+      liveDemo: communityProjects.liveDemo,
+      createdAt: communityProjects.createdAt,
+      creator: {
+        id: users.id,
+        username: users.username,
+        name: users.name,
+        avatar: users.avatar
+      }
+    }).from(communityProjects)
+    .leftJoin(users, eq(communityProjects.createdBy, users.id));
+    
+    const conditions = [];
+    
+    if (communityId) {
+      conditions.push(eq(communityProjects.communityId, parseInt(communityId as string)));
     }
     
-    const community = await storage.getCommunity(communityId);
-    if (!community) {
-      return res.status(404).json({ message: "Community not found" });
+    if (status) {
+      conditions.push(eq(communityProjects.status, status as string));
     }
     
-    res.status(200).json(community);
+    if (projectType) {
+      conditions.push(eq(communityProjects.projectType, projectType as string));
+    }
+    
+    if (difficulty) {
+      conditions.push(eq(communityProjects.difficulty, difficulty as string));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    const result = await query.orderBy(desc(communityProjects.createdAt));
+    
+    res.json(result);
   } catch (error) {
-    console.error("Error fetching community:", error);
-    res.status(500).json({ message: "Failed to fetch community" });
+    console.error('Error fetching community projects:', error);
+    res.status(500).json({ error: 'Failed to fetch community projects' });
   }
 });
 
-// Create a new community
-router.post("/", requirePermission("community:create"), async (req, res) => {
+// Create community project
+router.post('/community-projects', isAuthenticated, async (req, res) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    
-    const validatedData = insertCommunitySchema.parse(req.body);
-    const communityData = {
-      ...validatedData,
+    const projectData = {
+      ...req.body,
       createdBy: req.user.id
     };
     
-    const community = await storage.createCommunity(communityData);
+    const [project] = await db.insert(communityProjects)
+      .values(projectData)
+      .returning();
     
-    // Add the creator as a member with 'owner' role
-    await storage.joinCommunity({
+    // Add creator as first collaborator
+    await db.insert(projectCollaborators).values({
+      projectId: project.id,
       userId: req.user.id,
-      communityId: community.id,
-      role: "owner"
+      role: 'owner',
+      skills: [],
+      status: 'active'
     });
     
-    res.status(201).json(community);
+    res.json(project);
   } catch (error) {
-    console.error("Error creating community:", error);
-    res.status(500).json({ message: "Failed to create community" });
+    console.error('Error creating community project:', error);
+    res.status(500).json({ error: 'Failed to create community project' });
   }
 });
 
-// Join a community
-router.post("/:communityId/members", requirePermission("community:join"), async (req, res) => {
+// Get community events (both college and local)
+router.get('/community-events', isAuthenticated, async (req, res) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Authentication required" });
+    const { eventType, category, city, state, upcoming = true } = req.query;
+    
+    // Get college events
+    let collegeQuery = db.select({
+      id: collegeEvents.id,
+      title: collegeEvents.title,
+      description: collegeEvents.description,
+      eventType: collegeEvents.eventType,
+      category: collegeEvents.category,
+      college: collegeEvents.college,
+      venue: collegeEvents.venue,
+      city: collegeEvents.city,
+      state: collegeEvents.state,
+      isOnline: collegeEvents.isOnline,
+      startDate: collegeEvents.startDate,
+      endDate: collegeEvents.endDate,
+      maxParticipants: collegeEvents.maxParticipants,
+      currentParticipants: collegeEvents.currentParticipants,
+      entryFee: collegeEvents.entryFee,
+      prizes: collegeEvents.prizes,
+      status: collegeEvents.status,
+      createdAt: collegeEvents.createdAt,
+      source: 'college' as const
+    }).from(collegeEvents);
+    
+    // Get local events
+    let localQuery = db.select({
+      id: localEvents.id,
+      title: localEvents.title,
+      description: localEvents.description,
+      eventType: localEvents.eventType,
+      category: localEvents.category,
+      college: null as any,
+      venue: localEvents.venue,
+      city: localEvents.city,
+      state: localEvents.state,
+      isOnline: false as const,
+      startDate: localEvents.date,
+      endDate: localEvents.date,
+      maxParticipants: localEvents.maxAttendees,
+      currentParticipants: localEvents.currentAttendees,
+      entryFee: localEvents.entryFee,
+      prizes: null as any,
+      status: localEvents.status,
+      createdAt: localEvents.createdAt,
+      source: 'local' as const
+    }).from(localEvents);
+    
+    const conditions = [];
+    
+    if (eventType) {
+      conditions.push(eq(collegeEvents.eventType, eventType as string));
     }
     
-    const communityId = parseInt(req.params.communityId);
-    if (isNaN(communityId)) {
-      return res.status(400).json({ message: "Invalid community ID" });
+    if (category) {
+      conditions.push(eq(collegeEvents.category, category as string));
     }
     
-    // Check if community exists
-    const community = await storage.getCommunity(communityId);
-    if (!community) {
-      return res.status(404).json({ message: "Community not found" });
+    if (city) {
+      conditions.push(eq(collegeEvents.city, city as string));
     }
     
-    // Check if user is already a member
-    const isMember = await storage.isCommunityMember(req.user.id, communityId);
-    if (isMember) {
-      return res.status(400).json({ message: "Already a member of this community" });
+    if (state) {
+      conditions.push(eq(collegeEvents.state, state as string));
     }
     
-    // Add user to community with 'member' role
-    const member = await storage.joinCommunity({
-      userId: req.user.id,
-      communityId: communityId,
-      role: "member"
-    });
+    if (upcoming === 'true') {
+      conditions.push(eq(collegeEvents.status, 'upcoming'));
+    }
     
-    res.status(201).json(member);
+    if (conditions.length > 0) {
+      collegeQuery = collegeQuery.where(and(...conditions));
+      localQuery = localQuery.where(and(...conditions));
+    }
+    
+    const [collegeResults, localResults] = await Promise.all([
+      collegeQuery.orderBy(desc(collegeEvents.createdAt)),
+      localQuery.orderBy(desc(localEvents.createdAt))
+    ]);
+    
+    // Combine and sort results
+    const allEvents = [...collegeResults, ...localResults].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    
+    res.json(allEvents);
   } catch (error) {
-    console.error("Error joining community:", error);
-    res.status(500).json({ message: "Failed to join community" });
+    console.error('Error fetching community events:', error);
+    res.status(500).json({ error: 'Failed to fetch community events' });
   }
 });
 
-// Leave a community
-router.delete("/:communityId/members", async (req, res) => {
+// Create college event
+router.post('/college-events', isAuthenticated, async (req, res) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    
-    const communityId = parseInt(req.params.communityId);
-    if (isNaN(communityId)) {
-      return res.status(400).json({ message: "Invalid community ID" });
-    }
-    
-    // Check if community exists
-    const community = await storage.getCommunity(communityId);
-    if (!community) {
-      return res.status(404).json({ message: "Community not found" });
-    }
-    
-    // Check if user is a member
-    const isMember = await storage.isCommunityMember(req.user.id, communityId);
-    if (!isMember) {
-      return res.status(400).json({ message: "Not a member of this community" });
-    }
-    
-    // Don't allow community owners to leave (they must transfer ownership first)
-    if (community.createdBy === req.user.id) {
-      return res.status(400).json({ 
-        message: "Community owners cannot leave. Transfer ownership first." 
-      });
-    }
-    
-    // Remove user from community
-    await storage.leaveCommunity(req.user.id, communityId);
-    
-    res.status(200).json({ message: "Successfully left the community" });
-  } catch (error) {
-    console.error("Error leaving community:", error);
-    res.status(500).json({ message: "Failed to leave community" });
-  }
-});
-
-// Get community members
-router.get("/:communityId/members", async (req, res) => {
-  try {
-    const communityId = parseInt(req.params.communityId);
-    if (isNaN(communityId)) {
-      return res.status(400).json({ message: "Invalid community ID" });
-    }
-    
-    // Check if community exists
-    const community = await storage.getCommunity(communityId);
-    if (!community) {
-      return res.status(404).json({ message: "Community not found" });
-    }
-    
-    const members = await storage.getCommunityMembers(communityId);
-    res.status(200).json(members);
-  } catch (error) {
-    console.error("Error fetching community members:", error);
-    res.status(500).json({ message: "Failed to fetch community members" });
-  }
-});
-
-// Update member role (moderator only)
-router.patch("/:communityId/members/:userId", requireCommunityOwner(), async (req, res) => {
-  try {
-    const communityId = parseInt(req.params.communityId);
-    const userId = parseInt(req.params.userId);
-    const { role } = req.body;
-    
-    if (isNaN(communityId) || isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid community ID or user ID" });
-    }
-    
-    if (!role || !["member", "moderator"].includes(role)) {
-      return res.status(400).json({ message: "Invalid role. Must be 'member' or 'moderator'" });
-    }
-    
-    // Check if the target user is a member
-    const isMember = await storage.isCommunityMember(userId, communityId);
-    if (!isMember) {
-      return res.status(404).json({ message: "User is not a member of this community" });
-    }
-    
-    // Update member role
-    const updatedMember = await storage.updateCommunityMemberRole(userId, communityId, role);
-    
-    res.status(200).json(updatedMember);
-  } catch (error) {
-    console.error("Error updating member role:", error);
-    res.status(500).json({ message: "Failed to update member role" });
-  }
-});
-
-// Community Post routes
-
-// Get all posts in a community
-router.get("/:communityId/posts", async (req, res) => {
-  try {
-    const communityId = parseInt(req.params.communityId);
-    if (isNaN(communityId)) {
-      return res.status(400).json({ message: "Invalid community ID" });
-    }
-    
-    // Check if community exists
-    const community = await storage.getCommunity(communityId);
-    if (!community) {
-      return res.status(404).json({ message: "Community not found" });
-    }
-    
-    const posts = await storage.getCommunityPosts(communityId);
-    res.status(200).json(posts);
-  } catch (error) {
-    console.error("Error fetching community posts:", error);
-    res.status(500).json({ message: "Failed to fetch community posts" });
-  }
-});
-
-// Get a specific post
-router.get("/:communityId/posts/:postId", async (req, res) => {
-  try {
-    const postId = parseInt(req.params.postId);
-    if (isNaN(postId)) {
-      return res.status(400).json({ message: "Invalid post ID" });
-    }
-    
-    const post = await storage.getCommunityPost(postId);
-    if (!post) {
-      return res.status(404).json({ message: "Community post not found" });
-    }
-    
-    res.status(200).json(post);
-  } catch (error) {
-    console.error("Error fetching community post:", error);
-    res.status(500).json({ message: "Failed to fetch community post" });
-  }
-});
-
-// Create a post in a community
-router.post("/:communityId/posts", requirePermission("content:create"), async (req, res) => {
-  try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    
-    const communityId = parseInt(req.params.communityId);
-    if (isNaN(communityId)) {
-      return res.status(400).json({ message: "Invalid community ID" });
-    }
-    
-    // Check if community exists
-    const community = await storage.getCommunity(communityId);
-    if (!community) {
-      return res.status(404).json({ message: "Community not found" });
-    }
-    
-    // Check if user is a member
-    const isMember = await storage.isCommunityMember(req.user.id, communityId);
-    if (!isMember) {
-      return res.status(403).json({ message: "Only community members can create posts" });
-    }
-    
-    const validatedData = insertCommunityPostSchema.parse(req.body);
-    const postData = {
-      ...validatedData,
-      userId: req.user.id,
-      communityId: communityId
+    const eventData = {
+      ...req.body,
+      organizerId: req.user.id
     };
     
-    const post = await storage.createCommunityPost(postData);
-    res.status(201).json(post);
+    const [event] = await db.insert(collegeEvents)
+      .values(eventData)
+      .returning();
+    
+    res.json(event);
   } catch (error) {
-    console.error("Error creating community post:", error);
-    res.status(500).json({ message: "Failed to create community post" });
+    console.error('Error creating college event:', error);
+    res.status(500).json({ error: 'Failed to create college event' });
   }
 });
 
-// Update a post
-router.patch("/:communityId/posts/:postId", requirePermission("content:edit"), async (req, res) => {
+// Create local event
+router.post('/local-events', isAuthenticated, async (req, res) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    
-    const postId = parseInt(req.params.postId);
-    if (isNaN(postId)) {
-      return res.status(400).json({ message: "Invalid post ID" });
-    }
-    
-    // Check if post exists
-    const post = await storage.getCommunityPost(postId);
-    if (!post) {
-      return res.status(404).json({ message: "Community post not found" });
-    }
-    
-    // Check if user is the post creator or a moderator
-    const isModerator = await storage.isCommunityModerator(req.user.id, post.communityId);
-    if (post.userId !== req.user.id && !isModerator) {
-      return res.status(403).json({ 
-        message: "Only the post creator or moderators can update posts" 
-      });
-    }
-    
-    const updatedPost = await storage.updateCommunityPost(postId, req.body);
-    res.status(200).json(updatedPost);
-  } catch (error) {
-    console.error("Error updating community post:", error);
-    res.status(500).json({ message: "Failed to update community post" });
-  }
-});
-
-// Delete a post
-router.delete("/:communityId/posts/:postId", requirePermission("content:delete"), async (req, res) => {
-  try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    
-    const postId = parseInt(req.params.postId);
-    if (isNaN(postId)) {
-      return res.status(400).json({ message: "Invalid post ID" });
-    }
-    
-    // Check if post exists
-    const post = await storage.getCommunityPost(postId);
-    if (!post) {
-      return res.status(404).json({ message: "Community post not found" });
-    }
-    
-    // Check if user is the post creator or a moderator
-    const isModerator = await storage.isCommunityModerator(req.user.id, post.communityId);
-    if (post.userId !== req.user.id && !isModerator) {
-      return res.status(403).json({ 
-        message: "Only the post creator or moderators can delete posts" 
-      });
-    }
-    
-    await storage.deleteCommunityPost(postId);
-    
-    // If user is a moderator and not the post creator, log a moderation action
-    if (isModerator && post.userId !== req.user.id) {
-      await storage.createModerationAction({
-        moderatorId: req.user.id,
-        targetId: post.userId,
-        targetType: "user",
-        communityId: post.communityId,
-        action: "post_removal",
-        reason: req.body.reason || "Violated community guidelines"
-      });
-    }
-    
-    res.status(200).json({ message: "Community post deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting community post:", error);
-    res.status(500).json({ message: "Failed to delete community post" });
-  }
-});
-
-// Post comments routes
-
-// Get comments for a post
-router.get("/:communityId/posts/:postId/comments", async (req, res) => {
-  try {
-    const postId = parseInt(req.params.postId);
-    if (isNaN(postId)) {
-      return res.status(400).json({ message: "Invalid post ID" });
-    }
-    
-    // Check if post exists
-    const post = await storage.getCommunityPost(postId);
-    if (!post) {
-      return res.status(404).json({ message: "Community post not found" });
-    }
-    
-    const comments = await storage.getCommunityPostComments(postId);
-    res.status(200).json(comments);
-  } catch (error) {
-    console.error("Error fetching post comments:", error);
-    res.status(500).json({ message: "Failed to fetch post comments" });
-  }
-});
-
-// Add a comment to a post
-router.post("/:communityId/posts/:postId/comments", requirePermission("content:create"), async (req, res) => {
-  try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    
-    const postId = parseInt(req.params.postId);
-    const communityId = parseInt(req.params.communityId);
-    
-    if (isNaN(postId) || isNaN(communityId)) {
-      return res.status(400).json({ message: "Invalid post ID or community ID" });
-    }
-    
-    // Check if post exists
-    const post = await storage.getCommunityPost(postId);
-    if (!post) {
-      return res.status(404).json({ message: "Community post not found" });
-    }
-    
-    // Check if user is a community member
-    const isMember = await storage.isCommunityMember(req.user.id, communityId);
-    if (!isMember) {
-      return res.status(403).json({ message: "Only community members can comment" });
-    }
-    
-    const validatedData = insertCommunityPostCommentSchema.parse(req.body);
-    const commentData = {
-      ...validatedData,
-      userId: req.user.id,
-      postId: postId
+    const eventData = {
+      ...req.body,
+      organizerId: req.user.id
     };
     
-    const comment = await storage.createCommunityPostComment(commentData);
-    res.status(201).json(comment);
+    const [event] = await db.insert(localEvents)
+      .values(eventData)
+      .returning();
+    
+    res.json(event);
   } catch (error) {
-    console.error("Error creating comment:", error);
-    res.status(500).json({ message: "Failed to create comment" });
+    console.error('Error creating local event:', error);
+    res.status(500).json({ error: 'Failed to create local event' });
   }
 });
 
-// Update a comment
-router.patch("/:communityId/posts/:postId/comments/:commentId", requirePermission("content:edit"), async (req, res) => {
+// Join project as collaborator
+router.post('/community-projects/:id/join', isAuthenticated, async (req, res) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Authentication required" });
+    const projectId = parseInt(req.params.id);
+    const { role = 'contributor', skills = [] } = req.body;
+    
+    // Check if user is already a collaborator
+    const existingCollaborator = await db.select()
+      .from(projectCollaborators)
+      .where(
+        and(
+          eq(projectCollaborators.projectId, projectId),
+          eq(projectCollaborators.userId, req.user.id)
+        )
+      );
+    
+    if (existingCollaborator.length > 0) {
+      return res.status(400).json({ error: 'Already a collaborator on this project' });
     }
     
-    const commentId = parseInt(req.params.commentId);
-    if (isNaN(commentId)) {
-      return res.status(400).json({ message: "Invalid comment ID" });
+    // Check if project has space
+    const [project] = await db.select()
+      .from(communityProjects)
+      .where(eq(communityProjects.id, projectId));
+    
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
     }
     
-    // Check if comment exists
-    const comment = await storage.getCommunityPostComment(commentId);
-    if (!comment) {
-      return res.status(404).json({ message: "Comment not found" });
+    if (project.currentCollaborators >= project.maxCollaborators) {
+      return res.status(400).json({ error: 'Project is full' });
     }
     
-    // Check if user is the comment creator
-    if (comment.userId !== req.user.id) {
-      // Check if user is a moderator
-      const post = await storage.getCommunityPost(comment.postId);
-      if (!post) {
-        return res.status(404).json({ message: "Post not found" });
-      }
+    // Add collaborator
+    const [collaborator] = await db.insert(projectCollaborators)
+      .values({
+        projectId,
+        userId: req.user.id,
+        role,
+        skills,
+        status: 'active'
+      })
+      .returning();
+    
+    // Update project collaborator count
+    await db.update(communityProjects)
+      .set({ currentCollaborators: project.currentCollaborators + 1 })
+      .where(eq(communityProjects.id, projectId));
+    
+    res.json(collaborator);
+  } catch (error) {
+    console.error('Error joining project:', error);
+    res.status(500).json({ error: 'Failed to join project' });
+  }
+});
+
+// Register for event
+router.post('/events/:id/register', isAuthenticated, async (req, res) => {
+  try {
+    const eventId = parseInt(req.params.id);
+    const { eventType, ...registrationData } = req.body;
+    
+    if (eventType === 'college') {
+      // Register for college event
+      const [registration] = await db.insert(collegeEventRegistrations)
+        .values({
+          eventId,
+          userId: req.user.id,
+          ...registrationData
+        })
+        .returning();
       
-      const isModerator = await storage.isCommunityModerator(req.user.id, post.communityId);
-      if (!isModerator) {
-        return res.status(403).json({ 
-          message: "Only the comment creator or moderators can update comments" 
-        });
-      }
-    }
-    
-    const updatedComment = await storage.updateCommunityPostComment(commentId, req.body);
-    res.status(200).json(updatedComment);
-  } catch (error) {
-    console.error("Error updating comment:", error);
-    res.status(500).json({ message: "Failed to update comment" });
-  }
-});
-
-// Delete a comment
-router.delete("/:communityId/posts/:postId/comments/:commentId", requirePermission("content:delete"), async (req, res) => {
-  try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    
-    const commentId = parseInt(req.params.commentId);
-    if (isNaN(commentId)) {
-      return res.status(400).json({ message: "Invalid comment ID" });
-    }
-    
-    // Check if comment exists
-    const comment = await storage.getCommunityPostComment(commentId);
-    if (!comment) {
-      return res.status(404).json({ message: "Comment not found" });
-    }
-    
-    // Check if user is the comment creator or a moderator
-    let isModerator = false;
-    if (comment.userId !== req.user.id) {
-      // Get the post to check community
-      const post = await storage.getCommunityPost(comment.postId);
-      if (!post) {
-        return res.status(404).json({ message: "Post not found" });
-      }
+      // Update participant count
+      await db.update(collegeEvents)
+        .set({ 
+          currentParticipants: db.select().from(collegeEvents).where(eq(collegeEvents.id, eventId))
+        })
+        .where(eq(collegeEvents.id, eventId));
       
-      isModerator = await storage.isCommunityModerator(req.user.id, post.communityId);
-      if (!isModerator) {
-        return res.status(403).json({ 
-          message: "Only the comment creator or moderators can delete comments" 
-        });
-      }
+      res.json(registration);
+    } else {
+      // Register for local event
+      const [registration] = await db.insert(localEventAttendees)
+        .values({
+          eventId,
+          userId: req.user.id,
+          ...registrationData
+        })
+        .returning();
+      
+      res.json(registration);
     }
-    
-    await storage.deleteCommunityPostComment(commentId);
-    
-    // Log moderation action if applicable
-    if (isModerator && comment.userId !== req.user.id) {
-      const post = await storage.getCommunityPost(comment.postId);
-      if (post) {
-        await storage.createModerationAction({
-          moderatorId: req.user.id,
-          targetId: comment.userId,
-          targetType: "user",
-          communityId: post.communityId,
-          action: "comment_removal",
-          reason: req.body.reason || "Violated community guidelines"
-        });
-      }
-    }
-    
-    res.status(200).json({ message: "Comment deleted successfully" });
   } catch (error) {
-    console.error("Error deleting comment:", error);
-    res.status(500).json({ message: "Failed to delete comment" });
+    console.error('Error registering for event:', error);
+    res.status(500).json({ error: 'Failed to register for event' });
   }
 });
 
-// Moderation actions routes
-
-// Get moderation actions for a community (moderators only)
-router.get("/:communityId/moderation-actions", requireCommunityModerator(), async (req, res) => {
+// Get project tasks
+router.get('/community-projects/:id/tasks', isAuthenticated, async (req, res) => {
   try {
-    const communityId = parseInt(req.params.communityId);
-    if (isNaN(communityId)) {
-      return res.status(400).json({ message: "Invalid community ID" });
-    }
+    const projectId = parseInt(req.params.id);
     
-    const actions = await storage.getModerationActionsByCommunity(communityId);
-    res.status(200).json(actions);
+    const tasks = await db.select({
+      id: projectTasks.id,
+      title: projectTasks.title,
+      description: projectTasks.description,
+      priority: projectTasks.priority,
+      status: projectTasks.status,
+      category: projectTasks.category,
+      estimatedHours: projectTasks.estimatedHours,
+      actualHours: projectTasks.actualHours,
+      dueDate: projectTasks.dueDate,
+      completedAt: projectTasks.completedAt,
+      createdAt: projectTasks.createdAt,
+      assignedTo: {
+        id: users.id,
+        username: users.username,
+        name: users.name,
+        avatar: users.avatar
+      }
+    }).from(projectTasks)
+    .leftJoin(users, eq(projectTasks.assignedTo, users.id))
+    .where(eq(projectTasks.projectId, projectId))
+    .orderBy(desc(projectTasks.createdAt));
+    
+    res.json(tasks);
   } catch (error) {
-    console.error("Error fetching moderation actions:", error);
-    res.status(500).json({ message: "Failed to fetch moderation actions" });
+    console.error('Error fetching project tasks:', error);
+    res.status(500).json({ error: 'Failed to fetch project tasks' });
   }
 });
 
-// Create a moderation action (moderators only)
-router.post("/:communityId/moderation", requireCommunityModerator(), async (req, res) => {
+// Create project task
+router.post('/community-projects/:id/tasks', isAuthenticated, async (req, res) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
+    const projectId = parseInt(req.params.id);
     
-    const communityId = parseInt(req.params.communityId);
-    if (isNaN(communityId)) {
-      return res.status(400).json({ message: "Invalid community ID" });
-    }
+    const taskData = {
+      ...req.body,
+      projectId,
+      createdBy: req.user.id
+    };
     
-    const { targetType, targetId, action, reason } = req.body;
+    const [task] = await db.insert(projectTasks)
+      .values(taskData)
+      .returning();
     
-    if (!targetType || !targetId || !action || !reason) {
-      return res.status(400).json({ 
-        message: "Required fields missing: targetType, targetId, action, and reason are required"
-      });
-    }
-    
-    if (!["post", "comment", "user"].includes(targetType)) {
-      return res.status(400).json({
-        message: "Invalid targetType. Must be 'post', 'comment', or 'user'"
-      });
-    }
-    
-    const parsedTargetId = parseInt(targetId);
-    if (isNaN(parsedTargetId)) {
-      return res.status(400).json({ message: "Invalid targetId. Must be a number." });
-    }
-    
-    // Perform the moderation action based on targetType and action
-    switch (targetType) {
-      case "post":
-        if (action === "pin") {
-          const post = await storage.getCommunityPost(parsedTargetId);
-          if (!post) {
-            return res.status(404).json({ message: "Post not found" });
-          }
-          
-          await storage.updateCommunityPost(parsedTargetId, { isPinned: true });
-        } else if (action === "unpin") {
-          const post = await storage.getCommunityPost(parsedTargetId);
-          if (!post) {
-            return res.status(404).json({ message: "Post not found" });
-          }
-          
-          await storage.updateCommunityPost(parsedTargetId, { isPinned: false });
-        } else if (action === "delete") {
-          await storage.deleteCommunityPost(parsedTargetId);
-        } else {
-          return res.status(400).json({ message: "Invalid action for post type" });
-        }
-        break;
-        
-      case "comment":
-        if (action === "delete") {
-          await storage.deleteCommunityPostComment(parsedTargetId);
-        } else {
-          return res.status(400).json({ message: "Invalid action for comment type" });
-        }
-        break;
-        
-      case "user":
-        // For user actions like warn, mute, ban (we'd need additional implementation)
-        if (!["warn", "mute", "ban", "unban"].includes(action)) {
-          return res.status(400).json({ message: "Invalid action for user type" });
-        }
-        // Implement user moderation logic here
-        break;
-    }
-    
-    // Log the moderation action
-    const moderationAction = await storage.createModerationAction({
-      moderatorId: req.user.id,
-      targetId: parsedTargetId,
-      targetType: targetType,
-      communityId: communityId,
-      action: action,
-      reason: reason
-    });
-    
-    // Set the Content-Type explicitly to ensure we get JSON back
-    res.setHeader('Content-Type', 'application/json');
-    
-    return res.status(200).json({ 
-      message: "Moderation action completed successfully",
-      action: moderationAction
-    });
+    res.json(task);
   } catch (error) {
-    console.error("Error performing moderation action:", error);
-    // Set the Content-Type explicitly to ensure we get JSON back
-    res.setHeader('Content-Type', 'application/json');
-    return res.status(500).json({ message: "Failed to perform moderation action" });
+    console.error('Error creating project task:', error);
+    res.status(500).json({ error: 'Failed to create project task' });
+  }
+});
+
+// Get project updates
+router.get('/community-projects/:id/updates', isAuthenticated, async (req, res) => {
+  try {
+    const projectId = parseInt(req.params.id);
+    
+    const updates = await db.select({
+      id: projectUpdates.id,
+      updateType: projectUpdates.updateType,
+      title: projectUpdates.title,
+      content: projectUpdates.content,
+      attachments: projectUpdates.attachments,
+      isImportant: projectUpdates.isImportant,
+      createdAt: projectUpdates.createdAt,
+      user: {
+        id: users.id,
+        username: users.username,
+        name: users.name,
+        avatar: users.avatar
+      }
+    }).from(projectUpdates)
+    .leftJoin(users, eq(projectUpdates.userId, users.id))
+    .where(eq(projectUpdates.projectId, projectId))
+    .orderBy(desc(projectUpdates.createdAt));
+    
+    res.json(updates);
+  } catch (error) {
+    console.error('Error fetching project updates:', error);
+    res.status(500).json({ error: 'Failed to fetch project updates' });
+  }
+});
+
+// Create project update
+router.post('/community-projects/:id/updates', isAuthenticated, async (req, res) => {
+  try {
+    const projectId = parseInt(req.params.id);
+    
+    const updateData = {
+      ...req.body,
+      projectId,
+      userId: req.user.id
+    };
+    
+    const [update] = await db.insert(projectUpdates)
+      .values(updateData)
+      .returning();
+    
+    res.json(update);
+  } catch (error) {
+    console.error('Error creating project update:', error);
+    res.status(500).json({ error: 'Failed to create project update' });
+  }
+});
+
+// Get project showcase
+router.get('/community-projects/:id/showcase', isAuthenticated, async (req, res) => {
+  try {
+    const projectId = parseInt(req.params.id);
+    
+    const showcase = await db.select({
+      id: projectShowcase.id,
+      title: projectShowcase.title,
+      description: projectShowcase.description,
+      screenshots: projectShowcase.screenshots,
+      videoDemo: projectShowcase.videoDemo,
+      liveUrl: projectShowcase.liveUrl,
+      githubUrl: projectShowcase.githubUrl,
+      techStack: projectShowcase.techStack,
+      challenges: projectShowcase.challenges,
+      learnings: projectShowcase.learnings,
+      futureEnhancements: projectShowcase.futureEnhancements,
+      isPublic: projectShowcase.isPublic,
+      isFeatured: projectShowcase.isFeatured,
+      views: projectShowcase.views,
+      likes: projectShowcase.likes,
+      createdAt: projectShowcase.createdAt,
+      user: {
+        id: users.id,
+        username: users.username,
+        name: users.name,
+        avatar: users.avatar
+      }
+    }).from(projectShowcase)
+    .leftJoin(users, eq(projectShowcase.userId, users.id))
+    .where(eq(projectShowcase.projectId, projectId));
+    
+    res.json(showcase);
+  } catch (error) {
+    console.error('Error fetching project showcase:', error);
+    res.status(500).json({ error: 'Failed to fetch project showcase' });
+  }
+});
+
+// Create project showcase
+router.post('/community-projects/:id/showcase', isAuthenticated, async (req, res) => {
+  try {
+    const projectId = parseInt(req.params.id);
+    
+    const showcaseData = {
+      ...req.body,
+      projectId,
+      userId: req.user.id
+    };
+    
+    const [showcase] = await db.insert(projectShowcase)
+      .values(showcaseData)
+      .returning();
+    
+    res.json(showcase);
+  } catch (error) {
+    console.error('Error creating project showcase:', error);
+    res.status(500).json({ error: 'Failed to create project showcase' });
   }
 });
 
