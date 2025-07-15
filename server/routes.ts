@@ -588,6 +588,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Event registration endpoint for community events
+  app.post("/api/events/:id/register", async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const eventId = parseInt(req.params.id);
+      const { eventType = 'college' } = req.body;
+
+      // For now, use the existing user events system
+      const userEventData = insertUserEventSchema.parse({
+        userId,
+        eventId,
+        registrationStatus: 'registered'
+      });
+      
+      const userEvent = await storage.createUserEvent(userEventData);
+      res.status(201).json({ message: "Successfully registered for event", userEvent });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return handleZodError(error, res);
+      }
+      console.error("Error registering for event:", error);
+      res.status(500).json({ message: "Failed to register for event" });
+    }
+  });
+
   // DAILY BYTES
   app.get("/api/daily-bytes", async (req, res) => {
     try {

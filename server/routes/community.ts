@@ -566,4 +566,103 @@ router.post('/community-projects/:id/showcase', isAuthenticated, async (req, res
   }
 });
 
+// Join community endpoint
+router.post('/communities/:id/join', isAuthenticated, async (req, res) => {
+  try {
+    const communityId = parseInt(req.params.id);
+    const userId = req.user.id;
+    const { role = 'member' } = req.body;
+    
+    // Check if user is already a member
+    const existingMember = await db.select()
+      .from(communityMembers)
+      .where(and(
+        eq(communityMembers.communityId, communityId),
+        eq(communityMembers.userId, userId)
+      ))
+      .limit(1);
+    
+    if (existingMember.length > 0) {
+      return res.status(400).json({ error: 'Already a member of this community' });
+    }
+    
+    // Add user to community
+    const [membership] = await db.insert(communityMembers)
+      .values({
+        communityId,
+        userId,
+        role,
+        joinedAt: new Date()
+      })
+      .returning();
+    
+    // Update member count
+    await db.update(communities)
+      .set({ currentMembers: db.select().from(communityMembers).where(eq(communityMembers.communityId, communityId)) })
+      .where(eq(communities.id, communityId));
+    
+    res.json({ message: 'Successfully joined community', membership });
+  } catch (error) {
+    console.error('Error joining community:', error);
+    res.status(500).json({ error: 'Failed to join community' });
+  }
+});
+
+// Join project endpoint
+router.post('/community-projects/:id/join', isAuthenticated, async (req, res) => {
+  try {
+    const projectId = parseInt(req.params.id);
+    const userId = req.user.id;
+    const { role = 'contributor', skills = [] } = req.body;
+    
+    // Check if user is already a collaborator
+    const existingCollaborator = await db.select()
+      .from(projectCollaborators)
+      .where(and(
+        eq(projectCollaborators.projectId, projectId),
+        eq(projectCollaborators.userId, userId)
+      ))
+      .limit(1);
+    
+    if (existingCollaborator.length > 0) {
+      return res.status(400).json({ error: 'Already a collaborator on this project' });
+    }
+    
+    // Check if project has space
+    const project = await db.select()
+      .from(communityProjects)
+      .where(eq(communityProjects.id, projectId))
+      .limit(1);
+    
+    if (project.length === 0) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    if (project[0].currentCollaborators >= project[0].maxCollaborators) {
+      return res.status(400).json({ error: 'Project is full' });
+    }
+    
+    // Add user to project
+    const [collaboration] = await db.insert(projectCollaborators)
+      .values({
+        projectId,
+        userId,
+        role,
+        skills,
+        joinedAt: new Date()
+      })
+      .returning();
+    
+    // Update collaborator count
+    await db.update(communityProjects)
+      .set({ currentCollaborators: project[0].currentCollaborators + 1 })
+      .where(eq(communityProjects.id, projectId));
+    
+    res.json({ message: 'Successfully joined project', collaboration });
+  } catch (error) {
+    console.error('Error joining project:', error);
+    res.status(500).json({ error: 'Failed to join project' });
+  }
+});
+
 export default router;

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
@@ -181,7 +181,7 @@ export default function CommunityHub() {
   // Create event mutation
   const createEventMutation = useMutation({
     mutationFn: async (data: z.infer<typeof eventSchema>) => {
-      const response = await apiRequest('POST', '/api/community-events', {
+      const response = await apiRequest('POST', '/api/college-events', {
         ...data,
         startDate: new Date(data.startDate).toISOString(),
         endDate: new Date(data.endDate).toISOString(),
@@ -194,6 +194,46 @@ export default function CommunityHub() {
       queryClient.invalidateQueries({ queryKey: ['/api/community-events'] });
       setCreateEventOpen(false);
       eventForm.reset();
+    }
+  });
+
+  // Join project mutation
+  const joinProjectMutation = useMutation({
+    mutationFn: async (projectId: number) => {
+      const response = await apiRequest('POST', `/api/community-projects/${projectId}/join`, {
+        role: 'contributor',
+        skills: []
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/community-projects'] });
+    }
+  });
+
+  // Register for event mutation
+  const registerEventMutation = useMutation({
+    mutationFn: async ({ eventId, eventType }: { eventId: number; eventType: string }) => {
+      const response = await apiRequest('POST', `/api/events/${eventId}/register`, {
+        eventType: eventType === 'college' ? 'college' : 'local'
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/community-events'] });
+    }
+  });
+
+  // Join community mutation
+  const joinCommunityMutation = useMutation({
+    mutationFn: async (communityId: number) => {
+      const response = await apiRequest('POST', `/api/communities/${communityId}/join`, {
+        role: 'member'
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/communities'] });
     }
   });
 
@@ -235,6 +275,9 @@ export default function CommunityHub() {
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Create New Project</DialogTitle>
+                <p className="text-sm text-gray-600 mt-1">
+                  Start a new collaborative project and invite other students to join
+                </p>
               </DialogHeader>
               <Form {...projectForm}>
                 <form onSubmit={projectForm.handleSubmit((data) => createProjectMutation.mutate(data))} className="space-y-4">
@@ -366,6 +409,30 @@ export default function CommunityHub() {
                       </FormItem>
                     )}
                   />
+                  <FormField
+                    control={projectForm.control}
+                    name="communityId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Community</FormLabel>
+                        <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a community" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {communities.map((community: any) => (
+                              <SelectItem key={community.id} value={community.id.toString()}>
+                                {community.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <div className="flex justify-end gap-2">
                     <Button type="button" variant="outline" onClick={() => setCreateProjectOpen(false)}>
                       Cancel
@@ -389,6 +456,9 @@ export default function CommunityHub() {
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Create New Event</DialogTitle>
+                <p className="text-sm text-gray-600 mt-1">
+                  Organize a college fest, competition, or local meetup for your community
+                </p>
               </DialogHeader>
               <Form {...eventForm}>
                 <form onSubmit={eventForm.handleSubmit((data) => createEventMutation.mutate(data))} className="space-y-4">
@@ -708,8 +778,13 @@ export default function CommunityHub() {
                     </div>
                     
                     <div className="flex gap-2 mt-4">
-                      <Button size="sm" className="flex-1">
-                        Join Community
+                      <Button 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => joinCommunityMutation.mutate(community.id)}
+                        disabled={joinCommunityMutation.isPending}
+                      >
+                        {joinCommunityMutation.isPending ? 'Joining...' : 'Join Community'}
                       </Button>
                       <Button size="sm" variant="outline">
                         View
@@ -760,7 +835,21 @@ export default function CommunityHub() {
                       
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Users className="h-4 w-4" />
-                        <span>{project.currentCollaborators}/{project.maxCollaborators} collaborators</span>
+                        <span>{project.currentCollaborators || 0}/{project.maxCollaborators} collaborators</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={project.status === 'active' ? 'default' : 'secondary'}>
+                            {project.status}
+                          </Badge>
+                          <Badge variant={project.type === 'public' ? 'outline' : 'destructive'}>
+                            {project.type}
+                          </Badge>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {project.difficulty}
+                        </Badge>
                       </div>
                       
                       {project.techStack && project.techStack.length > 0 && (
@@ -780,8 +869,14 @@ export default function CommunityHub() {
                     </div>
                     
                     <div className="flex gap-2 mt-4">
-                      <Button size="sm" className="flex-1">
-                        Join Project
+                      <Button 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => joinProjectMutation.mutate(project.id)}
+                        disabled={joinProjectMutation.isPending || project.status !== 'active' || (project.currentCollaborators >= project.maxCollaborators)}
+                      >
+                        {joinProjectMutation.isPending ? 'Joining...' : 
+                         project.currentCollaborators >= project.maxCollaborators ? 'Full' : 'Join Project'}
                       </Button>
                       <Button size="sm" variant="outline">
                         <Eye className="h-4 w-4" />
@@ -844,8 +939,14 @@ export default function CommunityHub() {
                     </div>
                     
                     <div className="flex gap-2 mt-4">
-                      <Button size="sm" className="flex-1">
-                        Register
+                      <Button 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => registerEventMutation.mutate({ eventId: event.id, eventType: event.eventType })}
+                        disabled={registerEventMutation.isPending || (event.currentParticipants >= event.maxParticipants)}
+                      >
+                        {registerEventMutation.isPending ? 'Registering...' : 
+                         event.currentParticipants >= event.maxParticipants ? 'Full' : 'Register'}
                       </Button>
                       <Button size="sm" variant="outline">
                         <Eye className="h-4 w-4" />
@@ -915,51 +1016,112 @@ export default function CommunityHub() {
 
         <TabsContent value="showcase" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Placeholder for project showcase */}
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg">AI-Powered Study Assistant</CardTitle>
-                    <CardDescription className="text-sm mt-1">Smart study companion using NLP and ML</CardDescription>
+            {projects.filter((project: any) => project.status === 'completed').map((project: any) => (
+              <Card key={project.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-green-500">
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Award className="h-5 w-5 text-green-500" />
+                        {project.title}
+                      </CardTitle>
+                      <CardDescription className="text-sm mt-1">{project.description}</CardDescription>
+                    </div>
+                    <Badge variant="outline" className="border-green-200 text-green-600">Completed</Badge>
                   </div>
-                  <Badge variant="outline" className="border-green-200 text-green-600">Featured</Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <User className="h-4 w-4" />
-                    <span>By Ananya Singh</span>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Code className="h-4 w-4" />
+                      <span>{project.projectType}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Users className="h-4 w-4" />
+                      <span>{project.currentCollaborators || 0} contributors</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Clock className="h-4 w-4" />
+                      <span>{project.estimatedDuration}</span>
+                    </div>
+                    
+                    {project.techStack && project.techStack.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {project.techStack.slice(0, 3).map((tech: string) => (
+                          <Badge key={tech} variant="secondary" className="text-xs">
+                            {tech}
+                          </Badge>
+                        ))}
+                        {project.techStack.length > 3 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{project.techStack.length - 3} more
+                          </Badge>
+                        )}
+                      </div>
+                    )}
                   </div>
                   
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Eye className="h-4 w-4" />
-                    <span>1.2k views</span>
+                  <div className="flex gap-2 mt-4">
+                    <Button size="sm" className="flex-1">
+                      View Project
+                    </Button>
+                    <Button size="sm" variant="outline">
+                      <GitBranch className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            
+            {/* Placeholder showcase items if no completed projects */}
+            {projects.filter((project: any) => project.status === 'completed').length === 0 && (
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg">AI-Powered Study Assistant</CardTitle>
+                      <CardDescription className="text-sm mt-1">Smart study companion using NLP and ML</CardDescription>
+                    </div>
+                    <Badge variant="outline" className="border-green-200 text-green-600">Featured</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <User className="h-4 w-4" />
+                      <span>By Community Member</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Eye className="h-4 w-4" />
+                      <span>1.2k views</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Heart className="h-4 w-4" />
+                      <span>89 likes</span>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      <Badge variant="secondary" className="text-xs">Python</Badge>
+                      <Badge variant="secondary" className="text-xs">TensorFlow</Badge>
+                      <Badge variant="secondary" className="text-xs">React</Badge>
+                    </div>
                   </div>
                   
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Heart className="h-4 w-4" />
-                    <span>89 likes</span>
+                  <div className="flex gap-2 mt-4">
+                    <Button size="sm" className="flex-1">
+                      View Project
+                    </Button>
+                    <Button size="sm" variant="outline">
+                      <GitBranch className="h-4 w-4" />
+                    </Button>
                   </div>
-                  
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    <Badge variant="secondary" className="text-xs">Python</Badge>
-                    <Badge variant="secondary" className="text-xs">TensorFlow</Badge>
-                    <Badge variant="secondary" className="text-xs">React</Badge>
-                  </div>
-                </div>
-                
-                <div className="flex gap-2 mt-4">
-                  <Button size="sm" className="flex-1">
-                    View Project
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <GitBranch className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
             
             {/* Add more showcase items */}
             <Card className="hover:shadow-lg transition-shadow">
