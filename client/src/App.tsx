@@ -8,7 +8,6 @@ import ModeratorDashboard from "@/pages/ModeratorDashboard";
 import CareerGuide from "@/pages/CareerGuide";
 import CareerRoadmap from "@/pages/CareerRoadmap";
 import Learning from "@/pages/Learning";
-import Community from "@/pages/Community";
 import CommunityHub from "@/pages/CommunityHub";
 import ResumeBuilder from "@/pages/ResumeBuilder";
 import SoftSkills from "@/pages/SoftSkills";
@@ -72,7 +71,7 @@ function Router() {
       </Route>
       <Route path="/community">
         <ProtectedRoute>
-          <Community />
+          <CommunityHub />
         </ProtectedRoute>
       </Route>
       <Route path="/community-hub">

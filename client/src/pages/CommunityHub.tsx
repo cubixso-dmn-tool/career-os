@@ -256,13 +256,27 @@ export default function CommunityHub() {
 
   return (
     <div className="container mx-auto py-6 px-4">
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
+        <div className="mb-4 md:mb-0">
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Users className="h-8 w-8 text-primary" />
             Community Hub
           </h1>
           <p className="text-gray-600 mt-2">Connect, collaborate, and grow with fellow students</p>
+          <div className="flex flex-wrap items-center gap-4 mt-3">
+            <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+              <Users className="h-4 w-4 text-blue-500" />
+              <span className="font-medium">{communities.length} communities</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+              <GitBranch className="h-4 w-4 text-green-500" />
+              <span className="font-medium">{projects.length} projects</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+              <Calendar className="h-4 w-4 text-purple-500" />
+              <span className="font-medium">{events.length} events</span>
+            </div>
+          </div>
         </div>
         <div className="flex gap-2">
           <Dialog open={createProjectOpen} onOpenChange={setCreateProjectOpen}>
@@ -275,9 +289,9 @@ export default function CommunityHub() {
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Create New Project</DialogTitle>
-                <p className="text-sm text-gray-600 mt-1">
+                <DialogDescription>
                   Start a new collaborative project and invite other students to join
-                </p>
+                </DialogDescription>
               </DialogHeader>
               <Form {...projectForm}>
                 <form onSubmit={projectForm.handleSubmit((data) => createProjectMutation.mutate(data))} className="space-y-4">
@@ -456,9 +470,9 @@ export default function CommunityHub() {
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Create New Event</DialogTitle>
-                <p className="text-sm text-gray-600 mt-1">
+                <DialogDescription>
                   Organize a college fest, competition, or local meetup for your community
-                </p>
+                </DialogDescription>
               </DialogHeader>
               <Form {...eventForm}>
                 <form onSubmit={eventForm.handleSubmit((data) => createEventMutation.mutate(data))} className="space-y-4">
