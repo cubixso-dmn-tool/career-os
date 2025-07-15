@@ -7,9 +7,9 @@ export default function MobileNavigation() {
   
   const navItems = [
     { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { path: "/ai-career-coach", icon: Bot, label: "AI Coach" },
-    { path: "/industry-experts", icon: Users, label: "Experts" },
-    { path: "/courses", icon: BookOpen, label: "Courses" },
+    // { path: "/ai-career-coach", icon: Bot, label: "AI Coach" },
+    // { path: "/industry-experts", icon: Users, label: "Experts" },
+    // { path: "/courses", icon: BookOpen, label: "Courses" },
     { path: "/projects", icon: GitBranch, label: "Projects" },
     { path: "/community", icon: MessageSquare, label: "Community" }
   ];

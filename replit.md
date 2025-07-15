@@ -283,6 +283,7 @@ A cutting-edge EdTech platform empowering Indian students with personalized care
   - Fixed accessibility warnings by adding proper DialogDescription components
   - Removed old Community page imports and consolidated to single Community Hub implementation
   - Enhanced mobile responsiveness across all community features
+  - **Phase-Based Launch**: Temporarily hidden navigation for AI Career Coach, Expert Network, Learning, Soft Skills, and Achievements (code preserved for future phases)
 
 ## Next Priority Features to Implement
 1. **Phase 2**: Performance optimization with database indexing and Redis caching

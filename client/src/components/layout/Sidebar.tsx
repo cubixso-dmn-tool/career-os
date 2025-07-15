@@ -62,15 +62,15 @@ export default function Sidebar({ user }: SidebarProps) {
     // Default navigation for students and other roles
     return [
       { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-      { path: "/ai-career-coach", icon: Bot, label: "AI Career Coach" },
-      { path: "/industry-experts", icon: Users, label: "Expert Network" },
+      // { path: "/ai-career-coach", icon: Bot, label: "AI Career Coach" },
+      // { path: "/industry-experts", icon: Users, label: "Expert Network" },
       { path: "/career-guide", icon: Compass, label: "Career Guide" },
       { path: "/career-roadmap", icon: GitBranch, label: "Career Roadmap" },
-      { path: "/learning", icon: BookOpen, label: "Learning" },
+      // { path: "/learning", icon: BookOpen, label: "Learning" },
       { path: "/community", icon: MessageSquare, label: "Community" },
       { path: "/resume-builder", icon: FileText, label: "Resume Builder" },
-      { path: "/soft-skills", icon: UserCheck, label: "Soft Skills" },
-      { path: "/achievements", icon: Trophy, label: "Achievements" },
+      // { path: "/soft-skills", icon: UserCheck, label: "Soft Skills" },
+      // { path: "/achievements", icon: Trophy, label: "Achievements" },
       { path: "/settings", icon: Settings, label: "Settings" }
     ];
   };
