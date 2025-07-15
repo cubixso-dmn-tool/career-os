@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -255,7 +256,8 @@ export default function CommunityHub() {
   };
 
   return (
-    <div className="container mx-auto py-6 px-4">
+    <Layout>
+      <div className="container mx-auto py-6 px-4">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
         <div className="mb-4 md:mb-0">
           <h1 className="text-3xl font-bold flex items-center gap-2">
@@ -1186,5 +1188,6 @@ export default function CommunityHub() {
         </TabsContent>
       </Tabs>
     </div>
+    </Layout>
   );
 }
