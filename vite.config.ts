@@ -35,4 +35,15 @@ export default defineConfig({
       }
     }
   },
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
+  },
+  // Base URL for Vercel deployment
+  base: process.env.NODE_ENV === 'production' ? '/dist/client' : '/',
 });
