@@ -2,13 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
-// Ensure the uploads directory exists
+// Define uploads directory
 const UPLOADS_DIR = path.join(process.cwd(), 'public', 'uploads');
-
-// Create uploads directory if it doesn't exist
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
 
 // Additional subdirectories for specific file types
 const SUBDIRS = {
@@ -21,12 +16,18 @@ const SUBDIRS = {
   documents: path.join(UPLOADS_DIR, 'documents')
 };
 
-// Create all subdirectories if they don't exist
-Object.values(SUBDIRS).forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+// Helper function to ensure directory exists
+function ensureDirectoryExists(dir: string) {
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  } catch (error) {
+    // In serverless environments, we might not be able to create directories
+    // This is okay for Vercel deployments as file uploads should use cloud storage
+    console.warn(`Could not create directory ${dir}:`, error);
   }
-});
+}
 
 /**
  * Process a base64 image or file upload
@@ -35,6 +36,11 @@ Object.values(SUBDIRS).forEach(dir => {
  * @returns Object with the file URL and other info
  */
 export async function processBase64Upload(base64Data: string, folder: string): Promise<{ url: string, filename: string }> {
+  // In serverless environments, throw an error to indicate cloud storage should be used
+  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    throw new Error('File uploads not supported in serverless environment. Please configure cloud storage.');
+  }
+
   // Check if folder is valid
   if (!Object.values(SUBDIRS).includes(path.join(UPLOADS_DIR, folder))) {
     throw new Error(`Invalid upload folder: ${folder}`);
@@ -69,6 +75,9 @@ export async function processBase64Upload(base64Data: string, folder: string): P
   const uploadPath = path.join(UPLOADS_DIR, folder, filename);
   const publicUrl = `/uploads/${folder}/${filename}`;
 
+  // Ensure directory exists
+  ensureDirectoryExists(path.join(UPLOADS_DIR, folder));
+
   // Write the file
   fs.writeFileSync(uploadPath, buffer);
 
@@ -85,6 +94,11 @@ export async function processBase64Upload(base64Data: string, folder: string): P
  * @returns Object with the file URL and other info
  */
 export async function processFileUpload(file: any, subdir: keyof typeof SUBDIRS): Promise<{ url: string, filename: string }> {
+  // In serverless environments, throw an error to indicate cloud storage should be used
+  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    throw new Error('File uploads not supported in serverless environment. Please configure cloud storage.');
+  }
+
   if (!file) {
     throw new Error('No file provided');
   }
@@ -100,10 +114,8 @@ export async function processFileUpload(file: any, subdir: keyof typeof SUBDIRS)
   const filename = `${uuidv4()}${fileExtension}`;
   const uploadPath = path.join(destDir, filename);
   
-  // Create folder if it doesn't exist
-  if (!fs.existsSync(destDir)) {
-    fs.mkdirSync(destDir, { recursive: true });
-  }
+  // Ensure directory exists
+  ensureDirectoryExists(destDir);
 
   // Write the file from buffer
   fs.writeFileSync(uploadPath, file.buffer);
@@ -126,6 +138,11 @@ export async function processFileUpload(file: any, subdir: keyof typeof SUBDIRS)
  * @returns Object with the file URL and other info, or null if no file was provided
  */
 export async function extractAndProcessFile(req: any, fieldName: string, subdir: keyof typeof SUBDIRS): Promise<{ url: string, filename: string } | null> {
+  // In serverless environments, throw an error to indicate cloud storage should be used
+  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    throw new Error('File uploads not supported in serverless environment. Please configure cloud storage.');
+  }
+
   // Check if there's a file in the fieldName
   if (!req.files || !req.files[fieldName] || !req.files[fieldName][0]) {
     return null;
