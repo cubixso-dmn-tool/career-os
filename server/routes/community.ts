@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { db } from '../db';
+import { db } from '../db.js';
 import { 
   communities, 
   communityMembers, 
@@ -14,7 +14,7 @@ import {
   localEvents,
   localEventAttendees,
   users
-} from '../../shared/schema';
+} from '../../shared/schema.js';
 import { eq, and, or, like, desc, asc, sql } from 'drizzle-orm';
 // Authentication middleware
 const isAuthenticated = (req: any, res: any, next: any) => {

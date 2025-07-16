@@ -1,5 +1,5 @@
 import express, { Request, Response, Router } from 'express';
-import { storage } from '../storage';
+import { storage } from '../storage.js';
 import { 
   insertCourseSchema, 
   insertProjectSchema, 
@@ -7,8 +7,8 @@ import {
 } from '../../shared/schema.js';
 import { ZodError } from 'zod';
 import multer from 'multer';
-import { processFileUpload } from '../lib/upload-helper';
-import { requireContentPermissions } from '../middleware/rbac';
+import { processFileUpload } from '../lib/upload-helper.js';
+import { requireContentPermissions } from '../middleware/rbac.js';
 
 const router = Router();
 

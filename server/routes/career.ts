@@ -5,8 +5,8 @@ import {
   generateLearningRoadmap, 
   generatePathFinderResponse,
   generateQuickCareerAssessment
-} from '../services/openai';
-import { storage } from '../storage';
+} from '../services/openai.js';
+import { storage } from '../storage.js';
 
 // Helper function to handle Zod validation errors
 function handleZodError(error: z.ZodError, res: Response) {

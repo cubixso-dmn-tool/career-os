@@ -1,4 +1,4 @@
-import { db } from "../db";
+import { db } from "../db.js";
 import { users, userRoles } from "../../shared/schema.js";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
