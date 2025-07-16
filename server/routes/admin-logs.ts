@@ -51,7 +51,7 @@ router.get("/", requireAuth, requireAdmin, cacheMiddleware(60), async (req, res)
     await AdminLogger.logAPI(
       "ADMIN_LOGS_ACCESSED",
       `Admin viewed logs with filters: ${JSON.stringify(query)}`,
-      req.user.id,
+      req.user?.id,
       { query, resultCount: result.logs.length }
     );
 
@@ -71,7 +71,7 @@ router.get("/summary", requireAuth, requireAdmin, cacheMiddleware(300), async (r
     await AdminLogger.logAPI(
       "ADMIN_LOGS_SUMMARY_ACCESSED",
       `Admin viewed log summary for ${hours} hours`,
-      req.user.id,
+      req.user?.id,
       { hours }
     );
 
@@ -93,7 +93,7 @@ router.get("/user/:userId", requireAuth, requireAdmin, async (req, res) => {
     await AdminLogger.logAPI(
       "USER_LOGS_ACCESSED",
       `Admin viewed logs for user ${userId}`,
-      req.user.id,
+      req.user?.id,
       { targetUserId: userId, resultCount: logs.length }
     );
 
@@ -113,7 +113,7 @@ router.get("/critical", requireAuth, requireAdmin, async (req, res) => {
     await AdminLogger.logAPI(
       "CRITICAL_LOGS_ACCESSED",
       `Admin viewed critical logs for ${hours} hours`,
-      req.user.id,
+      req.user?.id,
       { hours, criticalCount: logs.length }
     );
 
@@ -133,7 +133,7 @@ router.post("/cleanup", requireAuth, requireAdmin, async (req, res) => {
       "MANUAL_LOG_CLEANUP",
       `Admin manually triggered log cleanup, deleted ${deletedCount} old logs`,
       LogLevel.INFO,
-      { adminUserId: req.user.id, deletedCount }
+      { adminUserId: req.user?.id, deletedCount }
     );
 
     res.json({ 
@@ -219,7 +219,7 @@ router.get("/export", requireAuth, requireAdmin, async (req, res) => {
       "LOGS_EXPORTED",
       `Admin exported ${result.logs.length} logs in ${format} format`,
       LogLevel.INFO,
-      { adminUserId: req.user.id, exportQuery: query, format }
+      { adminUserId: req.user?.id, exportQuery: query, format }
     );
 
     if (format === 'csv') {

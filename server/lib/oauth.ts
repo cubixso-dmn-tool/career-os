@@ -24,7 +24,7 @@ export class OAuthManager {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL: `${baseURL}/api/auth/google/callback`
-      }, async (accessToken, refreshToken, profile, done) => {
+      }, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
         try {
           const oauthProfile: OAuthProfile = {
             id: profile.id,
@@ -35,7 +35,7 @@ export class OAuthManager {
           };
 
           const user = await this.handleOAuthUser(oauthProfile);
-          return done(null, user);
+          return done(null, user as any);
         } catch (error) {
           return done(error, null);
         }
@@ -48,7 +48,7 @@ export class OAuthManager {
         clientID: process.env.GITHUB_CLIENT_ID,
         clientSecret: process.env.GITHUB_CLIENT_SECRET,
         callbackURL: `${baseURL}/api/auth/github/callback`
-      }, async (accessToken, refreshToken, profile, done) => {
+      }, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
         try {
           const oauthProfile: OAuthProfile = {
             id: profile.id,
@@ -60,7 +60,7 @@ export class OAuthManager {
           };
 
           const user = await this.handleOAuthUser(oauthProfile);
-          return done(null, user);
+          return done(null, user as any);
         } catch (error) {
           return done(error, null);
         }
@@ -89,21 +89,22 @@ export class OAuthManager {
     if (user) {
       // Update OAuth info if user exists
       await storage.updateUser(user.id, {
-        profileImageUrl: profile.avatar || user.profileImageUrl,
-        lastLoginAt: new Date()
+        avatar: profile.avatar || user.avatar,
+        // Using the correct field name from the User type
       });
     } else {
       // Create new user from OAuth profile
       const newUser = {
         email: profile.email,
         username: this.generateUsername(profile),
-        firstName: this.extractFirstName(profile.name),
-        lastName: this.extractLastName(profile.name),
-        profileImageUrl: profile.avatar,
-        isEmailVerified: true, // OAuth emails are considered verified
-        oauthProvider: profile.provider,
-        oauthId: profile.id,
-        lastLoginAt: new Date()
+        // Combine first and last name into full name as required by User schema
+        name: profile.name,
+        // Use a placeholder password for OAuth users
+        password: `oauth_${Math.random().toString(36).substring(2, 15)}`,
+        // Use avatar field instead of profileImageUrl
+        avatar: profile.avatar,
+        // Bio can be null
+        bio: null
       };
 
       user = await storage.createUser(newUser);

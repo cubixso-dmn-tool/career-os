@@ -118,7 +118,7 @@ router.get("/community", isAuthenticated, async (req: any, res) => {
       [engagement] = await db
         .insert(mentorCommunityEngagement)
         .values({
-          mentorId: userId,
+          mentorId: userId as number,
           answersPosted: 43,
           postsCreated: 12,
           totalUpvotes: 127,

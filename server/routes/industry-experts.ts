@@ -8,14 +8,15 @@ import {
   insertExpertQnaSessionSchema,
   insertCareerSuccessStorySchema,
   insertNetworkingEventSchema,
-  insertEventRegistrationSchema,
+  insertCollegeEventRegistrationSchema,
   insertExpertMentorshipSchema,
   type IndustryExpert,
   type ExpertSession,
   type SessionRegistration,
   type CareerSuccessStory,
-  type NetworkingEvent
-} from "@shared/schema.js";
+  type NetworkingEvent,
+  type CollegeEventRegistration
+} from "@shared/schema";
 
 const router = Router();
 

@@ -80,7 +80,7 @@ router.post("/register", async (req, res) => {
       emailSent,
       userId: newUser.id
     });
-  } catch (error) {
+  } catch (error: any) {
     await AdminLogger.logAuth(
       "REGISTRATION_ERROR",
       `Registration error: ${error}`,
@@ -128,7 +128,7 @@ router.get("/verify-email", async (req, res) => {
     );
 
     res.json({ message: "Email verified successfully. You can now log in." });
-  } catch (error) {
+  } catch (error: any) {
     await AdminLogger.logAuth(
       "EMAIL_VERIFICATION_ERROR",
       `Email verification error: ${error}`,
@@ -220,7 +220,7 @@ router.post("/jwt-login", async (req, res) => {
         roles
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     await AdminLogger.logAuth(
       "JWT_LOGIN_ERROR",
       `Login error: ${error}`,
@@ -275,7 +275,7 @@ router.post("/refresh-token", async (req, res) => {
       message: "Token refreshed successfully",
       ...tokens
     });
-  } catch (error) {
+  } catch (error: any) {
     await AdminLogger.logAuth(
       "TOKEN_REFRESH_ERROR",
       `Token refresh error: ${error}`,
@@ -310,7 +310,7 @@ router.get("/google/callback",
 
       // Redirect with tokens (in production, use secure method)
       res.redirect(`/?access_token=${tokens.accessToken}&refresh_token=${tokens.refreshToken}`);
-    } catch (error) {
+    } catch (error: any) {
       await AdminLogger.logAuth(
         "OAUTH_LOGIN_ERROR",
         `Google OAuth login error: ${error}`,
@@ -347,7 +347,7 @@ router.get("/github/callback",
       );
 
       res.redirect(`/?access_token=${tokens.accessToken}&refresh_token=${tokens.refreshToken}`);
-    } catch (error) {
+    } catch (error: any) {
       await AdminLogger.logAuth(
         "OAUTH_LOGIN_ERROR",
         `GitHub OAuth login error: ${error}`,
@@ -405,7 +405,7 @@ router.post("/forgot-password", async (req, res) => {
       message: "If the email exists, a reset link has been sent.",
       emailSent 
     });
-  } catch (error) {
+  } catch (error: any) {
     await AdminLogger.logAuth(
       "PASSWORD_RESET_ERROR",
       `Password reset error: ${error}`,
@@ -483,9 +483,8 @@ router.post("/setup-2fa", jwtAuthMiddleware, async (req: any, res) => {
     await AdminLogger.logSecurity(
       "2FA_SETUP_INITIATED",
       "User initiated 2FA setup",
-      userId,
-      user.email,
-      { secretLength: secret.base32.length }
+      LogLevel.INFO,
+      { userId, userEmail: user.email, secretLength: secret.base32.length }
     );
 
     res.json({
@@ -493,13 +492,12 @@ router.post("/setup-2fa", jwtAuthMiddleware, async (req: any, res) => {
       qrCode,
       backupCodes: [] // Generate backup codes in production
     });
-  } catch (error) {
+  } catch (error: any) {
     await AdminLogger.logSecurity(
       "2FA_SETUP_ERROR",
       `2FA setup error: ${error}`,
-      req.user.userId,
-      req.user.email,
-      { error: error.toString() }
+      LogLevel.ERROR,
+      { userId: req.user.userId, userEmail: req.user.email, error: error.toString() }
     );
     
     console.error("2FA setup error:", error);

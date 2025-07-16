@@ -135,7 +135,7 @@ router.post('/pathfinder/chat', async (req, res) => {
           const softSkills = await Promise.all(
             softSkillIds.map(async id => await storage.getSoftSkill(id))
           );
-          const softSkillNames = softSkills.filter(Boolean).map(s => s?.name || '');
+          const softSkillNames = softSkills.filter(Boolean).map((s: any) => s?.name || '');
           
           // Get recommended niches and career from quiz results
           const recommendedNiches = quizResults.length > 0 && Array.isArray(quizResults[0].recommendedNiches) 

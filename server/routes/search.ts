@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { storage } from "../simple-storage";
 import { sql } from "drizzle-orm";
+import { Course, Project, CollegeEvent } from '@shared/schema';
 
 const router = Router();
 
@@ -21,7 +22,13 @@ router.get("/", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "Search query is required" });
     }
 
-    const results = {
+    const results: {
+      courses: Course[];
+      projects: Project[];
+      posts: any[]; // Assuming posts and users are not part of the current error, keeping as any for now
+      users: any[];
+      events: CollegeEvent[];
+    } = {
       courses: [],
       projects: [],
       posts: [],

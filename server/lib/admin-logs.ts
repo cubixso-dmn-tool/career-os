@@ -264,12 +264,13 @@ export class AdminLogger {
       );
 
       return deletedCount;
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       await this.logSystem(
         'LOG_CLEANUP_FAILED',
-        `Failed to cleanup old logs: ${error}`,
+        `Failed to cleanup old logs: ${errorMessage}`,
         LogLevel.ERROR,
-        { error: error.toString() }
+        { error: String(error) }
       );
       
       return 0;

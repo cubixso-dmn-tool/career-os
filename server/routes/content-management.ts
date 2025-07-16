@@ -88,7 +88,7 @@ router.post("/courses", requireContentPermissions, upload.single('thumbnail'), a
     const course = await storage.createCourse(validatedData);
     
     res.status(201).json(course);
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof ZodError) {
       console.error("Course upload - Zod Validation Errors:", JSON.stringify(error.errors, null, 2));
       return handleZodError(error, res);

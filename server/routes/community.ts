@@ -15,7 +15,7 @@ import {
   localEventAttendees,
   users
 } from '../../shared/schema';
-import { eq, and, or, like, desc, asc } from 'drizzle-orm';
+import { eq, and, or, like, desc, asc, sql } from 'drizzle-orm';
 // Authentication middleware
 const isAuthenticated = (req: any, res: any, next: any) => {
   if (!req.isAuthenticated() || !req.user) {
@@ -65,7 +65,7 @@ router.get('/communities', isAuthenticated, async (req, res) => {
       query = query.where(and(...conditions));
     }
     
-    const result = await query.orderBy(desc(communities.createdAt));
+    const result = await query.orderBy(desc(communities.createdAt)).execute();
     
     res.json(result);
   } catch (error) {
@@ -127,7 +127,7 @@ router.get('/community-projects', isAuthenticated, async (req, res) => {
       query = query.where(and(...conditions));
     }
     
-    const result = await query.orderBy(desc(communityProjects.createdAt));
+    const result = await query.orderBy(desc(communityProjects.createdAt)).execute();
     
     res.json(result);
   } catch (error) {
@@ -139,6 +139,10 @@ router.get('/community-projects', isAuthenticated, async (req, res) => {
 // Create community project
 router.post('/community-projects', isAuthenticated, async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const projectData = {
       ...req.body,
       createdBy: req.user.id
@@ -189,7 +193,7 @@ router.get('/community-events', isAuthenticated, async (req, res) => {
       prizes: collegeEvents.prizes,
       status: collegeEvents.status,
       createdAt: collegeEvents.createdAt,
-      source: 'college' as const
+      source: 'college' as any
     }).from(collegeEvents);
     
     // Get local events
@@ -203,7 +207,7 @@ router.get('/community-events', isAuthenticated, async (req, res) => {
       venue: localEvents.venue,
       city: localEvents.city,
       state: localEvents.state,
-      isOnline: false as const,
+      isOnline: false as any,
       startDate: localEvents.date,
       endDate: localEvents.date,
       maxParticipants: localEvents.maxAttendees,
@@ -212,7 +216,7 @@ router.get('/community-events', isAuthenticated, async (req, res) => {
       prizes: null as any,
       status: localEvents.status,
       createdAt: localEvents.createdAt,
-      source: 'local' as const
+      source: 'local' as any
     }).from(localEvents);
     
     const conditions = [];
@@ -249,7 +253,7 @@ router.get('/community-events', isAuthenticated, async (req, res) => {
     
     // Combine and sort results
     const allEvents = [...collegeResults, ...localResults].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) => new Date(b.createdAt as string | number | Date).getTime() - new Date(a.createdAt as string | number | Date).getTime()
     );
     
     res.json(allEvents);
@@ -262,6 +266,10 @@ router.get('/community-events', isAuthenticated, async (req, res) => {
 // Create college event
 router.post('/college-events', isAuthenticated, async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const eventData = {
       ...req.body,
       organizerId: req.user.id
@@ -281,6 +289,10 @@ router.post('/college-events', isAuthenticated, async (req, res) => {
 // Create local event
 router.post('/local-events', isAuthenticated, async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const eventData = {
       ...req.body,
       organizerId: req.user.id
@@ -300,6 +312,10 @@ router.post('/local-events', isAuthenticated, async (req, res) => {
 // Join project as collaborator
 router.post('/community-projects/:id/join', isAuthenticated, async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const projectId = parseInt(req.params.id);
     const { role = 'contributor', skills = [] } = req.body;
     
@@ -326,8 +342,13 @@ router.post('/community-projects/:id/join', isAuthenticated, async (req, res) =>
       return res.status(404).json({ error: 'Project not found' });
     }
     
-    if (project.currentCollaborators >= project.maxCollaborators) {
+    if (project.currentCollaborators !== null && project.maxCollaborators !== null && 
+        project.currentCollaborators >= project.maxCollaborators) {
       return res.status(400).json({ error: 'Project is full' });
+    }
+    
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
     }
     
     // Add collaborator
@@ -343,7 +364,7 @@ router.post('/community-projects/:id/join', isAuthenticated, async (req, res) =>
     
     // Update project collaborator count
     await db.update(communityProjects)
-      .set({ currentCollaborators: project.currentCollaborators + 1 })
+      .set({ currentCollaborators: (project.currentCollaborators ?? 0) + 1 })
       .where(eq(communityProjects.id, projectId));
     
     res.json(collaborator);
@@ -356,6 +377,10 @@ router.post('/community-projects/:id/join', isAuthenticated, async (req, res) =>
 // Register for event
 router.post('/events/:id/register', isAuthenticated, async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const eventId = parseInt(req.params.id);
     const { eventType, ...registrationData } = req.body;
     
@@ -370,9 +395,13 @@ router.post('/events/:id/register', isAuthenticated, async (req, res) => {
         .returning();
       
       // Update participant count
+      const [eventData] = await db.select()
+        .from(collegeEvents)
+        .where(eq(collegeEvents.id, eventId));
+      
       await db.update(collegeEvents)
         .set({ 
-          currentParticipants: db.select().from(collegeEvents).where(eq(collegeEvents.id, eventId))
+          currentParticipants: (eventData?.currentParticipants ?? 0) + 1
         })
         .where(eq(collegeEvents.id, eventId));
       
@@ -382,7 +411,7 @@ router.post('/events/:id/register', isAuthenticated, async (req, res) => {
       const [registration] = await db.insert(localEventAttendees)
         .values({
           eventId,
-          userId: req.user.id,
+          userId: req.user?.id,
           ...registrationData
         })
         .returning();
@@ -433,6 +462,10 @@ router.get('/community-projects/:id/tasks', isAuthenticated, async (req, res) =>
 // Create project task
 router.post('/community-projects/:id/tasks', isAuthenticated, async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const projectId = parseInt(req.params.id);
     
     const taskData = {
@@ -486,6 +519,10 @@ router.get('/community-projects/:id/updates', isAuthenticated, async (req, res) 
 // Create project update
 router.post('/community-projects/:id/updates', isAuthenticated, async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const projectId = parseInt(req.params.id);
     
     const updateData = {
@@ -547,6 +584,10 @@ router.get('/community-projects/:id/showcase', isAuthenticated, async (req, res)
 // Create project showcase
 router.post('/community-projects/:id/showcase', isAuthenticated, async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const projectId = parseInt(req.params.id);
     
     const showcaseData = {
@@ -569,6 +610,10 @@ router.post('/community-projects/:id/showcase', isAuthenticated, async (req, res
 // Join community endpoint
 router.post('/communities/:id/join', isAuthenticated, async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const communityId = parseInt(req.params.id);
     const userId = req.user.id;
     const { role = 'member' } = req.body;
@@ -597,8 +642,12 @@ router.post('/communities/:id/join', isAuthenticated, async (req, res) => {
       .returning();
     
     // Update member count
+    const memberCount = await db.select({ count: sql`count(*)` })
+      .from(communityMembers)
+      .where(eq(communityMembers.communityId, communityId));
+    
     await db.update(communities)
-      .set({ currentMembers: db.select().from(communityMembers).where(eq(communityMembers.communityId, communityId)) })
+      .set({ currentMembers: Number(memberCount[0]?.count) || 1 })
       .where(eq(communities.id, communityId));
     
     res.json({ message: 'Successfully joined community', membership });
@@ -611,6 +660,10 @@ router.post('/communities/:id/join', isAuthenticated, async (req, res) => {
 // Join project endpoint
 router.post('/community-projects/:id/join', isAuthenticated, async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const projectId = parseInt(req.params.id);
     const userId = req.user.id;
     const { role = 'contributor', skills = [] } = req.body;
@@ -638,7 +691,8 @@ router.post('/community-projects/:id/join', isAuthenticated, async (req, res) =>
       return res.status(404).json({ error: 'Project not found' });
     }
     
-    if (project[0].currentCollaborators >= project[0].maxCollaborators) {
+    if (project[0].currentCollaborators !== null && project[0].maxCollaborators !== null && 
+        project[0].currentCollaborators >= project[0].maxCollaborators) {
       return res.status(400).json({ error: 'Project is full' });
     }
     
@@ -655,7 +709,7 @@ router.post('/community-projects/:id/join', isAuthenticated, async (req, res) =>
     
     // Update collaborator count
     await db.update(communityProjects)
-      .set({ currentCollaborators: project[0].currentCollaborators + 1 })
+      .set({ currentCollaborators: (project[0].currentCollaborators ?? 0) + 1 })
       .where(eq(communityProjects.id, projectId));
     
     res.json({ message: 'Successfully joined project', collaboration });
