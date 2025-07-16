@@ -45,5 +45,5 @@ export default defineConfig({
     },
   },
   // Base URL for Vercel deployment
-  base: process.env.NODE_ENV === 'production' ? '/dist/client' : '/',
+  base: './',
 });
