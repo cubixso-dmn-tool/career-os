@@ -10,7 +10,7 @@ import {
   type InsertProject, type InsertUserProject, type InsertSoftSkill, type InsertUserSoftSkill,
   type InsertResume, type InsertPost, type InsertComment, type InsertAchievement,
   type InsertUserAchievement, type InsertEvent, type InsertUserEvent
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { eq, desc, and, or, sql, like } from "drizzle-orm";
 import { db } from "./db.js";
 

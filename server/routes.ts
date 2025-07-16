@@ -16,7 +16,7 @@ import {
   insertUserEventSchema,
   insertDailyByteSchema,
   insertUserDailyByteSchema
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { 
   generateCareerRecommendations,
   chatWithPathFinder

@@ -27,7 +27,7 @@ import {
   communityPosts, CommunityPost, InsertCommunityPost,
   communityPostComments, CommunityPostComment, InsertCommunityPostComment,
   moderationActions, ModerationAction, InsertModerationAction
-} from "@shared/schema";
+} from "../shared/schema.js";
 
 export interface IStorage {
   // User operations

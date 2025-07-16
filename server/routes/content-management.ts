@@ -4,7 +4,7 @@ import {
   insertCourseSchema, 
   insertProjectSchema, 
   insertCommunitySchema 
-} from '@shared/schema';
+} from '../../shared/schema.js';
 import { ZodError } from 'zod';
 import multer from 'multer';
 import { processFileUpload } from '../lib/upload-helper';

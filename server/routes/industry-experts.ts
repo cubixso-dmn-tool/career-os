@@ -16,7 +16,7 @@ import {
   type CareerSuccessStory,
   type NetworkingEvent,
   type CollegeEventRegistration
-} from "@shared/schema";
+} from "../../shared/schema.js";
 
 const router = Router();
 

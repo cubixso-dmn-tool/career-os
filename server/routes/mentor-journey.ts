@@ -12,7 +12,7 @@ import {
   insertMentorProfileSchema,
   insertMentorSessionSchema,
   insertMentorResourceSchema
-} from "@shared/schema";
+} from "../../shared/schema.js";
 import { eq, desc, and, gte, count, avg } from "drizzle-orm";
 // Simple authentication middleware
 const isAuthenticated = (req: any, res: any, next: any) => {

@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { userRoles, users, roles } from '@shared/schema';
+import { userRoles, users, roles } from '../../shared/schema.js';
 import { eq } from 'drizzle-orm';
 
 async function assignTestRoles() {

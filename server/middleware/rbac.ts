@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { storage } from "../storage.js";
-import { Permission } from "@shared/schema";
+import { Permission } from "../shared/schema.js";
 
 // Type definition for Express Request with user role information
 declare global {

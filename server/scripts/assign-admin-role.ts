@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { roles, userRoles, users } from "@shared/schema";
+import { roles, userRoles, users } from "../../shared/schema.js";
 import { eq, and } from "drizzle-orm";
 
 /**

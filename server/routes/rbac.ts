@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { storage } from "../storage.js";
 import { loadUserRolesMiddleware, requirePermission } from "../middleware/rbac.js";
-import { insertRoleSchema, insertPermissionSchema, insertRolePermissionSchema } from "@shared/schema";
+import { insertRoleSchema, insertPermissionSchema, insertRolePermissionSchema } from "../../shared/schema.js";
 
 // Create router
 const router = Router();
