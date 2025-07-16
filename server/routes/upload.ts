@@ -14,21 +14,31 @@ const requireAuth = (req: any, res: any, next: any) => {
   next();
 };
 
-// Ensure upload directories exist
+// Define upload directories
 const uploadDir = path.join(process.cwd(), 'server/public/uploads');
 const profileDir = path.join(uploadDir, 'profiles');
 const projectDir = path.join(uploadDir, 'projects');
 const resumeDir = path.join(uploadDir, 'resumes');
 
-[uploadDir, profileDir, projectDir, resumeDir].forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+// Helper function to ensure directory exists
+function ensureDirectoryExists(dir: string) {
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  } catch (error) {
+    console.warn(`Could not create directory ${dir}:`, error);
   }
-});
+}
 
 // Configure multer for different file types
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    // In serverless environments, fail gracefully
+    if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+      return cb(new Error('File uploads not supported in serverless environment. Please configure cloud storage.'), '');
+    }
+
     let destinationDir = uploadDir;
     
     if (req.route.path.includes('profile')) {
@@ -38,6 +48,9 @@ const storage = multer.diskStorage({
     } else if (req.route.path.includes('resume')) {
       destinationDir = resumeDir;
     }
+    
+    // Ensure directory exists before using it
+    ensureDirectoryExists(destinationDir);
     
     cb(null, destinationDir);
   },
