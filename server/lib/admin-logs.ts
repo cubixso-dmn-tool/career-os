@@ -1,4 +1,4 @@
-import { storage } from '../simple-storage';
+
 import { cache } from './cache';
 
 export enum LogLevel {

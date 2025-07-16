@@ -21,27 +21,27 @@ import {
   generateCareerRecommendations,
   chatWithPathFinder
 } from "./lib/openai";
-import communityRoutes from "./routes/community.ts";
-import rbacRoutes from "./routes/rbac.ts";
-import careerRoutes from "./routes/career.ts";
-import careerRoadmapRoutes from "./routes/career-roadmap.ts";
-import contentManagementRoutes from "./routes/content-management.ts";
-import coursesRoutes from "./routes/courses.ts";
-import aiCareerCoachRoutes from "./routes/ai-career-coach.ts";
-import industryExpertsRoutes from "./routes/industry-experts.ts";
-import learningResourcesRoutes from "./routes/learning-resources.ts";
-import mentorRoutes from "./routes/mentor.ts";
-import mentorJourneyRoutes from "./routes/mentor-journey.ts";
-import adminRoutes from "./routes/admin.ts";
-import analyticsRoutes from "./routes/analytics.ts";
-import dashboardRoutes from "./routes/dashboard.ts";
-import searchRoutes from "./routes/search.ts";
-import uploadRoutes from "./routes/upload.ts";
-import authAdvancedRoutes from "./routes/auth-advanced.ts";
-import adminLogsRoutes from "./routes/admin-logs.ts";
-import { loadUserRolesMiddleware } from "./middleware/rbac.ts";
-import { sanitizeInput, rateLimit, validateSqlInjection, securityHeaders } from "./middleware/validation.ts";
-import { AdminLogger } from "./lib/admin-logs.ts";
+import communityRoutes from "./routes/community";
+import rbacRoutes from "./routes/rbac";
+import careerRoutes from "./routes/career";
+import careerRoadmapRoutes from "./routes/career-roadmap";
+import contentManagementRoutes from "./routes/content-management";
+import coursesRoutes from "./routes/courses";
+import aiCareerCoachRoutes from "./routes/ai-career-coach";
+import industryExpertsRoutes from "./routes/industry-experts";
+import learningResourcesRoutes from "./routes/learning-resources";
+import mentorRoutes from "./routes/mentor";
+import mentorJourneyRoutes from "./routes/mentor-journey";
+import adminRoutes from "./routes/admin";
+import analyticsRoutes from "./routes/analytics";
+import dashboardRoutes from "./routes/dashboard";
+import searchRoutes from "./routes/search";
+import uploadRoutes from "./routes/upload";
+import authAdvancedRoutes from "./routes/auth-advanced";
+import adminLogsRoutes from "./routes/admin-logs";
+import { loadUserRolesMiddleware } from "./middleware/rbac";
+import { sanitizeInput, rateLimit, validateSqlInjection, securityHeaders } from "./middleware/validation";
+import { AdminLogger } from "./lib/admin-logs";
 
 function handleZodError(error: ZodError, res: Response) {
   return res.status(400).json({

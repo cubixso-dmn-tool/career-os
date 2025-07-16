@@ -1,14 +1,17 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from "express";
-import { registerRoutes } from "../server/routes.ts";
+import { registerRoutes } from "../server/routes";
 import cors from "cors";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { storage } from "../server/storage.ts";
+import { storage } from "../server/storage";
 import connectPgSimple from "connect-pg-simple";
-import { pool } from "../server/db.ts";
-import { OAuthManager } from "../server/lib/oauth.ts";
-import GlobalErrorHandler from "../server/middleware/error-handler.ts";
+import { pool } from "../server/db";
+import { OAuthManager } from "../server/lib/oauth";
+import GlobalErrorHandler from "../server/middleware/error-handler";
 
 const PgSession = connectPgSimple(session);
 
