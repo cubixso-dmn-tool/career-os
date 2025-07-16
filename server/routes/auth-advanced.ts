@@ -1,11 +1,11 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
 import passport from "passport";
-import { storage } from "../simple-storage";
-import { JWTManager, jwtAuthMiddleware } from "../lib/jwt";
-import { OAuthManager, isOAuthConfigured } from "../lib/oauth";
-import { EmailManager } from "../lib/email";
-import { AdminLogger, LogLevel, LogCategory } from "../lib/admin-logs";
+import { storage } from "../simple-storage.js";
+import { JWTManager, jwtAuthMiddleware } from "../lib/jwt.js";
+import { OAuthManager, isOAuthConfigured } from "../lib/oauth.js";
+import { EmailManager } from "../lib/email.js";
+import { AdminLogger, LogLevel, LogCategory } from "../lib/admin-logs.js";
 import speakeasy from "speakeasy";
 import QRCode from "qrcode";
 

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { storage } from "../simple-storage";
+import { storage } from "../simple-storage.js";
 import { sql } from "drizzle-orm";
 import { Course, Project, CollegeEvent } from '@shared/schema';
 

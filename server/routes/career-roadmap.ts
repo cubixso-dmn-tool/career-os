@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { storage } from "../storage";
-import { loadUserRolesMiddleware } from "../middleware/rbac";
+import { storage } from "../storage.js";
+import { loadUserRolesMiddleware } from "../middleware/rbac.js";
 
 const router = Router();
 

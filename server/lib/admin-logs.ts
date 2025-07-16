@@ -1,5 +1,5 @@
 
-import { cache } from './cache';
+import { cache } from './cache.js';
 
 export enum LogLevel {
   INFO = 'info',

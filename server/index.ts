@@ -2,17 +2,17 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import express from "express";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { registerRoutes } from "./routes.js";
+import { setupVite, serveStatic, log } from "./vite.js";
 import cors from "cors";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 import connectPgSimple from "connect-pg-simple";
-import { pool } from "./db";
-import { OAuthManager } from "./lib/oauth";
-import GlobalErrorHandler from "./middleware/error-handler";
+import { pool } from "./db.js";
+import { OAuthManager } from "./lib/oauth.js";
+import GlobalErrorHandler from "./middleware/error-handler.js";
 
 const port = process.env.PORT || 5000;
 const host = process.env.NODE_ENV === 'production' ? "0.0.0.0" : "127.0.0.1";

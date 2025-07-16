@@ -12,7 +12,7 @@ import {
   type InsertUserAchievement, type InsertEvent, type InsertUserEvent
 } from "@shared/schema";
 import { eq, desc, and, or, sql, like } from "drizzle-orm";
-import { db } from "./db";
+import { db } from "./db.js";
 
 // Database storage interface
 export interface IStorage {

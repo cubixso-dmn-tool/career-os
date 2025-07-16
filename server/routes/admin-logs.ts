@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { AdminLogger, LogLevel, LogCategory } from "../lib/admin-logs";
-import { cacheMiddleware } from "../lib/cache";
+import { AdminLogger, LogLevel, LogCategory } from "../lib/admin-logs.js";
+import { cacheMiddleware } from "../lib/cache.js";
 
 const router = Router();
 

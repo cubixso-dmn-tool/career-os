@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { storage } from "../storage";
-import { loadUserRolesMiddleware, requirePermission } from "../middleware/rbac";
+import { storage } from "../storage.js";
+import { loadUserRolesMiddleware, requirePermission } from "../middleware/rbac.js";
 import { insertRoleSchema, insertPermissionSchema, insertRolePermissionSchema } from "@shared/schema";
 
 // Create router

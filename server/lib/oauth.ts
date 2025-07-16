@@ -1,8 +1,8 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as GitHubStrategy } from 'passport-github2';
-import { storage } from '../simple-storage';
-import { JWTManager } from './jwt';
+import { storage } from '../simple-storage.js';
+import { JWTManager } from './jwt.js';
 
 export interface OAuthProfile {
   id: string;

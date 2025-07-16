@@ -190,7 +190,7 @@ export interface IStorage {
 }
 
 import { eq, desc, and, or, sql, like } from "drizzle-orm";
-import { db } from "./db";
+import { db } from "./db.js";
 
 // JSON type definition
 type Json = Record<string, any>;

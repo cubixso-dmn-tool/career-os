@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { storage } from "../simple-storage";
-import { cache, cacheMiddleware } from "../lib/cache";
-import { requirePermission } from "../middleware/rbac";
+import { storage } from "../simple-storage.js";
+import { cache, cacheMiddleware } from "../lib/cache.js";
+import { requirePermission } from "../middleware/rbac.js";
 
 const router = Router();
 

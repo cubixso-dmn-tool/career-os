@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import { AdminLogger } from '../lib/admin-logs';
+import { AdminLogger } from '../lib/admin-logs.js';
 
 interface AppError extends Error {
   statusCode?: number;
