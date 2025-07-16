@@ -14,6 +14,9 @@ import { pool } from "./db";
 import { OAuthManager } from "./lib/oauth";
 import GlobalErrorHandler from "./middleware/error-handler";
 
+const port = process.env.PORT || 5000;
+const host = process.env.NODE_ENV === 'production' ? "0.0.0.0" : "127.0.0.1";
+
 const PgSession = connectPgSimple(session);
 
 // Configure Passport
@@ -127,11 +130,11 @@ app.use((req, res, next) => {
   // Add global error handling after Vite setup
   app.use(GlobalErrorHandler.middleware());
 
-  const port = 5000;
-  const host = "127.0.0.1";
+  // const port = 5000;
+  // const host = "127.0.0.1";
   const url = `http://${host}:${port}`;
   
-  server.listen(port, host, () => {
+  server.listen({ port: Number(port), host }, () => {
     log(`serving on port ${port}`);
     log(`Click here to open the app: ${url}`)
   });
