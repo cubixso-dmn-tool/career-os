@@ -1,5 +1,5 @@
-import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "../server/routes.js";
+import express from "express";
+import { registerRoutes } from "../server/routes.ts";
 import cors from "cors";
 import session from "express-session";
 import passport from "passport";
