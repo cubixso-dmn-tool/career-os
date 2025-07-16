@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -124,15 +127,13 @@ app.use((req, res, next) => {
   // Add global error handling after Vite setup
   app.use(GlobalErrorHandler.middleware());
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
+  const host = "127.0.0.1";
+  const url = `http://${host}:${port}`;
+  
+  server.listen(port, host, () => {
     log(`serving on port ${port}`);
+    log(`Click here to open the app: ${url}`)
   });
+
 })();
