@@ -2,16 +2,16 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import express from "express";
-import { registerRoutes } from "../server/routes";
+import { registerRoutes } from "../server/routes.js";
 import cors from "cors";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { storage } from "../server/storage";
+import { storage } from "../server/storage.js";
 import connectPgSimple from "connect-pg-simple";
-import { pool } from "../server/db";
-import { OAuthManager } from "../server/lib/oauth";
-import GlobalErrorHandler from "../server/middleware/error-handler";
+import { pool } from "../server/db.js";
+import { OAuthManager } from "../server/lib/oauth.js";
+import GlobalErrorHandler from "../server/middleware/error-handler.js";
 
 const PgSession = connectPgSimple(session);
 
