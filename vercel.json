@@ -9,13 +9,15 @@
       }
     },
     {
-      "src": "api/index.ts",
+      "src": "dist/index.js",
       "use": "@vercel/node",
       "config": {
         "includeFiles": ["server/**"]
       }
     }
   ],
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "routes": [
     {
       "src": "/api/(.*)",
