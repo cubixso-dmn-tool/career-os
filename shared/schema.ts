@@ -768,7 +768,7 @@ export type CareerSuccessStory = typeof careerSuccessStories.$inferSelect;
 export type InsertNetworkingEvent = z.infer<typeof insertNetworkingEventSchema>;
 export type NetworkingEvent = typeof networkingEvents.$inferSelect;
 
-export type InsertEventRegistration = z.infer<typeof insertEventRegistrationSchema>;
+export type InsertEventRegistration = z.infer<typeof insertCollegeEventRegistrationSchema>;
 export type EventRegistration = typeof eventRegistrations.$inferSelect;
 
 export type InsertExpertMentorship = z.infer<typeof insertExpertMentorshipSchema>;

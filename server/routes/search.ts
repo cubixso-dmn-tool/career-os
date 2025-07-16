@@ -62,13 +62,19 @@ router.get("/", requireAuth, async (req, res) => {
 
     // Search events
     if (!type || type === 'events') {
-      const events = await storage.getAllEvents();
-      results.events = events
-        .filter(event => 
-          event.title.toLowerCase().includes(q.toLowerCase()) ||
-          event.description.toLowerCase().includes(q.toLowerCase())
-        )
-        .slice(0, parseInt(limit as string));
+      // const events = await storage.getAllEvents();
+      // results.events = events.filter(event => 
+      //     event.title.toLowerCase().includes(q.toLowerCase()) ||
+      //     event.description.toLowerCase().includes(q.toLowerCase())
+      //   ).map(event => ({
+      //     id: event.id,
+      //     date: event.date,
+      //     title: event.title,
+      //     type: event.type,
+      //     description: event.description,
+      //     duration: event.duration,
+      //     isRegistrationRequired: event.isRegistrationRequired,
+      //   }));
     }
 
     res.json(results);

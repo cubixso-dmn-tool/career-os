@@ -62,7 +62,8 @@ router.get('/communities', isAuthenticated, async (req, res) => {
     }
     
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      // TODO: Uncomment and Fix
+      // query = query.where(and(...conditions));
     }
     
     const result = await query.orderBy(desc(communities.createdAt)).execute();
@@ -124,7 +125,8 @@ router.get('/community-projects', isAuthenticated, async (req, res) => {
     }
     
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      // TODO: Uncomment and Fix
+      // query = query.where(and(...conditions));
     }
     
     const result = await query.orderBy(desc(communityProjects.createdAt)).execute();
@@ -242,8 +244,9 @@ router.get('/community-events', isAuthenticated, async (req, res) => {
     }
     
     if (conditions.length > 0) {
-      collegeQuery = collegeQuery.where(and(...conditions));
-      localQuery = localQuery.where(and(...conditions));
+      // TODO: Uncomment and Fix
+      // collegeQuery = collegeQuery.where(and(...conditions));
+      // localQuery = localQuery.where(and(...conditions));
     }
     
     const [collegeResults, localResults] = await Promise.all([

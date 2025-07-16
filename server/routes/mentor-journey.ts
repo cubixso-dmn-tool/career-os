@@ -115,18 +115,20 @@ router.get("/community", isAuthenticated, async (req: any, res) => {
     
     if (!engagement) {
       // Create default engagement record
-      [engagement] = await db
-        .insert(mentorCommunityEngagement)
-        .values({
-          mentorId: userId as number,
-          answersPosted: 43,
-          postsCreated: 12,
-          totalUpvotes: 127,
-          communityRating: 4.8,
-          monthlyGoalAnswers: 50,
-          currentMonthAnswers: 43
-        })
-        .returning();
+      // TODO: Below commented
+      
+      // [engagement] = await db
+      //   .insert(mentorCommunityEngagement)
+      //   .values({
+      //     mentorId: userId,
+      //     answersPosted: 43,
+      //     postsCreated: 12,
+      //     totalUpvotes: 127,
+      //     communityRating: 4.8,
+      //     monthlyGoalAnswers: 50,
+      //     currentMonthAnswers: 43
+      //   })
+      //   .returning();
     }
     
     const activities = [
