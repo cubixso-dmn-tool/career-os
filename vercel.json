@@ -22,8 +22,12 @@
       "dest": "/api/index.ts"
     },
     {
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/api/index.ts"
+      "dest": "/index.html"
     }
   ],
   "env": {
