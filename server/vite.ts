@@ -79,8 +79,14 @@ export function serveStatic(app: Express) {
   // Serve static files from the dist/public directory
   app.use(express.static(distPath, { index: false }));
 
-  // Serve the client's index.html for all routes
-  app.get('*', (_req, res) => {
+  // SPA fallback - serve index.html for all non-API routes
+  app.get('*', (req, res) => {
+    // Don't serve index.html for API routes
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    
+    // Serve index.html for all other routes (SPA routing)
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }
