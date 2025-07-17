@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { queryClient, getQueryFn, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -52,17 +53,17 @@ import {
   Loader2
 } from "lucide-react";
 
-const USER_ID = 1;
-
 export default function Settings() {
   const { toast } = useToast();
+  const { user: authUser, loading: authLoading } = useAuth();
   const [activeSection, setActiveSection] = useState("profile");
   const [isEditing, setIsEditing] = useState(false);
   
   // Fetch user data
   const { data: user, isLoading: isUserLoading } = useQuery({
-    queryKey: [`/api/users/${USER_ID}`],
-    queryFn: undefined,
+    queryKey: [`/api/users/${authUser?.id}`],
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: !!authUser?.id,
   });
 
   // Profile form state
@@ -142,36 +143,43 @@ export default function Settings() {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
 
-  // Data fetching queries
+  // Data fetching queries - Only load admin data when needed
+  const isAdminSection = activeSection === 'content' || activeSection === 'roles';
+  
   const { data: courses, isLoading: isCoursesLoading } = useQuery({
     queryKey: ['/api/content-management/courses'],
-    queryFn: getQueryFn({ on401: "throw" })
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: activeSection === 'content'
   });
   
   const { data: projects, isLoading: isProjectsLoading } = useQuery({
     queryKey: ['/api/content-management/projects'],
-    queryFn: getQueryFn({ on401: "throw" })
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: activeSection === 'content'
   });
   
   const { data: communities, isLoading: isCommunitiesLoading } = useQuery({
     queryKey: ['/api/content-management/communities'],
-    queryFn: getQueryFn({ on401: "throw" })
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: activeSection === 'content'
   });
 
   const { data: users, isLoading: isUsersLoading } = useQuery({
     queryKey: ['/api/users'],
-    queryFn: undefined,
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: activeSection === 'roles'
   });
   
   const { data: roles, isLoading: isRolesLoading } = useQuery({
     queryKey: ['/api/rbac/roles'],
-    queryFn: undefined,
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: activeSection === 'roles'
   });
   
   const { data: userRoles, isLoading: isUserRolesLoading, refetch: refetchUserRoles } = useQuery({
     queryKey: ['/api/rbac/users', selectedUserId, 'roles'],
-    queryFn: undefined,
-    enabled: !!selectedUserId,
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: !!selectedUserId && activeSection === 'roles',
   });
 
   // Update profile data when user data loads
@@ -187,10 +195,23 @@ export default function Settings() {
     }
   }, [user]);
 
+  // Use authenticated user data as fallback
+  useEffect(() => {
+    if (authUser && !user) {
+      setProfileForm({
+        name: authUser.name || "",
+        email: authUser.email || "",
+        bio: (authUser as any).bio || "",
+        avatar: authUser.avatar || "",
+      });
+    }
+  }, [authUser, user]);
+
   // Mutations
   const updateProfileMutation = useMutation({
     mutationFn: async (updatedProfile: any) => {
-      const response = await fetch(`/api/users/${USER_ID}`, {
+      if (!authUser?.id) throw new Error("User not authenticated");
+      const response = await fetch(`/api/users/${authUser.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -200,7 +221,7 @@ export default function Settings() {
       return await response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/users/${USER_ID}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${authUser?.id}`] });
       toast({ title: "Profile updated", description: "Your profile has been updated successfully." });
       setIsEditing(false);
     },
@@ -211,7 +232,8 @@ export default function Settings() {
 
   const saveNotificationSettingsMutation = useMutation({
     mutationFn: async (settings: any) => {
-      const response = await fetch(`/api/users/${USER_ID}/settings/notifications`, {
+      if (!authUser?.id) throw new Error("User not authenticated");
+      const response = await fetch(`/api/users/${authUser.id}/settings/notifications`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -227,7 +249,8 @@ export default function Settings() {
 
   const saveAppearanceSettingsMutation = useMutation({
     mutationFn: async (settings: any) => {
-      const response = await fetch(`/api/users/${USER_ID}/settings/appearance`, {
+      if (!authUser?.id) throw new Error("User not authenticated");
+      const response = await fetch(`/api/users/${authUser.id}/settings/appearance`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -243,7 +266,8 @@ export default function Settings() {
 
   const savePrivacySettingsMutation = useMutation({
     mutationFn: async (settings: any) => {
-      const response = await fetch(`/api/users/${USER_ID}/settings/privacy`, {
+      if (!authUser?.id) throw new Error("User not authenticated");
+      const response = await fetch(`/api/users/${authUser.id}/settings/privacy`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -346,6 +370,41 @@ export default function Settings() {
     updateProfileMutation.mutate(profileForm);
   };
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast({ 
+          title: "File too large", 
+          description: "Please select an image smaller than 2MB.", 
+          variant: "destructive" 
+        });
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({ 
+          title: "Invalid file type", 
+          description: "Please select a valid image file.", 
+          variant: "destructive" 
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          const base64String = event.target.result as string;
+          setProfileForm({ ...profileForm, avatar: base64String });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleCourseThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -386,7 +445,7 @@ export default function Settings() {
     { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Control how you receive updates' },
     { id: 'appearance', label: 'Appearance', icon: Palette, description: 'Customize your experience' },
     { id: 'privacy', label: 'Privacy & Security', icon: Shield, description: 'Control your data and security' },
-    { id: 'language', label: 'Language', icon: Globe, description: 'Choose your preferred language' },
+    { id: 'language', label: 'Language', icon: Globe, description: 'Choose your preferred language', disabled: true },
   ];
 
   const adminMenu = [
@@ -394,11 +453,24 @@ export default function Settings() {
     { id: 'roles', label: 'User Roles', icon: Crown, description: 'Assign roles and permissions' },
   ];
 
-  if (isUserLoading) {
+  if (authLoading || isUserLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[400px]">
           <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!authUser) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h2>
+            <p className="text-gray-600">Please log in to access settings.</p>
+          </div>
         </div>
       </Layout>
     );
@@ -427,52 +499,84 @@ export default function Settings() {
                 <CardTitle className="text-lg">Settings Menu</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="space-y-1">
-                  {settingsMenu.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveSection(item.id)}
-                      className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between group hover:bg-gray-50 ${
-                        activeSection === item.id ? 'bg-primary/10 text-primary border-r-2 border-primary' : 'text-gray-700'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <item.icon className="w-5 h-5" />
-                        <div>
-                          <div className="font-medium">{item.label}</div>
-                          <div className="text-xs text-gray-500 hidden lg:block">{item.description}</div>
-                        </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </button>
-                  ))}
-                  
-                  <Separator className="my-4" />
-                  
-                  <PermissionGate roles={[1]}>
-                    <div className="px-4 py-2">
-                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Admin Settings</h4>
-                    </div>
-                    {adminMenu.map((item) => (
-                      <button
-                        key={item.id}
-                        onClick={() => setActiveSection(item.id)}
-                        className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between group hover:bg-gray-50 ${
-                          activeSection === item.id ? 'bg-primary/10 text-primary border-r-2 border-primary' : 'text-gray-700'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <item.icon className="w-5 h-5" />
-                          <div>
-                            <div className="font-medium">{item.label}</div>
-                            <div className="text-xs text-gray-500 hidden lg:block">{item.description}</div>
+                <TooltipProvider>
+                  <div className="space-y-1">
+                    {settingsMenu.map((item) => {
+                      const isDisabled = item.disabled;
+                      const buttonContent = (
+                        <button
+                          key={item.id}
+                          onClick={() => !isDisabled && setActiveSection(item.id)}
+                          disabled={isDisabled}
+                          className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between group ${
+                            isDisabled 
+                              ? 'cursor-not-allowed opacity-60 text-gray-400' 
+                              : `hover:bg-gray-50 ${
+                                  activeSection === item.id ? 'bg-primary/10 text-primary border-r-2 border-primary' : 'text-gray-700'
+                                }`
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <item.icon className="w-5 h-5" />
+                            <div>
+                              <div className="font-medium">{item.label}</div>
+                              <div className="text-xs text-gray-500 hidden lg:block">{item.description}</div>
+                            </div>
                           </div>
-                        </div>
-                        <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </button>
-                    ))}
-                  </PermissionGate>
-                </div>
+                          <ChevronRight className={`w-4 h-4 transition-opacity ${
+                            isDisabled ? 'opacity-40' : 'opacity-0 group-hover:opacity-100'
+                          }`} />
+                        </button>
+                      );
+
+                      if (isDisabled) {
+                        return (
+                          <Tooltip key={item.id}>
+                            <TooltipTrigger asChild>
+                              {buttonContent}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs text-center">
+                                🌍 Languages are coming soon! Our developers are still arguing about whether 
+                                "data" is singular or plural in different languages. 
+                                <br />
+                                <span className="text-xs italic">Stay tuned! 🚀</span>
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      }
+
+                      return buttonContent;
+                    })}
+                  
+                    <Separator className="my-4" />
+                    
+                    <PermissionGate roles={[1]}>
+                      <div className="px-4 py-2">
+                        <h4 className="text-sm font-semibold text-gray-900 mb-2">Admin Settings</h4>
+                      </div>
+                      {adminMenu.map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => setActiveSection(item.id)}
+                          className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between group hover:bg-gray-50 ${
+                            activeSection === item.id ? 'bg-primary/10 text-primary border-r-2 border-primary' : 'text-gray-700'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <item.icon className="w-5 h-5" />
+                            <div>
+                              <div className="font-medium">{item.label}</div>
+                              <div className="text-xs text-gray-500 hidden lg:block">{item.description}</div>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                      ))}
+                    </PermissionGate>
+                  </div>
+                </TooltipProvider>
               </CardContent>
             </Card>
           </div>
@@ -516,7 +620,19 @@ export default function Settings() {
                       </Avatar>
                       {isEditing && (
                         <div>
-                          <Button variant="outline" size="sm">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/jpg"
+                            onChange={handleAvatarChange}
+                            className="hidden"
+                            id="avatar-upload"
+                          />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            type="button"
+                            onClick={() => document.getElementById('avatar-upload')?.click()}
+                          >
                             <Camera className="w-4 h-4 mr-2" />
                             Change Photo
                           </Button>

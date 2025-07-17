@@ -16,7 +16,7 @@ export default function Layout({ children, title }: LayoutProps) {
   const userWithDefaults = {
     name: user?.name || 'User',
     email: user?.email || 'user@example.com',
-    avatar: user?.avatar || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6',
+    avatar: user?.avatar || `https://placehold.co/600x400?text=${user?.name?.charAt(0)?.toUpperCase() || "."}`,
   };
 
   return (
