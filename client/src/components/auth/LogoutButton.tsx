@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface LogoutButtonProps {
@@ -7,16 +7,26 @@ interface LogoutButtonProps {
 }
 
 export default function LogoutButton({ className }: LogoutButtonProps) {
-  const { logout } = useAuth();
+  const { logout, loading } = useAuth();
 
   return (
     <Button 
       variant="outline" 
       className={className} 
       onClick={logout}
+      disabled={loading}
     >
-      <LogOut className="h-4 w-4 mr-2" /> 
-      Logout
+      {loading ? (
+        <>
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          Logging out...
+        </>
+      ) : (
+        <>
+          <LogOut className="h-4 w-4 mr-2" /> 
+          Logout
+        </>
+      )}
     </Button>
   );
 }

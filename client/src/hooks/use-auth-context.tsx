@@ -1,5 +1,8 @@
 import React, { createContext, ReactNode, useState, useContext, useEffect } from 'react';
 import { useLocation } from 'wouter';
+import { useToast } from './use-toast';
+import FirebaseAuthService from '../lib/firebase';
+import { User as FirebaseUser } from 'firebase/auth';
 
 interface User {
   id: number;
@@ -22,6 +25,8 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<{ success: boolean; message?: string }>;
   register: (userData: any) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
+  signInWithGoogle: () => Promise<{ success: boolean; message?: string }>;
+  signInWithGitHub: () => Promise<{ success: boolean; message?: string }>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -35,6 +40,8 @@ export const AuthContext = createContext<AuthContextType>({
   login: async () => ({ success: false }),
   register: async () => ({ success: false }),
   logout: async () => {},
+  signInWithGoogle: async () => ({ success: false }),
+  signInWithGitHub: async () => ({ success: false }),
 });
 
 export const useAuthContext = () => useContext(AuthContext);
@@ -49,6 +56,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [userRoles, setUserRoles] = useState<number[]>([]);
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
   const [, navigate] = useLocation();
+  const { toast } = useToast();
 
   // Token management functions
   const getStoredTokens = () => {
@@ -141,63 +149,128 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   useEffect(() => {
-    async function loadUser() {
-      try {
-        // Check for OAuth tokens in URL (from OAuth redirect)
-        const urlParams = new URLSearchParams(window.location.search);
-        const accessToken = urlParams.get('access_token');
-        const refreshToken = urlParams.get('refresh_token');
-        
-        if (accessToken && refreshToken) {
-          // Store tokens from OAuth redirect
-          setStoredTokens(accessToken, refreshToken);
-          // Clean up URL
-          window.history.replaceState({}, document.title, window.location.pathname);
+    // Set up Firebase auth state listener
+    const unsubscribe = FirebaseAuthService.onAuthStateChange(async (firebaseUser: FirebaseUser | null) => {
+      if (firebaseUser) {
+        try {
+          // Firebase user is signed in, sync to our database
+          const syncResult = await FirebaseAuthService.syncUserToDatabase(firebaseUser);
+          
+          // Store our JWT tokens
+          setStoredTokens(syncResult.accessToken, syncResult.refreshToken);
+          
+          // Set user data
+          setUser(syncResult.user);
+          await loadUserRolesAndPermissions();
+          
+          toast({
+            title: "Login successful",
+            description: "Welcome to CareerOS!",
+          });
+          
+        } catch (error) {
+          console.error('Firebase user sync failed:', error);
+          toast({
+            title: "Authentication Error",
+            description: "Failed to sync user data. Please try again.",
+            variant: "destructive",
+          });
         }
+      } else {
+        // No Firebase user, check for legacy auth
+        await loadLegacyAuth();
+      }
+      
+      setLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
+
+  // Legacy authentication check (for existing users)
+  const loadLegacyAuth = async () => {
+    try {
+      // Check for OAuth tokens in URL (from OAuth redirect)
+      const urlParams = new URLSearchParams(window.location.search);
+      const accessToken = urlParams.get('access_token');
+      const refreshToken = urlParams.get('refresh_token');
+      
+      if (accessToken && refreshToken) {
+        // Store tokens from OAuth redirect
+        setStoredTokens(accessToken, refreshToken);
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
         
-        const { accessToken: storedAccessToken } = getStoredTokens();
-        
-        // If no token, check session-based auth as fallback
-        if (!storedAccessToken) {
-          const response = await fetch('/api/auth/me');
-          if (response.ok) {
-            const data = await response.json();
-            setUser(data.user);
-            await loadUserRolesAndPermissions();
-          } else {
-            setUser(null);
-            setUserRoles([]);
-            setUserPermissions([]);
-          }
-        } else {
-          // Use token-based authentication - try advanced auth route first
+        // Immediately fetch user data with new tokens
+        try {
           const response = await authenticatedFetch('/api/auth/me');
           if (response.ok) {
             const data = await response.json();
-            // JWT endpoint returns user data directly
             setUser(data);
             await loadUserRolesAndPermissions();
-          } else {
-            // Token might be invalid, clear it
-            clearStoredTokens();
-            setUser(null);
-            setUserRoles([]);
-            setUserPermissions([]);
+            
+            // Show success toast
+            toast({
+              title: "Login successful",
+              description: "Welcome to CareerOS!",
+            });
+            
+            // Redirect to dashboard after successful OAuth login
+            setTimeout(() => {
+              navigate('/dashboard');
+            }, 500);
+            return;
           }
+        } catch (error) {
+          console.error('OAuth token validation failed:', error);
+          clearStoredTokens();
+          toast({
+            title: "Authentication Error",
+            description: "OAuth login failed. Please try again.",
+            variant: "destructive",
+          });
         }
-      } catch (error) {
-        console.error('Failed to fetch user', error);
-        clearStoredTokens();
-        setUser(null);
-        setUserRoles([]);
-        setUserPermissions([]);
-      } finally {
-        setLoading(false);
       }
+      
+      const { accessToken: storedAccessToken } = getStoredTokens();
+      
+      // If no token, check session-based auth as fallback
+      if (!storedAccessToken) {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+          await loadUserRolesAndPermissions();
+        } else {
+          setUser(null);
+          setUserRoles([]);
+          setUserPermissions([]);
+        }
+      } else {
+        // Use token-based authentication - try advanced auth route first
+        const response = await authenticatedFetch('/api/auth/me');
+        if (response.ok) {
+          const data = await response.json();
+          // JWT endpoint returns user data directly
+          setUser(data);
+          await loadUserRolesAndPermissions();
+        } else {
+          // Token might be invalid, clear it
+          clearStoredTokens();
+          setUser(null);
+          setUserRoles([]);
+          setUserPermissions([]);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch user', error);
+      clearStoredTokens();
+      setUser(null);
+      setUserRoles([]);
+      setUserPermissions([]);
     }
-    
-    loadUser();
-  }, []);
+  };
 
   // Check if user has a specific permission
   const hasPermission = (permission: string): boolean => {
@@ -210,6 +283,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const login = async (username: string, password: string) => {
+    setLoading(true);
     try {
       // Try JWT login first
       const jwtResponse = await fetch('/api/auth/jwt-login', {
@@ -270,10 +344,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         success: false, 
         message: 'An error occurred during login. Please try again.'
       };
+    } finally {
+      setLoading(false);
     }
   };
 
   const register = async (userData: any) => {
+    setLoading(true);
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -305,11 +382,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
         success: false, 
         message: 'An error occurred during registration. Please try again.'
       };
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = async () => {
+    setLoading(true);
     try {
+      // Sign out from Firebase
+      await FirebaseAuthService.signOut();
+      
       const { accessToken } = getStoredTokens();
       
       if (accessToken) {
@@ -338,6 +421,74 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUserRoles([]);
       setUserPermissions([]);
       navigate('/login');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Firebase Google Sign In
+  const signInWithGoogle = async () => {
+    setLoading(true);
+    try {
+      const result = await FirebaseAuthService.signInWithGoogle();
+      
+      if (result.success) {
+        // Firebase auth state listener will handle the rest
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
+        
+        return { success: true };
+      } else {
+        toast({
+          title: "Authentication Error",
+          description: result.error || "Google sign in failed",
+          variant: "destructive",
+        });
+        return { success: false, message: result.error };
+      }
+    } catch (error: any) {
+      toast({
+        title: "Authentication Error",
+        description: error.message || "Google sign in failed",
+        variant: "destructive",
+      });
+      return { success: false, message: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Firebase GitHub Sign In
+  const signInWithGitHub = async () => {
+    setLoading(true);
+    try {
+      const result = await FirebaseAuthService.signInWithGitHub();
+      
+      if (result.success) {
+        // Firebase auth state listener will handle the rest
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
+        
+        return { success: true };
+      } else {
+        toast({
+          title: "Authentication Error",
+          description: result.error || "GitHub sign in failed",
+          variant: "destructive",
+        });
+        return { success: false, message: result.error };
+      }
+    } catch (error: any) {
+      toast({
+        title: "Authentication Error",
+        description: error.message || "GitHub sign in failed",
+        variant: "destructive",
+      });
+      return { success: false, message: error.message };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -352,6 +503,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     login,
     register,
     logout,
+    signInWithGoogle,
+    signInWithGitHub,
   };
 
   return (

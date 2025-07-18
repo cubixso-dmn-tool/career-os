@@ -22,10 +22,11 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
-  const { login, loading } = useAuthContext();
+  const { login, loading, signInWithGoogle, signInWithGitHub } = useAuthContext();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string | null>(null);
+  const [oauthLoading, setOauthLoading] = useState<string | null>(null);
 
   // Check OAuth configuration
   const { data: oauthConfig } = useQuery({
@@ -40,19 +41,13 @@ export default function Login() {
     const accessToken = urlParams.get('access_token');
     const refreshToken = urlParams.get('refresh_token');
     
-    // Handle development OAuth tokens
+    // Handle OAuth tokens - let the auth context handle this
     if (accessToken && refreshToken) {
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      
       toast({
         title: "Login successful",
         description: "Welcome to CareerOS!",
       });
-      
-      // Clear URL parameters and reload to refresh auth state
-      window.history.replaceState({}, document.title, window.location.pathname);
-      window.location.reload();
+      // Auth context will handle token storage and redirect
       return;
     }
     
@@ -97,17 +92,20 @@ export default function Login() {
     }
   };
 
-  const handleOAuthLogin = (provider: string) => {
-    toast({
-      title: "Redirecting...",
-      description: `Connecting to ${provider} for secure authentication`,
-    });
+  const handleOAuthLogin = async (provider: string) => {
+    setOauthLoading(provider);
     
-    // Use development OAuth routes when in development
-    const isDevelopment = import.meta.env.DEV || window.location.hostname === 'localhost';
-    const route = isDevelopment ? `/api/auth/dev-oauth/${provider}` : `/api/auth/${provider}`;
-    
-    window.location.href = route;
+    try {
+      if (provider === 'google') {
+        await signInWithGoogle();
+      } else if (provider === 'github') {
+        await signInWithGitHub();
+      }
+    } catch (error) {
+      console.error(`${provider} sign in error:`, error);
+    } finally {
+      setOauthLoading(null);
+    }
   };
 
   return (
@@ -165,7 +163,7 @@ export default function Login() {
           </Form>
 
           {/* Social Login Section */}
-          <div className="relative">
+          <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
               <Separator className="w-full" />
             </div>
@@ -178,20 +176,38 @@ export default function Login() {
             <Button
               variant="outline"
               onClick={() => handleOAuthLogin("google")}
-              disabled={loading || !oauthConfig?.google}
+              disabled={loading || oauthLoading === "google"}
               className="w-full"
             >
-              <SiGoogle className="mr-2 h-4 w-4" />
-              Google
+              {oauthLoading === "google" ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <SiGoogle className="mr-2 h-4 w-4" />
+                  {oauthConfig?.firebase ? "Google" : "Google (Demo)"}
+                </>
+              )}
             </Button>
             <Button
               variant="outline"
               onClick={() => handleOAuthLogin("github")}
-              disabled={loading || !oauthConfig?.github}
+              disabled={loading || oauthLoading === "github"}
               className="w-full"
             >
-              <Github className="mr-2 h-4 w-4" />
-              GitHub
+              {oauthLoading === "github" ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <Github className="mr-2 h-4 w-4" />
+                  {oauthConfig?.firebase ? "GitHub" : "GitHub (Demo)"}
+                </>
+              )}
             </Button>
           </div>
         </CardContent>

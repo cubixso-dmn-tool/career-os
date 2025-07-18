@@ -6,6 +6,7 @@ import { JWTManager, jwtAuthMiddleware } from "../lib/jwt.js";
 import { OAuthManager, isOAuthConfigured } from "../lib/oauth.js";
 import { EmailManager } from "../lib/email.js";
 import { AdminLogger, LogLevel, LogCategory } from "../lib/admin-logs.js";
+import { FirebaseAdminService } from "../lib/firebase-admin.js";
 import speakeasy from "speakeasy";
 import QRCode from "qrcode";
 
@@ -290,7 +291,10 @@ router.post("/refresh-token", async (req, res) => {
 });
 
 // Google OAuth routes
-router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+router.get("/google", passport.authenticate("google", { 
+  scope: ["profile", "email"],
+  prompt: "select_account" // Force account selection
+}));
 
 router.get("/google/callback", 
   passport.authenticate("google", { failureRedirect: "/login?error=oauth_failed" }),
@@ -323,9 +327,6 @@ router.get("/google/callback",
     }
   }
 );
-
-// Google OAuth routes
-router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 
 // GitHub OAuth routes
 router.get("/github", passport.authenticate("github"));
@@ -555,15 +556,109 @@ router.get("/dev-oauth/:provider", async (req, res) => {
   }
 });
 
-// OAuth configuration status
+// Firebase user sync endpoint
+router.post("/firebase-sync", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: "No valid authorization header" });
+    }
+
+    const idToken = authHeader.split(' ')[1];
+    
+    // Verify Firebase ID token
+    const decodedToken = await FirebaseAdminService.verifyIdToken(idToken);
+    const { uid, email, name, avatar, provider } = req.body;
+
+    // Validate required fields
+    if (!uid || !email) {
+      return res.status(400).json({ error: "Missing required fields: uid, email" });
+    }
+
+    // Check if user exists by email
+    let user = await storage.getUserByEmail(email);
+    
+    if (user) {
+      // Update existing user with Firebase data
+      await storage.updateUser(user.id, {
+        name: name || user.name,
+        avatar: avatar || user.avatar,
+        // Store Firebase UID for future reference
+        // Note: This would require adding a firebaseUid field to the user schema
+      });
+      
+      await AdminLogger.logAuth(
+        "FIREBASE_USER_UPDATED",
+        `Firebase user synced: ${email}`,
+        user.id,
+        email,
+        { provider, firebaseUid: uid }
+      );
+    } else {
+      // Create new user from Firebase data
+      user = await storage.createUser({
+        email,
+        username: email.split('@')[0] + '_' + Math.random().toString(36).substring(2, 6),
+        name: name || email.split('@')[0],
+        password: 'firebase_' + Math.random().toString(36).substring(2, 15), // Random password for Firebase users
+        avatar,
+        bio: null
+      });
+
+      await AdminLogger.logAuth(
+        "FIREBASE_USER_CREATED",
+        `New Firebase user created: ${email}`,
+        user.id,
+        email,
+        { provider, firebaseUid: uid }
+      );
+    }
+
+    // Generate our JWT tokens for the user
+    const roles = ['user']; // Default role
+    const tokens = JWTManager.createTokenPair(user, roles);
+
+    res.json({
+      message: "User synced successfully",
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        roles
+      },
+      ...tokens
+    });
+  } catch (error: any) {
+    console.error("Firebase sync error:", error);
+    await AdminLogger.logAuth(
+      "FIREBASE_SYNC_ERROR",
+      `Firebase sync failed: ${error.message}`,
+      undefined,
+      req.body.email,
+      { error: error.toString() }
+    );
+    
+    res.status(500).json({ error: "Firebase sync failed" });
+  }
+});
+
+// OAuth configuration status (now includes Firebase)
 router.get("/oauth-config", (req, res) => {
   const config = isOAuthConfigured();
-  // In development, always show as available for testing
-  if (process.env.NODE_ENV !== 'production') {
-    config.google = true;
-    config.github = true;
-  }
-  res.json(config);
+  
+  // Check if Firebase is configured
+  const firebaseConfigured = !!(
+    process.env.VITE_FIREBASE_API_KEY &&
+    process.env.VITE_FIREBASE_AUTH_DOMAIN &&
+    process.env.VITE_FIREBASE_PROJECT_ID
+  );
+  
+  res.json({
+    ...config,
+    firebase: firebaseConfigured
+  });
 });
 
 export default router;

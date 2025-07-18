@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLocation } from 'wouter';
+import { useAuthContext } from '@/hooks/use-auth-context';
 import {
   ChevronRight,
   Rocket,
@@ -24,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 
 const LandingPage: React.FC = () => {
   const [_, navigate] = useLocation();
+  const { isAuthenticated, loading } = useAuthContext();
 
   const features = [
     {
@@ -88,7 +90,11 @@ const LandingPage: React.FC = () => {
   ];
 
   const handleGetStarted = () => {
-    navigate('/login');
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
+      navigate('/login');
+    }
   };
 
   return (
@@ -101,8 +107,16 @@ const LandingPage: React.FC = () => {
             <span className="text-xl font-bold">CareerOS</span>
           </div>
           <div className="space-x-2">
-            <Button variant="outline" onClick={() => navigate('/login')}>Login</Button>
-            <Button onClick={() => navigate('/register')}>Sign Up</Button>
+            {loading ? (
+              <div className="w-24 h-9 bg-gray-200 animate-pulse rounded"></div>
+            ) : isAuthenticated ? (
+              <Button onClick={() => navigate('/dashboard')}>Open Dashboard</Button>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => navigate('/login')}>Login</Button>
+                <Button onClick={() => navigate('/register')}>Sign Up</Button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -123,7 +137,7 @@ const LandingPage: React.FC = () => {
             </p>
             <div className="space-x-4">
               <Button size="lg" onClick={handleGetStarted} className="px-8">
-                Start Your Journey – It's Free
+                {isAuthenticated ? 'Open Dashboard' : 'Start Your Journey – It\'s Free'}
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
               <Button 
@@ -342,7 +356,7 @@ const LandingPage: React.FC = () => {
             onClick={handleGetStarted}
             className="bg-white text-primary hover:bg-gray-100 px-8 py-6 text-lg"
           >
-            Start Your Journey – It's Free
+            {isAuthenticated ? 'Open Dashboard' : 'Start Your Journey – It\'s Free'}
             <ChevronRight className="ml-2 h-5 w-5" />
           </Button>
         </div>
