@@ -13,11 +13,19 @@ class CacheManager {
     try {
       // For development, use in-memory store if Redis not available
       if (process.env.NODE_ENV === 'development' && !process.env.REDIS_URL) {
+        if (!this.hasLoggedError) {
+          console.log('📦 Redis not configured, using in-memory fallback for development');
+          this.hasLoggedError = true;
+        }
         return null;
       }
 
       this.client = createClient({
-        url: process.env.REDIS_URL || 'redis://localhost:6379'
+        url: process.env.REDIS_URL || 'redis://localhost:6379',
+        socket: {
+          connectTimeout: 5000, // 5 seconds timeout
+          reconnectStrategy: false // Don't auto-reconnect in development
+        }
       });
 
       this.client.on('error', (err) => {
@@ -41,7 +49,13 @@ class CacheManager {
         this.hasLoggedError = false;
       });
 
-      await this.client.connect();
+      // Add connection timeout
+      const connectPromise = this.client.connect();
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Redis connection timeout')), 3000);
+      });
+      
+      await Promise.race([connectPromise, timeoutPromise]);
       return this.client;
     } catch (error) {
       // Silently handle connection failures in development
@@ -53,6 +67,8 @@ class CacheManager {
       } else {
         console.error('❌ Redis connection failed, falling back to in-memory cache:', error);
       }
+      this.client = null;
+      this.isConnected = false;
       return null;
     }
   }
