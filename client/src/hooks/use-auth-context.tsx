@@ -151,10 +151,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     // Set up Firebase auth state listener
     const unsubscribe = FirebaseAuthService.onAuthStateChange(async (firebaseUser: FirebaseUser | null) => {
+      console.log('🔥 Firebase auth state change:', firebaseUser ? 'User signed in' : 'User signed out');
+      
       if (firebaseUser) {
         try {
+          console.log('📡 Syncing Firebase user to database...');
           // Firebase user is signed in, sync to our database
           const syncResult = await FirebaseAuthService.syncUserToDatabase(firebaseUser);
+          console.log('✅ User sync successful:', syncResult);
           
           // Store our JWT tokens
           setStoredTokens(syncResult.accessToken, syncResult.refreshToken);
@@ -167,6 +171,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
             title: "Login successful",
             description: "Welcome to CareerOS!",
           });
+          
+          // Navigate to dashboard after successful sync
+          console.log('🚀 Navigating to dashboard...');
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 1000);
           
         } catch (error) {
           console.error('Firebase user sync failed:', error);
@@ -433,11 +443,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const result = await FirebaseAuthService.signInWithGoogle();
       
       if (result.success) {
-        // Firebase auth state listener will handle the rest
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1000);
-        
+        // Firebase auth state listener will handle the rest (sync + redirect)
         return { success: true };
       } else {
         toast({
@@ -466,11 +472,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const result = await FirebaseAuthService.signInWithGitHub();
       
       if (result.success) {
-        // Firebase auth state listener will handle the rest
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1000);
-        
+        // Firebase auth state listener will handle the rest (sync + redirect)
         return { success: true };
       } else {
         toast({

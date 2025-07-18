@@ -22,11 +22,14 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
-  const { login, loading, signInWithGoogle, signInWithGitHub } = useAuthContext();
+  const { login, loading, signInWithGoogle, signInWithGitHub, isAuthenticated, user } = useAuthContext();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
+
+  // Debug: Check auth state
+  console.log('🔍 Login page - Auth state:', { isAuthenticated, user, loading });
 
   // Check OAuth configuration
   const { data: oauthConfig } = useQuery({
@@ -101,8 +104,19 @@ export default function Login() {
       } else if (provider === 'github') {
         await signInWithGitHub();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`${provider} sign in error:`, error);
+      
+      // Check if it's an unauthorized domain error
+      if (error?.message?.includes('unauthorized') || error?.message?.includes('domain')) {
+        const currentDomain = window.location.hostname;
+        toast({
+          title: "Domain Authorization Required",
+          description: `Add "${currentDomain}" to Firebase authorized domains`,
+          variant: "destructive",
+        });
+        console.log('🔧 Fix: Add this domain to Firebase Console → Authentication → Settings → Authorized domains:', currentDomain);
+      }
     } finally {
       setOauthLoading(null);
     }

@@ -116,7 +116,18 @@ export class FirebaseAuthService {
   // Sync Firebase user to our database
   static async syncUserToDatabase(firebaseUser: FirebaseUser): Promise<any> {
     try {
+      console.log('🔄 Getting Firebase ID token...');
       const idToken = await firebaseUser.getIdToken();
+      
+      const syncData = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        name: firebaseUser.displayName,
+        avatar: firebaseUser.photoURL,
+        provider: firebaseUser.providerData[0]?.providerId || 'firebase'
+      };
+      
+      console.log('📤 Sending sync request with data:', syncData);
       
       const response = await fetch('/api/auth/firebase-sync', {
         method: 'POST',
@@ -124,19 +135,19 @@ export class FirebaseAuthService {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`
         },
-        body: JSON.stringify({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          name: firebaseUser.displayName,
-          avatar: firebaseUser.photoURL,
-          provider: firebaseUser.providerData[0]?.providerId || 'firebase'
-        })
+        body: JSON.stringify(syncData)
       });
 
+      console.log('📥 Sync response status:', response.status);
+      
       if (response.ok) {
-        return await response.json();
+        const result = await response.json();
+        console.log('✅ Sync response data:', result);
+        return result;
       } else {
-        throw new Error('Failed to sync user to database');
+        const errorText = await response.text();
+        console.error('❌ Sync response error:', errorText);
+        throw new Error(`Failed to sync user to database: ${response.status} ${errorText}`);
       }
     } catch (error) {
       console.error('User sync error:', error);
