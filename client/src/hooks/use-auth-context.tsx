@@ -150,59 +150,53 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     // Set up Firebase auth state listener
-    const unsubscribe = FirebaseAuthService.onAuthStateChange((firebaseUser: FirebaseUser | null) => {
+    const unsubscribe = FirebaseAuthService.onAuthStateChange(async (firebaseUser: FirebaseUser | null) => {
       console.log('🔥 Firebase auth state change:', firebaseUser ? 'User signed in' : 'User signed out');
       
-      // Handle auth state change in a separate function to avoid async issues
-      handleAuthStateChange(firebaseUser);
+      try {
+        if (firebaseUser) {
+          console.log('📡 Syncing Firebase user to database...');
+          // Firebase user is signed in, sync to our database
+          const syncResult = await FirebaseAuthService.syncUserToDatabase(firebaseUser);
+          console.log('✅ User sync successful:', syncResult);
+          
+          // Store our JWT tokens
+          setStoredTokens(syncResult.accessToken, syncResult.refreshToken);
+          
+          // Set user data
+          setUser(syncResult.user);
+          await loadUserRolesAndPermissions();
+          
+          toast({
+            title: "Login successful",
+            description: "Welcome to CareerOS!",
+          });
+          
+          // Navigate to dashboard after successful sync
+          console.log('🚀 Navigating to dashboard...');
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 1000);
+          
+        } else {
+          // No Firebase user, check for legacy auth
+          await loadLegacyAuth();
+        }
+      } catch (error) {
+        console.error('Firebase user sync failed:', error);
+        toast({
+          title: "Authentication Error",
+          description: "Failed to sync user data. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
     });
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [handleAuthStateChange]);
-
-  // Separate function to handle auth state changes
-  const handleAuthStateChange = useCallback(async (firebaseUser: FirebaseUser | null) => {
-    try {
-      if (firebaseUser) {
-        console.log('📡 Syncing Firebase user to database...');
-        // Firebase user is signed in, sync to our database
-        const syncResult = await FirebaseAuthService.syncUserToDatabase(firebaseUser);
-        console.log('✅ User sync successful:', syncResult);
-        
-        // Store our JWT tokens
-        setStoredTokens(syncResult.accessToken, syncResult.refreshToken);
-        
-        // Set user data
-        setUser(syncResult.user);
-        await loadUserRolesAndPermissions();
-        
-        toast({
-          title: "Login successful",
-          description: "Welcome to CareerOS!",
-        });
-        
-        // Navigate to dashboard after successful sync
-        console.log('🚀 Navigating to dashboard...');
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1000);
-        
-      } else {
-        // No Firebase user, check for legacy auth
-        await loadLegacyAuth();
-      }
-    } catch (error) {
-      console.error('Firebase user sync failed:', error);
-      toast({
-        title: "Authentication Error",
-        description: "Failed to sync user data. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [navigate, toast]);
+  }, []);
 
   // Legacy authentication check (for existing users)
   const loadLegacyAuth = async () => {
