@@ -187,7 +187,7 @@ export default function Login() {
               ) : (
                 <>
                   <SiGoogle className="mr-2 h-4 w-4" />
-                  {oauthConfig?.firebase ? "Google" : "Google (Demo)"}
+                  {(oauthConfig as any)?.firebase ? "Google" : "Google (Demo)"}
                 </>
               )}
             </Button>
@@ -205,7 +205,7 @@ export default function Login() {
               ) : (
                 <>
                   <Github className="mr-2 h-4 w-4" />
-                  {oauthConfig?.firebase ? "GitHub" : "GitHub (Demo)"}
+                  {(oauthConfig as any)?.firebase ? "GitHub" : "GitHub (Demo)"}
                 </>
               )}
             </Button>

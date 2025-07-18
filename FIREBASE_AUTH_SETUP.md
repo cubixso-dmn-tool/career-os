@@ -39,7 +39,17 @@ VITE_FIREBASE_PROJECT_ID="your_project_id"
 VITE_FIREBASE_STORAGE_BUCKET="your_project.appspot.com"
 VITE_FIREBASE_MESSAGING_SENDER_ID="123456789"
 VITE_FIREBASE_APP_ID="1:123456789:web:abcdef"
+
+# Firebase Admin (Server-side)
+FIREBASE_PROJECT_ID="your_project_id"
 ```
+
+### 🔐 Security Note about Firebase API Keys
+Firebase API keys are **public identifiers** and are safe to expose in frontend code. However:
+- They identify your Firebase project, not authenticate requests
+- Security is handled by Firebase Auth rules and domain restrictions
+- Make sure to configure authorized domains in Firebase Console
+- Keep your `.env` file in `.gitignore` (already done)
 
 ### 5. GitHub OAuth Setup (for GitHub provider)
 1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
@@ -51,7 +61,19 @@ VITE_FIREBASE_APP_ID="1:123456789:web:abcdef"
 4. Copy Client ID and Client Secret
 5. Add them to Firebase Console → Authentication → Sign-in method → GitHub
 
-### 6. Restart the Server
+### 6. Configure Domain Restrictions (Security)
+1. In Firebase Console, go to "Authentication" → "Settings"
+2. Under "Authorized domains", add your domains:
+   - `localhost` (for development)
+   - Your production domain (e.g., `your-app.vercel.app`)
+3. This prevents unauthorized domains from using your Firebase project
+
+### 7. Install Dependencies (if not already installed)
+```bash
+npm install firebase firebase-admin
+```
+
+### 8. Restart the Server
 ```bash
 npm run dev
 ```
@@ -86,6 +108,8 @@ npm run dev
 - **"Popup blocked"**: Allow popups for your domain
 - **"GitHub OAuth error"**: Verify callback URL in GitHub settings
 - **"User sync failed"**: Check server logs for database errors
+- **"Domain not authorized"**: Add your domain to Firebase authorized domains
+- **Vercel "KEY" warning**: Firebase API keys are public identifiers, safe to expose
 
 ## 🎯 Benefits of Firebase Auth
 - **No OAuth setup complexity**
