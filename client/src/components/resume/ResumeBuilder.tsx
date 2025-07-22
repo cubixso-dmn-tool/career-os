@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,8 @@ import {
   Save,
   PlusCircle
 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 import TemplateSelector from './TemplateSelector';
 import { 
@@ -211,31 +213,72 @@ const templateComponentMap: Record<string, React.FC<any>> = {
 const ResumeBuilder: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const resumeRef = useRef<HTMLDivElement>(null);
   
   const [step, setStep] = useState<BuilderStep>(BuilderStep.SELECT_TEMPLATE);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('professional');
-  const [resumeData, setResumeData] = useState<ResumeData>(sampleResumeData);
+  const [resumeData, setResumeData] = useState<ResumeData>({
+    personalInfo: {
+      name: '',
+      title: '',
+      email: '',
+      phone: '',
+      location: '',
+      website: '',
+      summary: '',
+      profileImage: ''
+    },
+    experience: [],
+    education: [],
+    skills: [],
+    projects: [],
+    certifications: [],
+    languages: [],
+    achievements: []
+  });
+  const [hasStartedEditing, setHasStartedEditing] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   
-  // If we have a real user, update the personal info with their data
+  // If we have a real user and haven't started editing, update the personal info with their data
   useEffect(() => {
-    if (user) {
+    if (user && !hasStartedEditing) {
       setResumeData(prevData => ({
         ...prevData,
         personalInfo: {
           ...prevData.personalInfo,
-          name: user.name || prevData.personalInfo.name,
-          email: user.email || prevData.personalInfo.email,
+          name: user.name || '',
+          email: user.email || '',
           // Only set profile image if user has one
           ...(user.avatar ? { profileImage: user.avatar } : {})
         }
       }));
     }
-  }, [user]);
+  }, [user, hasStartedEditing]);
   
   const handleSelectTemplate = (templateId: string) => {
     setSelectedTemplateId(templateId);
     setStep(BuilderStep.PERSONAL_INFO);
+    setHasStartedEditing(true);
+    // Clear the form data when user starts editing
+    setResumeData({
+      personalInfo: {
+        name: user?.name || '',
+        title: '',
+        email: user?.email || '',
+        phone: '',
+        location: '',
+        website: '',
+        summary: '',
+        profileImage: user?.avatar || ''
+      },
+      experience: [],
+      education: [],
+      skills: [],
+      projects: [],
+      certifications: [],
+      languages: [],
+      achievements: []
+    });
   };
   
   const handleUpdatePersonalInfo = (personalInfo: ResumeData['personalInfo']) => {
@@ -311,13 +354,73 @@ const ResumeBuilder: React.FC = () => {
     }
   };
   
-  const handleDownloadResume = () => {
-    // In a real app, this would generate a PDF and trigger a download
-    toast({
-      title: "Download feature",
-      description: "This feature will be implemented to generate and download a PDF of your resume.",
-      variant: "default",
-    });
+  const handleDownloadResume = async () => {
+    if (!resumeRef.current) {
+      toast({
+        title: "Error",
+        description: "Unable to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Generating PDF...",
+        description: "Please wait while we generate your resume PDF.",
+        variant: "default",
+      });
+
+      // Create a canvas from the resume element
+      const canvas = await html2canvas(resumeRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: resumeRef.current.scrollWidth,
+        height: resumeRef.current.scrollHeight,
+      });
+
+      // Calculate dimensions for PDF
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 295; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      // Create PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Add additional pages if needed
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      // Download the PDF
+      const fileName = `${resumeData.personalInfo.name.replace(/\s+/g, '_')}_Resume.pdf` || 'Resume.pdf';
+      pdf.save(fileName);
+
+      toast({
+        title: "PDF Downloaded",
+        description: "Your resume has been successfully downloaded as a PDF.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
   
   const handleShareResume = () => {
@@ -334,7 +437,7 @@ const ResumeBuilder: React.FC = () => {
       case BuilderStep.SELECT_TEMPLATE:
         return (
           <TemplateSelector 
-            sampleData={resumeData} 
+            sampleData={sampleResumeData} 
             onSelectTemplate={handleSelectTemplate} 
           />
         );
@@ -449,7 +552,9 @@ const ResumeBuilder: React.FC = () => {
             <Card className="border-2 border-primary/10 p-0 overflow-hidden">
               <div className="overflow-auto max-h-[650px]">
                 <div className="transform scale-[0.8] origin-top-left" style={{ width: '125%', minHeight: '1000px' }}>
-                  <SelectedTemplate data={resumeData} editable={true} onEdit={() => {}} />
+                  <div ref={resumeRef} style={{ transform: 'scale(1.25)', transformOrigin: 'top left', width: '80%' }}>
+                    <SelectedTemplate data={resumeData} editable={true} onEdit={() => {}} />
+                  </div>
                 </div>
               </div>
             </Card>

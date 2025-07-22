@@ -50,10 +50,15 @@ async function populateRBAC() {
     { name: "user:view", description: "View user profiles" },
     { name: "user:edit", description: "Edit user profiles" },
     { name: "user:manage", description: "Manage users (ban, suspend)" },
+    { name: "read:users", description: "Read user data for admin panel" },
+    { name: "update:users", description: "Update user roles and status" },
     
     // Admin permissions
     { name: "admin:settings", description: "Access admin settings" },
-    { name: "admin:roles", description: "Manage roles and permissions" }
+    { name: "admin:roles", description: "Manage roles and permissions" },
+    { name: "read:analytics", description: "Access analytics data" },
+    { name: "read:system", description: "Access system logs and data" },
+    { name: "create:events", description: "Create platform events" }
   ];
 
   console.log("Creating permissions...");
@@ -93,7 +98,7 @@ async function populateRBAC() {
     "admin": allPermissions.map(p => p.name), // Admin gets all permissions
     "moderator": [
       "content:create", "content:edit", "content:delete", "content:approve",
-      "community:moderate", "user:view"
+      "community:moderate", "user:view", "read:users"
     ],
     "mentor": [
       "content:create", "content:edit", "community:create", "user:view"

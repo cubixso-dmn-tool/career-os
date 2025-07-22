@@ -25,10 +25,19 @@ interface SkillsFormProps {
   onBack: () => void;
 }
 
-type Skill = ResumeData['skills'][0];
+// Define types for skill level and category
+type SkillLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+type SkillCategory = 'Frontend' | 'Backend' | 'Database' | 'DevOps' | 'Mobile' | 'Languages' | 'Frameworks' | 'Tools' | 'Soft Skills' | 'Design' | 'Cloud' | 'AI/ML' | 'Other';
+
+interface Skill {
+  id: string;
+  name: string;
+  level?: SkillLevel;
+  category?: SkillCategory;
+}
 
 // Define skill categories for easier selection
-const skillCategories = [
+const skillCategories: SkillCategory[] = [
   'Frontend',
   'Backend',
   'Database',
@@ -45,7 +54,7 @@ const skillCategories = [
 ];
 
 // Define proficiency levels
-const proficiencyLevels = [
+const proficiencyLevels: SkillLevel[] = [
   'Beginner',
   'Intermediate',
   'Advanced',
@@ -53,10 +62,17 @@ const proficiencyLevels = [
 ];
 
 const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }) => {
-  const [skills, setSkills] = useState<Skill[]>(initialData);
+  // Convert initial data to our Skill type
+  const [skills, setSkills] = useState<Skill[]>(
+    initialData.map(skill => ({
+      id: skill.id,
+      name: skill.name,
+      level: skill.level as SkillLevel | undefined,
+      category: skill.category as SkillCategory | undefined
+    }))
+  );
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
-  const [newSkill, setNewSkill] = useState<Skill>({
-    id: '',
+  const [newSkill, setNewSkill] = useState<Omit<Skill, 'id'>>({
     name: '',
     level: undefined,
     category: undefined
@@ -67,14 +83,18 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
   const generateId = () => `sk${Date.now()}`;
 
   const handleAddSkill = () => {
-    const skillToAdd = {
-      ...newSkill,
-      id: generateId()
+    if (!newSkill.name.trim()) return;
+    
+    // Ensure we don't have empty strings for optional fields
+    const skillToAdd: Skill = {
+      id: generateId(),
+      name: newSkill.name.trim(),
+      level: newSkill.level?.trim() as SkillLevel | undefined,
+      category: newSkill.category?.trim() as SkillCategory | undefined
     };
     
     setSkills([...skills, skillToAdd]);
     setNewSkill({
-      id: '',
       name: '',
       level: undefined,
       category: undefined
@@ -85,8 +105,16 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
   const handleUpdateSkill = () => {
     if (!editingSkill) return;
     
+    // Ensure we don't have empty strings for optional fields
+    const updatedSkill: Skill = {
+      ...editingSkill,
+      name: editingSkill.name.trim(),
+      level: editingSkill.level?.trim() as SkillLevel | undefined,
+      category: editingSkill.category?.trim() as SkillCategory | undefined
+    };
+    
     setSkills(skills.map(skill => 
-      skill.id === editingSkill.id ? editingSkill : skill
+      skill.id === updatedSkill.id ? updatedSkill : skill
     ));
     
     setEditingSkill(null);
@@ -102,7 +130,15 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(skills);
+    // Convert back to the expected format for ResumeData
+    const formattedSkills = skills.map(({ id, name, level, category }) => ({
+      id,
+      name,
+      ...(level && { level }),
+      ...(category && { category })
+    }));
+    
+    onSubmit(formattedSkills);
   };
 
   // Group skills by category for better organization
@@ -211,8 +247,8 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
                 <div>
                   <label className="block text-sm font-medium mb-1">Category</label>
                   <Select
-                    value={newSkill.category}
-                    onValueChange={(value) => setNewSkill({...newSkill, category: value})}
+                    value={newSkill.category || ''}
+                    onValueChange={(value) => setNewSkill({...newSkill, category: value as SkillCategory})}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
@@ -232,14 +268,14 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
                     <label className="block text-sm font-medium mb-1">Proficiency Level (Optional)</label>
                   </div>
                   <Select
-                    value={newSkill.level}
-                    onValueChange={(value) => setNewSkill({...newSkill, level: value})}
+                    value={newSkill.level || 'none'}
+                    onValueChange={(value) => setNewSkill({...newSkill, level: value === 'none' ? undefined : value as SkillLevel})}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select level (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {proficiencyLevels.map(level => (
                         <SelectItem key={level} value={level}>
                           {level}
@@ -286,8 +322,8 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
                 <div>
                   <label className="block text-sm font-medium mb-1">Category</label>
                   <Select
-                    value={editingSkill.category}
-                    onValueChange={(value) => setEditingSkill({...editingSkill, category: value})}
+                    value={editingSkill.category || ''}
+                    onValueChange={(value) => setEditingSkill({...editingSkill, category: value as SkillCategory})}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
@@ -307,14 +343,14 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
                     <label className="block text-sm font-medium mb-1">Proficiency Level (Optional)</label>
                   </div>
                   <Select
-                    value={editingSkill.level}
-                    onValueChange={(value) => setEditingSkill({...editingSkill, level: value})}
+                    value={editingSkill.level || 'none'}
+                    onValueChange={(value) => setEditingSkill({...editingSkill, level: value === 'none' ? undefined : value as SkillLevel})}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select level (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {proficiencyLevels.map(level => (
                         <SelectItem key={level} value={level}>
                           {level}

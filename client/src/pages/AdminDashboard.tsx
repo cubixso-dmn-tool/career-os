@@ -42,17 +42,49 @@ import {
 } from "lucide-react";
 
 export default function AdminDashboard() {
-  const { data: platformStats, isLoading: statsLoading } = useQuery({
-    queryKey: ["/api/analytics/platform-stats"],
+  const { data: analyticsData, isLoading: analyticsLoading } = useQuery({
+    queryKey: ["/api/admin/analytics"],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/analytics', {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return response.json();
+    },
     retry: false,
   });
 
-  const { data: userEngagement, isLoading: engagementLoading } = useQuery({
-    queryKey: ["/api/analytics/user-engagement"],
+  const { data: usersData, isLoading: usersLoading } = useQuery({
+    queryKey: ["/api/admin/users"],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/users', {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return response.json();
+    },
     retry: false,
   });
 
-  const isLoading = statsLoading || engagementLoading;
+  const { data: moderationData, isLoading: moderationLoading } = useQuery({
+    queryKey: ["/api/admin/moderation-queue"],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/moderation-queue', {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return response.json();
+    },
+    retry: false,
+  });
+
+  const isLoading = analyticsLoading || usersLoading || moderationLoading;
 
   if (isLoading) {
     return (
@@ -68,18 +100,22 @@ export default function AdminDashboard() {
   }
 
   // Use real analytics data
+  const analytics = analyticsData?.data || {};
+  const users = usersData?.data || {};
+  const moderation = moderationData?.data || {};
+
   const data = {
     stats: {
-      totalUsers: platformStats?.totalUsers || 0,
-      activeToday: platformStats?.activeToday || 0,
-      totalEvents: platformStats?.totalEvents || 0,
-      pendingModeration: platformStats?.pendingModeration || 0
+      totalUsers: users.stats?.totalUsers || analytics.users?.total || 0,
+      activeToday: analytics.users?.activeUsers || 0,
+      totalEvents: analytics.engagement?.totalSessions || 0,
+      pendingModeration: moderation.stats?.pendingReviews || 0
     },
     metrics: {
-      conversionRate: platformStats?.conversionRate || "0.0%",
-      growthRate: platformStats?.growthRate || "0.0%", 
-      retentionRate: platformStats?.retentionRate || "0.0%",
-      engagementRate: userEngagement?.engagementRate || "0.0%"
+      conversionRate: `${analytics.revenue?.conversionRate || 0}%`,
+      growthRate: `${analytics.users?.growthRate || 0}%`, 
+      retentionRate: `${analytics.users?.retentionRate || 0}%`,
+      engagementRate: `${analytics.engagement?.avgSessionDuration || 0}min`
     }
   };
 
@@ -323,44 +359,22 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent className="p-6">
                       <div className="space-y-4">
-                        {[
-                          {
-                            id: 1,
-                            name: "Alex Johnson",
-                            email: "alex@example.com",
-                            roles: ["student", "mentor"],
-                            status: "active",
-                            lastActive: "2 hours ago",
-                            joinDate: "Jan 15, 2024"
-                          },
-                          {
-                            id: 2,
-                            name: "Sarah Wilson",
-                            email: "sarah@example.com", 
-                            roles: ["moderator"],
-                            status: "active",
-                            lastActive: "1 hour ago",
-                            joinDate: "Feb 3, 2024"
-                          },
-                          {
-                            id: 3,
-                            name: "Mike Chen",
-                            email: "mike@example.com",
-                            roles: ["student"],
-                            status: "inactive",
-                            lastActive: "5 days ago",
-                            joinDate: "Mar 10, 2024"
-                          }
-                        ].map((user) => (
+                        {users.data?.data?.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">
+                            <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                            <p className="text-lg font-medium">No users found</p>
+                            <p className="text-sm">Users will appear here as they register</p>
+                          </div>
+                        ) : users.data?.data?.map((user: any) => (
                           <div key={user.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                             <div className="flex items-center justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
                                   <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                                    {user.name.split(' ').map(n => n[0]).join('')}
+                                    {(user.name || user.username).split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                                   </div>
                                   <div>
-                                    <h4 className="font-semibold text-gray-900">{user.name}</h4>
+                                    <h4 className="font-semibold text-gray-900">{user.name || user.username}</h4>
                                     <p className="text-sm text-gray-600">{user.email}</p>
                                   </div>
                                   <Badge 
@@ -372,13 +386,13 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="grid grid-cols-3 gap-4 text-xs text-gray-600">
                                   <div>
-                                    <span className="font-medium">Roles:</span> {user.roles.join(', ')}
+                                    <span className="font-medium">Role:</span> {user.role}
                                   </div>
                                   <div>
-                                    <span className="font-medium">Last Active:</span> {user.lastActive}
+                                    <span className="font-medium">Last Active:</span> {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : 'Never'}
                                   </div>
                                   <div>
-                                    <span className="font-medium">Joined:</span> {user.joinDate}
+                                    <span className="font-medium">Joined:</span> {user.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : 'Unknown'}
                                   </div>
                                 </div>
                               </div>
@@ -398,7 +412,7 @@ export default function AdminDashboard() {
                               </div>
                             </div>
                           </div>
-                        ))}
+                        )) || []}
                       </div>
                     </CardContent>
                   </Card>
@@ -418,26 +432,26 @@ export default function AdminDashboard() {
                         <div className="space-y-4">
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">Daily Active Users</span>
-                            <span className="font-semibold text-gray-900">2,341</span>
+                            <span className="font-semibold text-gray-900">{analytics.users?.activeUsers?.toLocaleString() || '0'}</span>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">Weekly Retention</span>
-                            <span className="font-semibold text-green-600">78%</span>
+                            <span className="font-semibold text-green-600">{analytics.users?.retentionRate || 0}%</span>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">Course Completion</span>
-                            <span className="font-semibold text-blue-600">64%</span>
+                            <span className="font-semibold text-blue-600">{analytics.engagement?.courseCompletions || 0}</span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">NPS Score</span>
-                            <span className="font-semibold text-purple-600">+67</span>
+                            <span className="text-sm text-gray-600">System Uptime</span>
+                            <span className="font-semibold text-purple-600">{analytics.performance?.systemUptime || 0}%</span>
                           </div>
                           <div className="pt-2 border-t">
                             <div className="flex justify-between items-center mb-2">
                               <span className="text-sm text-gray-600">Platform Health</span>
-                              <span className="text-sm font-medium text-green-600">96%</span>
+                              <span className="text-sm font-medium text-green-600">{analytics.performance?.systemUptime || 0}%</span>
                             </div>
-                            <Progress value={96} className="h-2" />
+                            <Progress value={analytics.performance?.systemUptime || 0} className="h-2" />
                           </div>
                         </div>
                       </CardContent>
@@ -453,20 +467,20 @@ export default function AdminDashboard() {
                       <CardContent className="p-6">
                         <div className="space-y-4">
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">New Users (7d)</span>
-                            <span className="font-semibold text-gray-900">+847</span>
+                            <span className="text-sm text-gray-600">New Users (30d)</span>
+                            <span className="font-semibold text-gray-900">+{analytics.users?.newThisMonth?.toLocaleString() || '0'}</span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Course Enrollments</span>
-                            <span className="font-semibold text-blue-600">+1,203</span>
+                            <span className="text-sm text-gray-600">Total Content</span>
+                            <span className="font-semibold text-blue-600">{analytics.content?.totalCourses || 0}</span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Mentor Sessions</span>
-                            <span className="font-semibold text-purple-600">+456</span>
+                            <span className="text-sm text-gray-600">Monthly Revenue</span>
+                            <span className="font-semibold text-purple-600">${analytics.revenue?.monthlyRevenue?.toLocaleString() || '0'}</span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Event Attendance</span>
-                            <span className="font-semibold text-orange-600">+234</span>
+                            <span className="text-sm text-gray-600">Community Posts</span>
+                            <span className="font-semibold text-orange-600">{analytics.content?.totalPosts?.toLocaleString() || '0'}</span>
                           </div>
                         </div>
                       </CardContent>

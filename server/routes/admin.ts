@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { storage } from "../storage.js";
 import { loadUserRolesMiddleware, requirePermission } from "../middleware/rbac.js";
+import { db } from "../db.js";
+import { users, userRoles, roles, posts, communityPosts, enrollments, courses, userEvents, projects } from "../../shared/schema.js";
+import { count, sql, and, gte, eq } from "drizzle-orm";
 
 const router = Router();
 
@@ -13,38 +16,61 @@ router.use(loadUserRolesMiddleware);
  */
 router.get("/analytics", requirePermission("read:analytics"), async (req, res) => {
   try {
-    // Mock analytics data - in real implementation, fetch from database
+    // Get real analytics data from database
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Get user stats
+    const [totalUsersResult] = await db.select({ count: count() }).from(users);
+    const [newUsersThisMonthResult] = await db.select({ count: count() }).from(users).where(gte(users.createdAt, startOfMonth));
+    
+    // Get content stats
+    const [totalCoursesResult] = await db.select({ count: count() }).from(courses);
+    const [totalProjectsResult] = await db.select({ count: count() }).from(projects);
+    const [totalPostsResult] = await db.select({ count: count() }).from(posts);
+    const [totalCommunityPostsResult] = await db.select({ count: count() }).from(communityPosts);
+    
+    // Get enrollment stats
+    const [totalEnrollmentsResult] = await db.select({ count: count() }).from(enrollments);
+    const [totalUserEventsResult] = await db.select({ count: count() }).from(userEvents);
+    
+    const totalUsers = totalUsersResult.count || 0;
+    const newUsersThisMonth = newUsersThisMonthResult.count || 0;
+    const totalCourses = totalCoursesResult.count || 0;
+    const totalProjects = totalProjectsResult.count || 0;
+    const totalPosts = (totalPostsResult.count || 0) + (totalCommunityPostsResult.count || 0);
+    
     const analytics = {
       users: {
-        total: 2847,
-        newThisMonth: 847,
-        growthRate: 12,
-        activeUsers: 1934,
-        retentionRate: 85
+        total: totalUsers,
+        newThisMonth: newUsersThisMonth,
+        growthRate: totalUsers > 0 ? Math.round((newUsersThisMonth / totalUsers) * 100) : 0,
+        activeUsers: 0, // Will be implemented later with session tracking
+        retentionRate: 0 // Will be implemented later with user activity tracking
       },
       content: {
-        totalCourses: 156,
-        totalProjects: 234,
-        totalPosts: 1876,
-        approvedContent: 98.5
+        totalCourses: totalCourses,
+        totalProjects: totalProjects,
+        totalPosts: totalPosts,
+        approvedContent: 0 // Will be implemented later with content moderation
       },
       engagement: {
-        totalSessions: 3421,
-        avgSessionDuration: 45,
-        courseCompletions: 1234,
-        communityPosts: 456
+        totalSessions: totalUserEventsResult.count || 0,
+        avgSessionDuration: 0, // Will be implemented later
+        courseCompletions: totalEnrollmentsResult.count || 0,
+        communityPosts: totalCommunityPostsResult.count || 0
       },
       performance: {
-        systemUptime: 99.9,
-        avgResponseTime: 245,
-        errorRate: 0.1,
-        databaseSize: 8.2
+        systemUptime: 0, // Will be implemented later with monitoring
+        avgResponseTime: 0, // Will be implemented later
+        errorRate: 0, // Will be implemented later
+        databaseSize: 0 // Will be implemented later
       },
       revenue: {
-        monthlyRevenue: 45600,
-        totalRevenue: 234500,
-        avgRevenuePerUser: 89.50,
-        conversionRate: 23.4
+        monthlyRevenue: 0, // Will be implemented later with payment tracking
+        totalRevenue: 0, // Will be implemented later
+        avgRevenuePerUser: 0, // Will be implemented later
+        conversionRate: 0 // Will be implemented later
       }
     };
 
@@ -68,56 +94,15 @@ router.get("/analytics", requirePermission("read:analytics"), async (req, res) =
  */
 router.get("/moderation-queue", requirePermission("community:moderate"), async (req, res) => {
   try {
-    // Mock moderation queue - in real implementation, fetch from database
+    // For now, return empty moderation queue as we haven't implemented content flagging yet
     const moderationQueue = {
-      flaggedContent: [
-        {
-          id: 1,
-          type: "community_post",
-          content: "Inappropriate content example",
-          author: "user123",
-          flaggedBy: "user456",
-          reason: "spam",
-          flaggedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-          status: "pending"
-        },
-        {
-          id: 2,
-          type: "comment",
-          content: "Offensive comment example",
-          author: "user789",
-          flaggedBy: "user101",
-          reason: "harassment",
-          flaggedAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
-          status: "pending"
-        }
-      ],
-      userReports: [
-        {
-          id: 3,
-          reportedUser: "user999",
-          reportedBy: "user888",
-          reason: "inappropriate_behavior",
-          description: "User posting spam in multiple channels",
-          reportedAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
-          status: "under_review"
-        }
-      ],
-      expertApplications: [
-        {
-          id: 4,
-          applicantName: "John Smith",
-          applicantEmail: "john.smith@email.com",
-          expertise: "Full Stack Development",
-          experience: "5 years at Google, Meta",
-          appliedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-          status: "pending_review"
-        }
-      ],
+      flaggedContent: [],
+      userReports: [],
+      expertApplications: [],
       stats: {
-        pendingReviews: 7,
-        resolvedToday: 12,
-        avgResolutionTime: 4.5
+        pendingReviews: 0,
+        resolvedToday: 0,
+        avgResolutionTime: 0
       }
     };
 
@@ -141,52 +126,111 @@ router.get("/moderation-queue", requirePermission("community:moderate"), async (
  */
 router.get("/users", requirePermission("read:users"), async (req, res) => {
   try {
-    const { page = 1, limit = 50, role, search } = req.query;
+    const { page = 1, limit = 50, role: roleFilter, search } = req.query;
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const offset = (pageNum - 1) * limitNum;
 
-    // Mock users data - in real implementation, fetch from database with pagination
-    const users = {
-      data: [
-        {
-          id: 1,
-          username: "student1",
-          email: "student1@example.com",
-          name: "Priya Sharma",
-          role: "student",
-          status: "active",
-          joinedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-          lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000)
-        },
-        {
-          id: 2,
-          username: "mentor1",
-          email: "mentor1@example.com",
-          name: "Rajesh Kumar",
-          role: "mentor",
-          status: "active",
-          joinedAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
-          lastActive: new Date(Date.now() - 30 * 60 * 1000)
-        }
-      ],
+    // Build search condition
+    let searchCondition;
+    if (search) {
+      searchCondition = sql`(${users.name} ILIKE ${`%${search}%`} OR ${users.email} ILIKE ${`%${search}%`} OR ${users.username} ILIKE ${`%${search}%`})`;
+    }
+
+    // Get total count
+    const [totalResult] = searchCondition ? 
+      await db.select({ count: count() }).from(users).where(searchCondition) :
+      await db.select({ count: count() }).from(users);
+    const total = totalResult.count || 0;
+
+    // Get users with their roles
+    const baseQuery = db
+      .select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        name: users.name,
+        bio: users.bio,
+        avatar: users.avatar,
+        createdAt: users.createdAt,
+        roleName: roles.name
+      })
+      .from(users)
+      .leftJoin(userRoles, eq(users.id, userRoles.userId))
+      .leftJoin(roles, eq(userRoles.roleId, roles.id))
+      .orderBy(sql`${users.createdAt} DESC`)
+      .limit(limitNum)
+      .offset(offset);
+
+    // Apply filters
+    const conditions = [];
+    if (searchCondition) {
+      conditions.push(searchCondition);
+    }
+    if (roleFilter) {
+      conditions.push(eq(roles.name, roleFilter as string));
+    }
+    
+    const usersList = conditions.length > 0 ? 
+      await baseQuery.where(and(...conditions)) : 
+      await baseQuery;
+
+    // Get role statistics
+    const roleStats = await db
+      .select({
+        roleName: roles.name,
+        count: count()
+      })
+      .from(users)
+      .leftJoin(userRoles, eq(users.id, userRoles.userId))
+      .leftJoin(roles, eq(userRoles.roleId, roles.id))
+      .groupBy(roles.name);
+
+    // Process role stats
+    const stats = {
+      totalUsers: total,
+      activeUsers: 0, // Will be implemented with session tracking
+      students: 0,
+      mentors: 0,
+      experts: 0,
+      moderators: 0,
+      admins: 0
+    };
+
+    roleStats.forEach(stat => {
+      if (stat.roleName === 'student') stats.students = stat.count || 0;
+      else if (stat.roleName === 'mentor') stats.mentors = stat.count || 0;
+      else if (stat.roleName === 'expert') stats.experts = stat.count || 0;
+      else if (stat.roleName === 'moderator') stats.moderators = stat.count || 0;
+      else if (stat.roleName === 'admin') stats.admins = stat.count || 0;
+    });
+
+    // Format users data
+    const usersData = usersList.map(user => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      name: user.name,
+      role: user.roleName || 'student',
+      status: 'active', // Will be implemented later with user activity tracking
+      joinedAt: user.createdAt,
+      lastActive: user.createdAt // Will be implemented later with session tracking
+    }));
+
+    const result = {
+      data: usersData,
       pagination: {
-        page: parseInt(page as string),
-        limit: parseInt(limit as string),
-        total: 2847,
-        totalPages: 57
+        page: pageNum,
+        limit: limitNum,
+        total: total,
+        totalPages: Math.ceil(total / limitNum)
       },
-      stats: {
-        totalUsers: 2847,
-        activeUsers: 1934,
-        students: 2534,
-        mentors: 89,
-        experts: 45,
-        moderators: 12,
-        admins: 3
-      }
+      stats: stats
     };
 
     res.json({
       success: true,
-      data: users
+      data: result
     });
   } catch (error: any) {
     console.error("Error fetching users:", error);
@@ -235,7 +279,7 @@ router.put("/users/:userId/role", requirePermission("update:users"), async (req,
  */
 router.post("/moderate", requirePermission("community:moderate"), async (req, res) => {
   try {
-    const { contentId, action, reason } = req.body;
+    const { contentId, action } = req.body;
 
     if (!contentId || !action) {
       return res.status(400).json({
@@ -318,7 +362,7 @@ router.post("/events", requirePermission("create:events"), async (req, res) => {
  */
 router.get("/logs", requirePermission("read:system"), async (req, res) => {
   try {
-    const { level = 'all', limit = 100 } = req.query;
+    const { limit = 100 } = req.query;
 
     // Mock system logs - in real implementation, fetch from logging system
     const logs = {

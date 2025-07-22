@@ -20,6 +20,10 @@ import LandingPage from "@/pages/LandingPage";
 import AICareerCoachPage from "@/pages/AICareerCoach";
 import IndustryExpertNetworkPage from "@/pages/IndustryExpertNetwork";
 import MentorJourney from "@/pages/MentorJourney";
+import AdminUserManagement from "@/pages/AdminUserManagement";
+import AdminAnalytics from "@/pages/AdminAnalytics";
+import AdminContentManagement from "@/pages/AdminContentManagement";
+import AdminModeration from "@/pages/AdminModeration";
 
 import { AuthProvider } from "@/hooks/use-auth-context";
 import { LearningModeProvider } from "@/hooks/use-learning-mode";
@@ -112,6 +116,26 @@ function Router() {
       <Route path="/mentor-journey">
         <ProtectedRoute>
           <MentorJourney />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin-users">
+        <ProtectedRoute>
+          <AdminUserManagement />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin-analytics">
+        <ProtectedRoute>
+          <AdminAnalytics />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin-content">
+        <ProtectedRoute>
+          <AdminContentManagement />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin-moderation">
+        <ProtectedRoute>
+          <AdminModeration />
         </ProtectedRoute>
       </Route>
 

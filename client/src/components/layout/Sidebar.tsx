@@ -12,7 +12,8 @@ import {
   ChevronRight,
   Settings,
   Bot,
-  Users
+  Users,
+  BarChart3
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LogoutButton from "@/components/auth/LogoutButton";
@@ -54,7 +55,11 @@ export default function Sidebar({ user }: SidebarProps) {
     
     if (primaryRole === 'admin') {
       return [
-        { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+        { path: "/dashboard", icon: LayoutDashboard, label: "Admin Dashboard" },
+        { path: "/admin-users", icon: Users, label: "User Management" },
+        { path: "/admin-analytics", icon: BarChart3, label: "Analytics" },
+        { path: "/admin-moderation", icon: MessageSquare, label: "Moderation" },
+        { path: "/admin-content", icon: FileText, label: "Content" },
         { path: "/settings", icon: Settings, label: "Settings" }
       ];
     }
