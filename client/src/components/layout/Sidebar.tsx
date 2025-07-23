@@ -6,14 +6,13 @@ import {
   GitBranch,
   MessageSquare,
   FileText,
-  UserCheck,
-  Trophy,
   ChevronLeft,
   ChevronRight,
   Settings,
-  Bot,
   Users,
-  BarChart3
+  BarChart3,
+  ContactRound,
+  BriefcaseBusiness
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LogoutButton from "@/components/auth/LogoutButton";
@@ -57,6 +56,8 @@ export default function Sidebar({ user }: SidebarProps) {
       return [
         { path: "/dashboard", icon: LayoutDashboard, label: "Admin Dashboard" },
         { path: "/admin-users", icon: Users, label: "User Management" },
+        { path: "/experts", icon: ContactRound, label: "Expert Network" },
+        { path: "/careers", icon: BriefcaseBusiness, label: "Career Management" },
         { path: "/admin-analytics", icon: BarChart3, label: "Analytics" },
         { path: "/admin-moderation", icon: MessageSquare, label: "Moderation" },
         { path: "/admin-content", icon: FileText, label: "Content" },

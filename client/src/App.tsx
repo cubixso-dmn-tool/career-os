@@ -24,6 +24,9 @@ import AdminUserManagement from "@/pages/AdminUserManagement";
 import AdminAnalytics from "@/pages/AdminAnalytics";
 import AdminContentManagement from "@/pages/AdminContentManagement";
 import AdminModeration from "@/pages/AdminModeration";
+import AdminExpertManagement from "@/pages/AdminExpertManagement";
+import AdminSessionManagement from "@/pages/AdminSessionManagement";
+import AdminCareerManagement from "@/pages/AdminCareerManagement";
 
 import { AuthProvider } from "@/hooks/use-auth-context";
 import { LearningModeProvider } from "@/hooks/use-learning-mode";
@@ -136,6 +139,21 @@ function Router() {
       <Route path="/admin-moderation">
         <ProtectedRoute>
           <AdminModeration />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/experts">
+        <ProtectedRoute>
+          <AdminExpertManagement />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/sessions">
+        <ProtectedRoute>
+          <AdminSessionManagement />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/careers">
+        <ProtectedRoute>
+          <AdminCareerManagement />
         </ProtectedRoute>
       </Route>
 

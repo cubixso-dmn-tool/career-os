@@ -1,6 +1,7 @@
 import React, { createContext, ReactNode, useState, useContext, useEffect, useCallback } from 'react';
 import { useLocation } from 'wouter';
 import { useToast } from './use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import FirebaseAuthService from '../lib/firebase';
 import { User as FirebaseUser } from 'firebase/auth';
 
@@ -57,6 +58,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Token management functions
   const getStoredTokens = () => {
@@ -422,6 +424,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(null);
       setUserRoles([]);
       setUserPermissions([]);
+      
+      // Clear all React Query cache to ensure fresh data on next login
+      queryClient.clear();
+      
       navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
@@ -430,6 +436,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(null);
       setUserRoles([]);
       setUserPermissions([]);
+      
+      // Clear all React Query cache to ensure fresh data on next login
+      queryClient.clear();
+      
       navigate('/login');
     } finally {
       setLoading(false);

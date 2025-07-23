@@ -152,7 +152,10 @@ export default function IndustryExpertNetwork() {
 
       if (expertsRes.ok) {
         const expertsData = await expertsRes.json();
+        console.log('Experts API response:', expertsData);
         setExperts(expertsData.experts || []);
+      } else {
+        console.error('Experts API failed:', expertsRes.status, expertsRes.statusText);
       }
 
       if (sessionsRes.ok) {
@@ -253,6 +256,8 @@ export default function IndustryExpertNetwork() {
     return matchesSearch && matchesIndustry;
   });
 
+  console.log('Experts loaded:', experts.length, 'Filtered:', filteredExperts.length);
+
   const industries = Array.from(new Set(experts.map(expert => expert.industry)));
 
   if (loading) {
@@ -339,9 +344,19 @@ export default function IndustryExpertNetwork() {
           </Card>
 
           {/* Experts Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AnimatePresence>
-              {filteredExperts.map((expert) => (
+          {filteredExperts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600 text-lg">No experts found</p>
+              <p className="text-gray-500 text-sm mt-2">
+                {experts.length === 0 
+                  ? "No experts are currently available in the database." 
+                  : "Try adjusting your search or filter criteria."}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <AnimatePresence>
+                {filteredExperts.map((expert) => (
                 <motion.div
                   key={expert.id}
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -373,14 +388,14 @@ export default function IndustryExpertNetwork() {
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1">
                             <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                            <span className="text-sm font-medium">{expert.rating}%</span>
+                            <span className="text-sm font-medium">{expert.rating || 0}%</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <Video className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm text-gray-600">{expert.totalSessions}</span>
+                            <span className="text-sm text-gray-600">{expert.totalSessions || 0}</span>
                           </div>
                         </div>
-                        <Badge variant="secondary">{expert.experience}+ years</Badge>
+                        <Badge variant="secondary">{(expert as any).experience || (expert as any).experienceYears || 0}+ years</Badge>
                       </div>
                     </CardHeader>
                     
@@ -425,9 +440,10 @@ export default function IndustryExpertNetwork() {
                     </CardContent>
                   </Card>
                 </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="sessions" className="space-y-6">

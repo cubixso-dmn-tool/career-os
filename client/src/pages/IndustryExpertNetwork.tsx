@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Layout from '@/components/layout/Layout';
 import MobileNavigation from '@/components/layout/MobileNavigation';
@@ -5,6 +6,20 @@ import IndustryExpertNetwork from '@/components/experts/IndustryExpertNetwork';
 import { Users, Video, BookOpen, Calendar, Star, TrendingUp, MessageCircle, Award } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+
+interface FeaturedExpert {
+  id: number;
+  name: string;
+  title: string;
+  company: string;
+  industry: string;
+  specializations: string[];
+  experience: number;
+  bio: string;
+  avatar?: string;
+  linkedinUrl?: string;
+  expertise: string[];
+}
 
 export default function IndustryExpertNetworkPage() {
   const features = [
@@ -34,26 +49,30 @@ export default function IndustryExpertNetworkPage() {
     }
   ];
 
-  const expertHighlights = [
-    {
-      name: "Priya Sharma",
-      title: "Senior Software Engineer at Google",
-      achievement: "From Tier-3 college to Google in 3 years",
-      expertise: ["Machine Learning", "System Design", "Career Transition"]
-    },
-    {
-      name: "Rahul Gupta", 
-      title: "VP of Product at Zomato",
-      achievement: "Led products from 0-1 to millions of users",
-      expertise: ["Product Strategy", "Growth", "Leadership"]
-    },
-    {
-      name: "Vikram Singh",
-      title: "Serial Entrepreneur & CEO",
-      achievement: "3 successful exits, raised $50M+ funding",
-      expertise: ["Entrepreneurship", "Fundraising", "Business Strategy"]
+  const [featuredExperts, setFeaturedExperts] = useState<FeaturedExpert[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchFeaturedExperts();
+  }, []);
+
+  const fetchFeaturedExperts = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/industry-experts/featured-experts?limit=3', {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setFeaturedExperts(data.experts || []);
+      }
+    } catch (error) {
+      console.error('Error fetching featured experts:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   return (
     <>
@@ -143,22 +162,37 @@ export default function IndustryExpertNetworkPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {expertHighlights.map((expert, index) => (
-                  <div key={index} className="text-center p-4 bg-white rounded-lg shadow-sm">
-                    <h3 className="font-semibold text-lg mb-1">{expert.name}</h3>
-                    <p className="text-sm text-gray-600 mb-2">{expert.title}</p>
-                    <p className="text-sm font-medium text-purple-600 mb-3">{expert.achievement}</p>
-                    <div className="flex flex-wrap justify-center gap-1">
-                      {expert.expertise.map((skill, skillIndex) => (
-                        <Badge key={skillIndex} variant="outline" className="text-xs">
-                          {skill}
-                        </Badge>
-                      ))}
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                </div>
+              ) : featuredExperts.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {featuredExperts.map((expert) => (
+                    <div key={expert.id} className="text-center p-4 bg-white rounded-lg shadow-sm">
+                      <h3 className="font-semibold text-lg mb-1">{expert.name}</h3>
+                      <p className="text-sm text-gray-600 mb-2">{expert.title} at {expert.company}</p>
+                      <p className="text-sm font-medium text-purple-600 mb-3">{expert.experience}+ years experience in {expert.industry}</p>
+                      <div className="flex flex-wrap justify-center gap-1">
+                        {expert.expertise.slice(0, 3).map((skill, skillIndex) => (
+                          <Badge key={skillIndex} variant="outline" className="text-xs">
+                            {skill}
+                          </Badge>
+                        ))}
+                        {expert.expertise.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{expert.expertise.length - 3}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">No featured experts available at the moment.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>

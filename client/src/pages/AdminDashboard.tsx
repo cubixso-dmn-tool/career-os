@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import Layout from "@/components/layout/Layout";
 import { 
   Card, 
@@ -323,14 +324,13 @@ export default function AdminDashboard() {
               transition={{ delay: 0.3 }}
             >
               <Tabs defaultValue="users" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-7">
+                <TabsList className="flex items-center justify-between">
                   <TabsTrigger value="users">Users</TabsTrigger>
-                  <TabsTrigger value="events">Events</TabsTrigger>
-                  <TabsTrigger value="moderation">Moderation</TabsTrigger>
+                  <TabsTrigger value="experts">Experts</TabsTrigger>
+                  <TabsTrigger value="sessions">Sessions</TabsTrigger>
+                  <TabsTrigger value="careers">Careers</TabsTrigger>
                   <TabsTrigger value="content">Content</TabsTrigger>
                   <TabsTrigger value="analytics">Analytics</TabsTrigger>
-                  <TabsTrigger value="features">Features</TabsTrigger>
-                  <TabsTrigger value="system">System</TabsTrigger>
                 </TabsList>
 
                 {/* User Management Tab */}
@@ -418,6 +418,225 @@ export default function AdminDashboard() {
                   </Card>
                 </TabsContent>
 
+                {/* Expert Management Tab */}
+                <TabsContent value="experts">
+                  <Card className="shadow-lg border-0">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            <Users className="h-5 w-5 text-purple-600" />
+                            Expert Network Management
+                          </CardTitle>
+                          <CardDescription>Manage industry experts, sessions, and networking events</CardDescription>
+                        </div>
+                        <Link href="/experts">
+                          <Button className="bg-purple-600 hover:bg-purple-700">
+                            <Users className="h-4 w-4 mr-2" />
+                            Manage Experts
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg p-6 text-white">
+                          <h3 className="text-lg font-semibold mb-2">Total Experts</h3>
+                          <p className="text-3xl font-bold">0</p>
+                          <p className="text-purple-100 text-sm mt-2">Industry professionals</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg p-6 text-white">
+                          <h3 className="text-lg font-semibold mb-2">Active Sessions</h3>
+                          <p className="text-3xl font-bold">0</p>
+                          <p className="text-blue-100 text-sm mt-2">Upcoming expert sessions</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-green-500 to-teal-500 rounded-lg p-6 text-white">
+                          <h3 className="text-lg font-semibold mb-2">Success Stories</h3>
+                          <p className="text-3xl font-bold">0</p>
+                          <p className="text-green-100 text-sm mt-2">Career transformation stories</p>
+                        </div>
+                      </div>
+                      <div className="mt-8 text-center">
+                        <p className="text-gray-600 mb-4">Start building your expert network by adding industry professionals</p>
+                        <Link href="/experts">
+                          <Button size="lg" className="bg-purple-600 hover:bg-purple-700">
+                            Get Started with Expert Management
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Session Management Tab */}
+                <TabsContent value="sessions">
+                  <Card className="shadow-lg border-0">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            <Calendar className="h-5 w-5 text-orange-600" />
+                            Session & Event Management
+                          </CardTitle>
+                          <CardDescription>Manage expert sessions and networking events</CardDescription>
+                        </div>
+                        <Link href="/sessions">
+                          <Button className="bg-orange-600 hover:bg-orange-700">
+                            <Calendar className="h-4 w-4 mr-2" />
+                            Manage Sessions
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-100 rounded-lg">
+                              <Users className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600">Expert Sessions</p>
+                              <p className="text-lg font-semibold">Create & Manage</p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-500">One-on-one mentoring, group sessions, and workshops</p>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-green-100 rounded-lg">
+                              <Calendar className="h-5 w-5 text-green-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600">Networking Events</p>
+                              <p className="text-lg font-semibold">Schedule & Track</p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-500">Webinars, conferences, and networking meetups</p>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-purple-100 rounded-lg">
+                              <BarChart3 className="h-5 w-5 text-purple-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600">Event Analytics</p>
+                              <p className="text-lg font-semibold">Performance Insights</p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-500">Attendance tracking and engagement metrics</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                        <div className="flex items-start gap-3">
+                          <Calendar className="h-5 w-5 text-orange-600 mt-0.5" />
+                          <div>
+                            <h4 className="font-medium text-orange-900">Session Management Features</h4>
+                            <p className="text-sm text-orange-700 mt-1">
+                              Create expert-led sessions, schedule networking events, manage participants, 
+                              and track engagement metrics. Set up pricing, manage registrations, and 
+                              monitor event success.
+                            </p>
+                            <ul className="text-sm text-orange-600 mt-2 space-y-1">
+                              <li>• Expert session scheduling and management</li>
+                              <li>• Networking event creation and tracking</li>
+                              <li>• Participant management and notifications</li>
+                              <li>• Event analytics and performance metrics</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Career Management Tab */}
+                <TabsContent value="careers">
+                  <Card className="shadow-lg border-0">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            <BarChart3 className="h-5 w-5 text-green-600" />
+                            Career Path Management
+                          </CardTitle>
+                          <CardDescription>Manage career options, assessments, and roadmaps</CardDescription>
+                        </div>
+                        <Link href="/careers">
+                          <Button className="bg-green-600 hover:bg-green-700">
+                            <BarChart3 className="h-4 w-4 mr-2" />
+                            Manage Careers
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-100 rounded-lg">
+                              <BarChart3 className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600">Career Options</p>
+                              <p className="text-lg font-semibold">Create & Manage</p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-500">Add and manage available career paths for students</p>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-green-100 rounded-lg">
+                              <FileText className="h-5 w-5 text-green-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600">Career Roadmaps</p>
+                              <p className="text-lg font-semibold">Skills & Resources</p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-500">Define skills, courses, and resources for each career path</p>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-purple-100 rounded-lg">
+                              <Users className="h-5 w-5 text-purple-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600">Assessments</p>
+                              <p className="text-lg font-semibold">Career Matching</p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-500">Configure assessment questions and career matching logic</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                        <div className="flex items-start gap-3">
+                          <BarChart3 className="h-5 w-5 text-green-600 mt-0.5" />
+                          <div>
+                            <h4 className="font-medium text-green-900">Career Management Features</h4>
+                            <p className="text-sm text-green-700 mt-1">
+                              Create and manage career options that will be recommended to students. Define 
+                              comprehensive roadmaps with skills, courses, projects, and resources for each career path.
+                            </p>
+                            <ul className="text-sm text-green-600 mt-2 space-y-1">
+                              <li>• Dynamic career options with salary ranges</li>
+                              <li>• Skill-based career roadmaps</li>
+                              <li>• Assessment questions and matching algorithms</li>
+                              <li>• Course and resource recommendations</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
                 {/* Analytics Tab */}
                 <TabsContent value="analytics">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -488,191 +707,7 @@ export default function AdminDashboard() {
                   </div>
                 </TabsContent>
 
-                {/* Feature Toggles Tab */}
-                <TabsContent value="features">
-                  <Card className="shadow-lg border-0">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Zap className="h-5 w-5 text-yellow-600" />
-                        Feature Flag Management
-                      </CardTitle>
-                      <CardDescription>Control feature rollouts and availability</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                      <div className="space-y-4">
-                        {[
-                          {
-                            name: "AI Career Coach Beta",
-                            description: "Advanced AI-powered career guidance",
-                            enabled: true,
-                            cohort: "Premium Users",
-                            usage: "87% adoption"
-                          },
-                          {
-                            name: "Live Video Sessions",
-                            description: "Real-time mentor video calls",
-                            enabled: true,
-                            cohort: "All Users",
-                            usage: "64% adoption"
-                          },
-                          {
-                            name: "Advanced Analytics",
-                            description: "Detailed learning progress tracking",
-                            enabled: false,
-                            cohort: "Beta Testers",
-                            usage: "Testing phase"
-                          },
-                          {
-                            name: "Mobile App Push Notifications",
-                            description: "Real-time mobile notifications",
-                            enabled: true,
-                            cohort: "Mobile Users",
-                            usage: "92% adoption"
-                          }
-                        ].map((feature, index) => (
-                          <div key={index} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <div className="flex items-center">
-                                    {feature.enabled ? (
-                                      <ToggleRight className="h-6 w-6 text-green-500" />
-                                    ) : (
-                                      <ToggleLeft className="h-6 w-6 text-gray-400" />
-                                    )}
-                                  </div>
-                                  <div>
-                                    <h4 className="font-semibold text-gray-900">{feature.name}</h4>
-                                    <p className="text-sm text-gray-600">{feature.description}</p>
-                                  </div>
-                                  <Badge variant="outline" className="ml-auto">
-                                    {feature.enabled ? 'Enabled' : 'Disabled'}
-                                  </Badge>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
-                                  <div>
-                                    <span className="font-medium">Cohort:</span> {feature.cohort}
-                                  </div>
-                                  <div>
-                                    <span className="font-medium">Usage:</span> {feature.usage}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex gap-2 ml-4">
-                                <Button size="sm" variant="outline">
-                                  <Edit className="h-4 w-4 mr-1" />
-                                  Configure
-                                </Button>
-                                <Button size="sm" variant={feature.enabled ? "outline" : "default"}>
-                                  {feature.enabled ? 'Disable' : 'Enable'}
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                {/* System Tab */}
-                <TabsContent value="system">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <Card className="shadow-lg border-0">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Database className="h-5 w-5 text-blue-600" />
-                          System Health
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-6">
-                        <div className="space-y-4">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Server Uptime</span>
-                            <span className="font-semibold text-green-600">99.9%</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Database Health</span>
-                            <span className="font-semibold text-green-600">Optimal</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">API Response Time</span>
-                            <span className="font-semibold text-blue-600">127ms</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Storage Usage</span>
-                            <span className="font-semibold text-orange-600">67%</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="shadow-lg border-0">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Bell className="h-5 w-5 text-orange-600" />
-                          System Alerts
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-6">
-                        <div className="space-y-3">
-                          {[
-                            {
-                              type: "info",
-                              message: "Scheduled maintenance: Dec 25, 2AM-4AM",
-                              time: "2h ago"
-                            },
-                            {
-                              type: "warning",
-                              message: "High traffic detected - auto-scaling initiated",
-                              time: "1d ago"
-                            },
-                            {
-                              type: "success",
-                              message: "Database backup completed successfully",
-                              time: "2d ago"
-                            }
-                          ].map((alert, index) => (
-                            <div key={index} className={`p-3 rounded-lg border-l-4 ${
-                              alert.type === 'info' ? 'border-blue-400 bg-blue-50' :
-                              alert.type === 'warning' ? 'border-orange-400 bg-orange-50' :
-                              'border-green-400 bg-green-50'
-                            }`}>
-                              <p className="text-sm font-medium text-gray-900">{alert.message}</p>
-                              <p className="text-xs text-gray-600 mt-1">{alert.time}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </TabsContent>
-
-                {/* Quick placeholders for other tabs */}
-                <TabsContent value="events">
-                  <Card className="shadow-lg border-0">
-                    <CardHeader>
-                      <CardTitle>Event Management</CardTitle>
-                      <CardDescription>Manage platform events and notifications</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                      <p className="text-gray-600">Event management interface coming soon...</p>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="moderation">
-                  <Card className="shadow-lg border-0">
-                    <CardHeader>
-                      <CardTitle>Moderation Oversight</CardTitle>
-                      <CardDescription>Monitor and manage moderation activities</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                      <p className="text-gray-600">Moderation oversight interface coming soon...</p>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
+                {/* Other tabs remain the same... */}
                 <TabsContent value="content">
                   <Card className="shadow-lg border-0">
                     <CardHeader>
@@ -684,8 +719,32 @@ export default function AdminDashboard() {
                     </CardContent>
                   </Card>
                 </TabsContent>
+
+                <TabsContent value="features">
+                  <Card className="shadow-lg border-0">
+                    <CardHeader>
+                      <CardTitle>Feature Management</CardTitle>
+                      <CardDescription>Control feature rollouts and availability</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <p className="text-gray-600">Feature management interface coming soon...</p>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="system">
+                  <Card className="shadow-lg border-0">
+                    <CardHeader>
+                      <CardTitle>System Status</CardTitle>
+                      <CardDescription>Monitor system health and performance</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <p className="text-gray-600">System monitoring interface coming soon...</p>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
               </Tabs>
-            </motion.div>
+            </motion.div>            
           </div>
         </div>
       </div>

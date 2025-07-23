@@ -1,22 +1,58 @@
 import { Router } from "express";
-import { z } from "zod";
-import { storage } from "../storage.js";
-import { 
-  insertIndustryExpertSchema,
-  insertExpertSessionSchema,
-  insertSessionRegistrationSchema,
-  insertExpertQnaSessionSchema,
-  insertCareerSuccessStorySchema,
-  insertNetworkingEventSchema,
-  insertCollegeEventRegistrationSchema,
-  insertExpertMentorshipSchema,
-  type IndustryExpert,
-  type ExpertSession,
-  type SessionRegistration,
-  type CareerSuccessStory,
-  type NetworkingEvent,
-  type CollegeEventRegistration
-} from "../../shared/schema.js";
+import { db } from "../db.js";
+import { industryExperts, expertSessions } from "../../shared/schema.js";
+import { eq, sql, and, desc } from "drizzle-orm";
+
+// Interfaces for type checking
+interface CareerSuccessStory {
+  id: number;
+  authorId: number | null;
+  expertId: number | null;
+  title: string;
+  story: string;
+  careerPath: string;
+  industryFrom?: string;
+  industryTo: string;
+  timeframe?: string;
+  keyLearnings: string[];
+  challenges: string[];
+  advice: string[];
+  salaryGrowth?: string;
+  companyProgression: string[];
+  skillsGained: string[];
+  certifications: string[];
+  isPublic: boolean;
+  isFeatured: boolean;
+  views: number;
+  likes: number;
+  createdAt: Date;
+}
+
+interface NetworkingEvent {
+  id: number;
+  title: string;
+  description: string;
+  eventType: string;
+  industry?: string;
+  targetAudience: string[];
+  organizer: string;
+  organizerId?: number;
+  expertId?: number;
+  scheduledAt: Date;
+  endTime: Date;
+  timezone: string;
+  location?: string;
+  meetingLink?: string;
+  maxAttendees?: number;
+  currentAttendees: number;
+  isOnline: boolean;
+  isFree: boolean;
+  registrationDeadline?: Date;
+  tags: string[];
+  agenda?: any;
+  status: string;
+  createdAt: Date;
+}
 
 const router = Router();
 
@@ -24,88 +60,66 @@ const router = Router();
 // Get all experts
 router.get("/experts", async (req, res) => {
   try {
-    const { industry, expertise, experience } = req.query;
+    const { industry, expertise, experience, featured } = req.query;
     
-    // For now, return sample data until database methods are implemented
-    const sampleExperts: IndustryExpert[] = [
-      {
-        id: 1,
-        userId: null,
-        name: "Priya Sharma",
-        title: "Senior Software Engineer",
-        company: "Google India",
-        industry: "Technology",
-        specializations: ["Machine Learning", "Backend Development", "System Design"],
-        experience: 8,
-        bio: "Senior Software Engineer at Google with 8+ years of experience in ML and distributed systems. Previously worked at Flipkart and Swiggy. Passionate about mentoring and helping students transition into tech careers.",
-        avatar: "https://images.unsplash.com/photo-1494790108755-2616b69a65bc?w=300",
-        linkedinUrl: "https://linkedin.com/in/priyasharma",
-        expertise: ["Machine Learning", "System Design", "Career Transition"],
-        rating: 95,
-        totalSessions: 45,
-        isActive: true,
-        joinedAt: new Date("2023-01-15")
-      },
-      {
-        id: 2,
-        userId: null,
-        name: "Rahul Gupta",
-        title: "VP of Product",
-        company: "Zomato",
-        industry: "Product Management",
-        specializations: ["Product Strategy", "Growth", "User Experience"],
-        experience: 12,
-        bio: "VP of Product at Zomato with 12+ years in product management. Led products from 0-1 and scaled to millions of users. Expert in product strategy, growth hacking, and building teams.",
-        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300",
-        linkedinUrl: "https://linkedin.com/in/rahulgupta",
-        expertise: ["Product Management", "Growth Strategy", "Leadership"],
-        rating: 92,
-        totalSessions: 38,
-        isActive: true,
-        joinedAt: new Date("2023-02-20")
-      },
-      {
-        id: 3,
-        userId: null,
-        name: "Anjali Desai",
-        title: "Data Science Manager",
-        company: "Microsoft India",
-        industry: "Data Science",
-        specializations: ["Data Analytics", "AI/ML", "Team Leadership"],
-        experience: 10,
-        bio: "Data Science Manager at Microsoft with expertise in AI/ML, analytics, and team building. Transitioned from software engineering to data science and now leads a team of 15+ data scientists.",
-        avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300",
-        linkedinUrl: "https://linkedin.com/in/anjalidesai",
-        expertise: ["Data Science", "Career Transition", "Team Management"],
-        rating: 96,
-        totalSessions: 52,
-        isActive: true,
-        joinedAt: new Date("2023-03-10")
-      },
-      {
-        id: 4,
-        userId: null,
-        name: "Vikram Singh",
-        title: "Founder & CEO",
-        company: "TechStart Solutions",
-        industry: "Entrepreneurship",
-        specializations: ["Startup Building", "Fundraising", "Business Strategy"],
-        experience: 15,
-        bio: "Serial entrepreneur with 3 successful exits. Currently building TechStart Solutions. Expert in startup strategy, fundraising, and scaling businesses. Mentor at multiple accelerators.",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300",
-        linkedinUrl: "https://linkedin.com/in/vikramsingh",
-        expertise: ["Entrepreneurship", "Fundraising", "Business Strategy"],
-        rating: 94,
-        totalSessions: 41,
-        isActive: true,
-        joinedAt: new Date("2023-01-25")
+    // Build query conditions
+    const conditions = [];
+    conditions.push(eq(industryExperts.isActive, true));
+    
+    if (industry) {
+      conditions.push(eq(industryExperts.industry, industry as string));
+    }
+    
+    if (experience) {
+      const expYears = parseInt(experience as string);
+      if (!isNaN(expYears)) {
+        conditions.push(sql`${industryExperts.experience} >= ${expYears}`);
       }
-    ];
+    }
+    
+    if (featured === 'true') {
+      conditions.push(sql`${industryExperts}.is_featured = true`);
+    }
+
+    // Query experts from database
+    let expertsList;
+    
+    // Sort by featured status first, then by featured order, then by joinedAt
+    if (featured === 'true') {
+      expertsList = await db
+        .select()
+        .from(industryExperts)
+        .where(and(...conditions))
+        .orderBy(
+          sql`${industryExperts}.featured_order ASC NULLS LAST`,
+          desc(industryExperts.joinedAt)
+        );
+    } else {
+      expertsList = await db
+        .select()
+        .from(industryExperts)
+        .where(and(...conditions))
+        .orderBy(
+          sql`${industryExperts}.is_featured DESC`,
+          sql`${industryExperts}.featured_order ASC NULLS LAST`,
+          desc(industryExperts.joinedAt)
+        );
+    }
+    
+    if (expertise) {
+      const expertiseArr = Array.isArray(expertise) ? expertise : [expertise];
+      expertsList = expertsList.filter(expert =>
+        expertiseArr.some(exp => 
+          expert.expertise.includes(exp as string) || 
+          expert.specializations.includes(exp as string)
+        )
+      );
+    }
 
     res.json({ 
       success: true, 
-      experts: sampleExperts,
-      total: sampleExperts.length 
+      experts: expertsList,
+      total: expertsList.length 
     });
   } catch (error) {
     console.error("Error fetching experts:", error);
@@ -116,32 +130,70 @@ router.get("/experts", async (req, res) => {
   }
 });
 
+// Get featured experts
+router.get("/featured-experts", async (req, res) => {
+  try {
+    const { limit = 6 } = req.query;
+    const limitNum = parseInt(limit as string);
+    
+    // Query featured experts
+    const featuredExperts = await db
+      .select()
+      .from(industryExperts)
+      .where(and(
+        eq(industryExperts.isActive, true),
+        sql`${industryExperts}.is_featured = true`
+      ))
+      .orderBy(
+        sql`${industryExperts}.featured_order ASC NULLS LAST`,
+        desc(industryExperts.joinedAt)
+      )
+      .limit(limitNum);
+
+    res.json({ 
+      success: true, 
+      experts: featuredExperts,
+      total: featuredExperts.length 
+    });
+  } catch (error) {
+    console.error("Error fetching featured experts:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to fetch featured experts" 
+    });
+  }
+});
+
 // Get expert by ID
 router.get("/experts/:id", async (req, res) => {
   try {
     const expertId = parseInt(req.params.id);
     
-    // Sample expert data
-    const expert = {
-      id: expertId,
-      userId: null,
-      name: "Priya Sharma",
-      title: "Senior Software Engineer",
-      company: "Google India",
-      industry: "Technology",
-      specializations: ["Machine Learning", "Backend Development", "System Design"],
-      experience: 8,
-      bio: "Senior Software Engineer at Google with 8+ years of experience in ML and distributed systems. Previously worked at Flipkart and Swiggy. Passionate about mentoring and helping students transition into tech careers.",
-      avatar: "https://images.unsplash.com/photo-1494790108755-2616b69a65bc?w=300",
-      linkedinUrl: "https://linkedin.com/in/priyasharma",
-      expertise: ["Machine Learning", "System Design", "Career Transition"],
-      rating: 95,
-      totalSessions: 45,
-      isActive: true,
-      joinedAt: new Date("2023-01-15")
-    };
+    if (isNaN(expertId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid expert ID"
+      });
+    }
+    
+    // Query expert from database
+    const expert = await db
+      .select()
+      .from(industryExperts)
+      .where(and(
+        eq(industryExperts.id, expertId),
+        eq(industryExperts.isActive, true)
+      ))
+      .limit(1);
 
-    res.json({ success: true, expert });
+    if (expert.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Expert not found"
+      });
+    }
+
+    res.json({ success: true, expert: expert[0] });
   } catch (error) {
     console.error("Error fetching expert:", error);
     res.status(500).json({ 
@@ -157,91 +209,85 @@ router.get("/sessions", async (req, res) => {
   try {
     const { category, sessionType, expertId } = req.query;
     
-    const sampleSessions: (ExpertSession & { expert: Pick<IndustryExpert, 'name' | 'title' | 'company' | 'avatar'> })[] = [
-      {
-        id: 1,
-        expertId: 1,
-        title: "Breaking into Tech: From Engineering to Google",
-        description: "Learn how I transitioned from a tier-2 college to Google. I'll share my journey, challenges, and practical tips for landing your dream tech job.",
-        sessionType: "lecture",
-        category: "career_guidance",
-        scheduledAt: new Date("2024-01-15T18:30:00Z"),
-        duration: 90,
-        maxAttendees: 100,
-        currentAttendees: 67,
-        meetingLink: "https://meet.google.com/abc-defg-hij",
-        recordingUrl: null,
-        status: "scheduled",
-        tags: ["career-transition", "google", "interview-tips"],
-        isRecorded: true,
-        isFree: true,
-        price: 0,
-        createdAt: new Date("2024-01-01"),
-        expert: {
-          name: "Priya Sharma",
-          title: "Senior Software Engineer",
-          company: "Google India",
-          avatar: "https://images.unsplash.com/photo-1494790108755-2616b69a65bc?w=300"
-        }
-      },
-      {
-        id: 2,
-        expertId: 2,
-        title: "Product Management 101: Building Your First Product",
-        description: "Interactive workshop on product management fundamentals. Learn about user research, roadmapping, and working with engineering teams.",
-        sessionType: "workshop",
-        category: "technical",
-        scheduledAt: new Date("2024-01-18T19:00:00Z"),
-        duration: 120,
-        maxAttendees: 50,
-        currentAttendees: 32,
-        meetingLink: "https://zoom.us/j/123456789",
-        recordingUrl: null,
-        status: "scheduled",
-        tags: ["product-management", "workshop", "beginner"],
-        isRecorded: true,
-        isFree: true,
-        price: 0,
-        createdAt: new Date("2024-01-02"),
-        expert: {
-          name: "Rahul Gupta",
-          title: "VP of Product",
-          company: "Zomato",
-          avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300"
-        }
-      },
-      {
-        id: 3,
-        expertId: 3,
-        title: "Q&A: Data Science Career Paths in India",
-        description: "Open Q&A session about data science careers, skill requirements, and industry trends in India. Bring your questions!",
-        sessionType: "qa",
-        category: "career_guidance",
-        scheduledAt: new Date("2024-01-20T17:00:00Z"),
-        duration: 60,
-        maxAttendees: 75,
-        currentAttendees: 41,
-        meetingLink: "https://teams.microsoft.com/l/meetup-join/abc",
-        recordingUrl: null,
-        status: "scheduled",
-        tags: ["data-science", "qa-session", "career-guidance"],
-        isRecorded: true,
-        isFree: true,
-        price: 0,
-        createdAt: new Date("2024-01-03"),
-        expert: {
-          name: "Anjali Desai",
-          title: "Data Science Manager",
-          company: "Microsoft India",
-          avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300"
-        }
+    // Build query conditions
+    const conditions = [];
+    conditions.push(sql`${expertSessions}.scheduled_at > NOW()`); // Only future sessions
+    
+    if (category) {
+      conditions.push(eq(expertSessions.category, category as string));
+    }
+    
+    if (sessionType) {
+      conditions.push(eq(expertSessions.sessionType, sessionType as string));
+    }
+    
+    if (expertId) {
+      const expId = parseInt(expertId as string);
+      if (!isNaN(expId)) {
+        conditions.push(eq(expertSessions.expertId, expId));
       }
-    ];
+    }
+
+    // Query sessions with expert details
+    const sessionsList = await db
+      .select({
+        id: expertSessions.id,
+        expertId: expertSessions.expertId,
+        title: expertSessions.title,
+        description: expertSessions.description,
+        sessionType: expertSessions.sessionType,
+        category: expertSessions.category,
+        scheduledAt: expertSessions.scheduledAt,
+        duration: expertSessions.duration,
+        maxAttendees: expertSessions.maxAttendees,
+        currentAttendees: expertSessions.currentAttendees,
+        meetingLink: expertSessions.meetingLink,
+        status: expertSessions.status,
+        tags: expertSessions.tags,
+        isFree: expertSessions.isFree,
+        price: expertSessions.price,
+        createdAt: expertSessions.createdAt,
+        // Expert details
+        expertName: industryExperts.name,
+        expertTitle: industryExperts.title,
+        expertCompany: industryExperts.company,
+        expertAvatar: industryExperts.avatar
+      })
+      .from(expertSessions)
+      .leftJoin(industryExperts, eq(expertSessions.expertId, industryExperts.id))
+      .where(and(...conditions))
+      .orderBy(expertSessions.scheduledAt);
+
+    // Transform the data to match the expected format
+    const formattedSessions = sessionsList.map(session => ({
+      id: session.id,
+      expertId: session.expertId,
+      title: session.title,
+      description: session.description,
+      sessionType: session.sessionType,
+      category: session.category,
+      scheduledAt: session.scheduledAt,
+      duration: session.duration,
+      maxAttendees: session.maxAttendees || 100,
+      currentAttendees: session.currentAttendees || 0,
+      meetingLink: session.meetingLink,
+      status: session.status,
+      tags: session.tags || [],
+      isFree: session.isFree !== false, // default to true if null
+      price: session.price || 0,
+      createdAt: session.createdAt,
+      expert: {
+        name: session.expertName || 'Unknown Expert',
+        title: session.expertTitle || 'Expert',
+        company: session.expertCompany || 'Company',
+        avatar: session.expertAvatar
+      }
+    }));
 
     res.json({ 
       success: true, 
-      sessions: sampleSessions,
-      total: sampleSessions.length 
+      sessions: formattedSessions,
+      total: formattedSessions.length 
     });
   } catch (error) {
     console.error("Error fetching sessions:", error);
@@ -295,9 +341,8 @@ router.post("/sessions/:id/register", async (req, res) => {
 
 // CAREER SUCCESS STORIES
 // Get success stories
-router.get("/success-stories", async (req, res) => {
+router.get("/success-stories", async (_, res) => {
   try {
-    const { industry, careerPath, featured } = req.query;
     
     const sampleStories: (CareerSuccessStory & { author?: { name: string; avatar?: string } })[] = [
       {
@@ -404,9 +449,8 @@ router.get("/success-stories", async (req, res) => {
 
 // NETWORKING EVENTS
 // Get networking events
-router.get("/networking-events", async (req, res) => {
+router.get("/networking-events", async (_, res) => {
   try {
-    const { eventType, industry, upcoming } = req.query;
     
     const sampleEvents: (NetworkingEvent & { expert?: { name: string; title: string; company: string } })[] = [
       {
@@ -417,7 +461,7 @@ router.get("/networking-events", async (req, res) => {
         industry: "Technology",
         targetAudience: ["students", "freshers", "experienced"],
         organizer: "TechBangalore Community",
-        organizerId: null,
+        organizerId: undefined,
         expertId: 1,
         scheduledAt: new Date("2024-01-25T19:00:00Z"),
         endTime: new Date("2024-01-25T21:00:00Z"),
@@ -452,7 +496,7 @@ router.get("/networking-events", async (req, res) => {
         industry: "Product Management",
         targetAudience: ["students", "freshers"],
         organizer: "ProductHunt India",
-        organizerId: null,
+        organizerId: undefined,
         expertId: 2,
         scheduledAt: new Date("2024-01-28T10:00:00Z"),
         endTime: new Date("2024-01-28T16:00:00Z"),

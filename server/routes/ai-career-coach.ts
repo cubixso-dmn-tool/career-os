@@ -10,6 +10,9 @@ import {
   type ResumeAnalysisRequest,
   type LearningPathRequest
 } from "../services/openai.js";
+import { db } from "../db.js";
+import { careerOptions, careerPaths, careerSkills, careerCourses, careerProjects, careerResources } from "../../shared/schema.js";
+import { eq, desc, sql } from "drizzle-orm";
 
 const router = Router();
 
@@ -217,70 +220,144 @@ router.post("/learning-path", async (req, res) => {
  * Get AI Career Coach Features Info
  * GET /api/ai-career-coach/features
  */
-router.get("/features", (req, res) => {
-  res.json({
-    success: true,
-    features: {
-      generalCoaching: {
-        name: "General Career Coaching",
-        description: "Comprehensive career guidance and advice",
-        capabilities: [
-          "Career path exploration",
-          "Skills development advice", 
-          "Industry insights",
-          "Salary expectations",
-          "Work-life balance guidance"
-        ]
+router.get("/features", async (req, res) => {
+  try {
+    // Fetch dynamic career options from database
+    const careers = await db.select({ title: careerOptions.title }).from(careerOptions);
+    const supportedRoles = careers.length > 0 
+      ? careers.map(c => c.title).concat(["And many more..."])
+      : [
+          "Software Engineer",
+          "Data Scientist", 
+          "Product Manager",
+          "UI/UX Designer",
+          "DevOps Engineer",
+          "Business Analyst",
+          "Digital Marketer",
+          "Content Creator",
+          "And many more..."
+        ];
+
+    res.json({
+      success: true,
+      features: {
+        generalCoaching: {
+          name: "General Career Coaching",
+          description: "Comprehensive career guidance and advice",
+          capabilities: [
+            "Career path exploration",
+            "Skills development advice", 
+            "Industry insights",
+            "Salary expectations",
+            "Work-life balance guidance"
+          ]
+        },
+        interviewCoaching: {
+          name: "Interview Preparation",
+          description: "AI-powered interview practice and preparation",
+          capabilities: [
+            "Mock interview questions",
+            "Technical interview prep",
+            "Behavioral interview strategies", 
+            "Company-specific insights",
+            "Salary negotiation tips"
+          ]
+        },
+        resumeOptimization: {
+          name: "Resume Analysis & Optimization",
+          description: "AI-powered resume analysis and improvement suggestions",
+          capabilities: [
+            "Resume scoring and analysis",
+            "ATS compatibility check",
+            "Keyword optimization",
+            "Section-wise improvements",
+            "Industry-specific customization"
+          ]
+        },
+        learningPath: {
+          name: "Personalized Learning Paths",
+          description: "Custom learning roadmaps based on career goals",
+          capabilities: [
+            "Skill gap analysis",
+            "Milestone-based progression",
+            "Resource recommendations",
+            "Certification guidance",
+            "Portfolio building strategies"
+          ]
+        }
       },
-      interviewCoaching: {
-        name: "Interview Preparation",
-        description: "AI-powered interview practice and preparation",
-        capabilities: [
-          "Mock interview questions",
-          "Technical interview prep",
-          "Behavioral interview strategies", 
-          "Company-specific insights",
-          "Salary negotiation tips"
-        ]
+      supportedRoles,
+      interviewTypes: ["technical", "behavioral", "system_design", "hr"],
+      difficulties: ["beginner", "intermediate", "advanced"],
+      learningStyles: ["visual", "hands-on", "theoretical", "mixed"]
+    });
+  } catch (error) {
+    console.error("Error fetching features:", error);
+    // Fallback to static data if database query fails
+    res.json({
+      success: true,
+      features: {
+        generalCoaching: {
+          name: "General Career Coaching",
+          description: "Comprehensive career guidance and advice",
+          capabilities: [
+            "Career path exploration",
+            "Skills development advice", 
+            "Industry insights",
+            "Salary expectations",
+            "Work-life balance guidance"
+          ]
+        },
+        interviewCoaching: {
+          name: "Interview Preparation",
+          description: "AI-powered interview practice and preparation",
+          capabilities: [
+            "Mock interview questions",
+            "Technical interview prep",
+            "Behavioral interview strategies", 
+            "Company-specific insights",
+            "Salary negotiation tips"
+          ]
+        },
+        resumeOptimization: {
+          name: "Resume Analysis & Optimization",
+          description: "AI-powered resume analysis and improvement suggestions",
+          capabilities: [
+            "Resume scoring and analysis",
+            "ATS compatibility check",
+            "Keyword optimization",
+            "Section-wise improvements",
+            "Industry-specific customization"
+          ]
+        },
+        learningPath: {
+          name: "Personalized Learning Paths",
+          description: "Custom learning roadmaps based on career goals",
+          capabilities: [
+            "Skill gap analysis",
+            "Milestone-based progression",
+            "Resource recommendations",
+            "Certification guidance",
+            "Portfolio building strategies"
+          ]
+        }
       },
-      resumeOptimization: {
-        name: "Resume Analysis & Optimization",
-        description: "AI-powered resume analysis and improvement suggestions",
-        capabilities: [
-          "Resume scoring and analysis",
-          "ATS compatibility check",
-          "Keyword optimization",
-          "Section-wise improvements",
-          "Industry-specific customization"
-        ]
-      },
-      learningPath: {
-        name: "Personalized Learning Paths",
-        description: "Custom learning roadmaps based on career goals",
-        capabilities: [
-          "Skill gap analysis",
-          "Milestone-based progression",
-          "Resource recommendations",
-          "Certification guidance",
-          "Portfolio building strategies"
-        ]
-      }
-    },
-    supportedRoles: [
-      "Software Engineer",
-      "Data Scientist", 
-      "Product Manager",
-      "UI/UX Designer",
-      "DevOps Engineer",
-      "Business Analyst",
-      "Digital Marketer",
-      "Content Creator",
-      "And many more..."
-    ],
-    interviewTypes: ["technical", "behavioral", "system_design", "hr"],
-    difficulties: ["beginner", "intermediate", "advanced"],
-    learningStyles: ["visual", "hands-on", "theoretical", "mixed"]
-  });
+      supportedRoles: [
+        "Software Engineer",
+        "Data Scientist", 
+        "Product Manager",
+        "UI/UX Designer",
+        "DevOps Engineer",
+        "Business Analyst",
+        "Digital Marketer",
+        "Content Creator",
+        "And many more..."
+      ],
+      interviewTypes: ["technical", "behavioral", "system_design", "hr"],
+      difficulties: ["beginner", "intermediate", "advanced"],
+      learningStyles: ["visual", "hands-on", "theoretical", "mixed"]
+    });
+  }
 });
 
 /**
@@ -321,127 +398,130 @@ router.post("/analyze", async (req, res) => {
         throw new Error("Failed to parse AI response");
       }
     } catch (aiError) {
-      console.log("AI service unavailable, using intelligent fallback based on assessment responses");
+      console.log("AI service unavailable, using intelligent fallback based on assessment responses and dynamic career data");
       
       // Analyze user responses to provide personalized recommendations
       const responses = message.toLowerCase();
+      
+      // Fetch career options from database
+      const availableCareers = await db.select().from(careerOptions).orderBy(desc(careerOptions.id)).limit(20);
       
       // Simple analysis based on keywords and patterns
       const techWords = ['programming', 'coding', 'software', 'computer', 'technology', 'technical', 'building'];
       const dataWords = ['data', 'analysis', 'statistics', 'numbers', 'research', 'information'];
       const designWords = ['design', 'creative', 'art', 'visual', 'user', 'interface', 'experience'];
       const businessWords = ['business', 'management', 'leadership', 'strategy', 'communication'];
+      const marketingWords = ['marketing', 'social', 'content', 'advertising', 'promotion', 'campaigns'];
+      const securityWords = ['security', 'protection', 'privacy', 'risk', 'compliance', 'threat'];
       
       const isTechOriented = techWords.some(word => responses.includes(word));
       const isDataOriented = dataWords.some(word => responses.includes(word));
       const isDesignOriented = designWords.some(word => responses.includes(word));
       const isBusinessOriented = businessWords.some(word => responses.includes(word));
+      const isMarketingOriented = marketingWords.some(word => responses.includes(word));
+      const isSecurityOriented = securityWords.some(word => responses.includes(word));
       
-      // Generate personalized recommendations based on detected interests
+      // Generate personalized recommendations based on detected interests using dynamic data
+      let filteredCareers = availableCareers;
+      
       if (isTechOriented) {
-        recommendations.push({
-          title: "Software Developer",
-          description: "Build applications and systems that solve real-world problems using programming languages and frameworks",
-          match_percentage: 88,
-          salary_range: "₹5-30 LPA",
-          growth_outlook: "25% growth over next 10 years",
-          key_skills: ["Programming Languages", "Problem Solving", "System Design", "Testing"],
-          daily_tasks: ["Write and review code", "Debug and fix issues", "Design software solutions", "Collaborate with team"],
-          learning_path: ["Programming fundamentals", "Data structures & algorithms", "Framework specialization", "System design"],
-          time_to_proficiency: "8-15 months",
-          difficulty_level: "Intermediate",
-          industry_demand: "High",
-          reasons: ["Strong technical interest shown", "Problem-solving mindset", "Enjoys building things"]
-        });
+        filteredCareers = availableCareers.filter(career => 
+          career.category === 'Software Development' || 
+          career.title.toLowerCase().includes('developer') ||
+          career.title.toLowerCase().includes('engineer')
+        );
+      } else if (isDataOriented) {
+        filteredCareers = availableCareers.filter(career => 
+          career.category === 'Data & AI' ||
+          career.title.toLowerCase().includes('data') ||
+          career.title.toLowerCase().includes('analyst')
+        );
+      } else if (isDesignOriented) {
+        filteredCareers = availableCareers.filter(career => 
+          career.category === 'Design & Product' ||
+          career.title.toLowerCase().includes('design') ||
+          career.title.toLowerCase().includes('ux') ||
+          career.title.toLowerCase().includes('ui')
+        );
+      } else if (isMarketingOriented) {
+        filteredCareers = availableCareers.filter(career => 
+          career.category === 'Marketing & Growth' ||
+          career.title.toLowerCase().includes('marketing') ||
+          career.title.toLowerCase().includes('content')
+        );
+      } else if (isSecurityOriented) {
+        filteredCareers = availableCareers.filter(career => 
+          career.category === 'Cybersecurity' ||
+          career.title.toLowerCase().includes('security') ||
+          career.title.toLowerCase().includes('cyber')
+        );
       }
       
-      if (isDataOriented) {
-        recommendations.push({
-          title: "Data Analyst",
-          description: "Transform raw data into actionable insights that drive business decisions and strategy",
-          match_percentage: 85,
-          salary_range: "₹5-18 LPA",
-          growth_outlook: "22% growth over next 10 years",
-          key_skills: ["SQL", "Excel", "Python/R", "Data Visualization", "Statistics"],
-          daily_tasks: ["Clean and analyze datasets", "Create reports and dashboards", "Present findings to stakeholders"],
-          learning_path: ["SQL and database fundamentals", "Statistical analysis", "Visualization tools", "Business intelligence"],
-          time_to_proficiency: "6-12 months",
-          difficulty_level: "Beginner",
-          industry_demand: "High",
-          reasons: ["Strong analytical thinking", "Interest in data and patterns", "Detail-oriented approach"]
-        });
+      // If no specific category matches, use top careers
+      if (filteredCareers.length === 0) {
+        filteredCareers = availableCareers.slice(0, 6);
       }
       
-      if (isDesignOriented) {
-        recommendations.push({
-          title: "UX/UI Designer",
-          description: "Create intuitive and beautiful user experiences that make technology accessible and enjoyable",
-          match_percentage: 82,
-          salary_range: "₹4-22 LPA",
-          growth_outlook: "19% growth over next 10 years",
-          key_skills: ["Design Tools", "User Research", "Prototyping", "Visual Design", "Psychology"],
-          daily_tasks: ["Research user needs", "Create wireframes and prototypes", "Design user interfaces", "Test usability"],
-          learning_path: ["Design fundamentals", "User research methods", "Design tools mastery", "Portfolio building"],
-          time_to_proficiency: "8-14 months",
-          difficulty_level: "Intermediate",
-          industry_demand: "Medium",
-          reasons: ["Creative problem-solving approach", "User-centric thinking", "Visual and aesthetic sense"]
-        });
-      }
+      // Take top 3 matches and format them
+      const topCareers = filteredCareers.slice(0, 3);
       
-      // Always include a versatile third option
-      if (recommendations.length < 3) {
-        recommendations.push({
-          title: "Product Manager",
-          description: "Bridge technology and business to create products that users love and businesses need",
-          match_percentage: 78,
-          salary_range: "₹8-35 LPA",
-          growth_outlook: "21% growth over next 10 years",
-          key_skills: ["Strategic Thinking", "Communication", "Market Research", "Project Management"],
-          daily_tasks: ["Define product requirements", "Coordinate with teams", "Analyze market trends", "Make data-driven decisions"],
-          learning_path: ["Business fundamentals", "Product management frameworks", "Analytics tools", "Leadership skills"],
-          time_to_proficiency: "10-18 months",
-          difficulty_level: "Advanced",
-          industry_demand: "High",
-          reasons: ["Leadership potential", "Strategic thinking", "Cross-functional collaboration skills"]
-        });
-      }
-      
-      // Ensure we have exactly 3 recommendations
-      if (recommendations.length < 3) {
-        const fallbackCareers = [
-          {
-            title: "Digital Marketing Specialist",
-            description: "Help businesses reach and engage customers through digital channels and platforms",
-            match_percentage: 75,
-            salary_range: "₹3-15 LPA",
-            growth_outlook: "18% growth over next 10 years",
-            key_skills: ["Digital Marketing", "Analytics", "Content Creation", "Social Media"],
-            daily_tasks: ["Create marketing campaigns", "Analyze performance metrics", "Manage social media", "Optimize content"],
-            learning_path: ["Marketing fundamentals", "Digital tools mastery", "Analytics certification", "Campaign management"],
-            time_to_proficiency: "6-10 months",
-            difficulty_level: "Beginner",
-            industry_demand: "High",
-            reasons: ["Communication skills", "Creative thinking", "Tech-savvy approach"]
-          },
-          {
-            title: "Business Analyst",
-            description: "Analyze business processes and recommend improvements to increase efficiency and profitability",
-            match_percentage: 72,
-            salary_range: "₹4-18 LPA",
-            growth_outlook: "17% growth over next 10 years",
-            key_skills: ["Analysis", "Process Mapping", "Requirements Gathering", "Documentation"],
-            daily_tasks: ["Analyze business processes", "Gather stakeholder requirements", "Create documentation", "Recommend solutions"],
-            learning_path: ["Business analysis fundamentals", "Process improvement methodologies", "Tools and software", "Communication skills"],
-            time_to_proficiency: "6-12 months",
-            difficulty_level: "Intermediate",
-            industry_demand: "Medium",
-            reasons: ["Analytical mindset", "Problem-solving skills", "Business understanding"]
-          }
-        ];
+      for (let i = 0; i < topCareers.length && recommendations.length < 3; i++) {
+        const career = topCareers[i];
+        const matchPercentage = Math.max(75, 95 - (i * 5) - Math.floor(Math.random() * 8));
         
-        while (recommendations.length < 3) {
-          recommendations.push(fallbackCareers[recommendations.length - 1] || fallbackCareers[0]);
+        recommendations.push({
+          title: career.title,
+          description: career.description,
+          match_percentage: matchPercentage,
+          salary_range: `₹${Math.floor(career.salaryMin / 100000)}-${Math.floor(career.salaryMax / 100000)} LPA`,
+          growth_outlook: career.growthOutlook || "Good growth prospects in the current market",
+          key_skills: career.requiredSkills || ["Professional Skills", "Communication", "Problem Solving"],
+          daily_tasks: [
+            "Work on projects and deliverables",
+            "Collaborate with team members",
+            "Analyze requirements and solutions",
+            "Continuous learning and skill development"
+          ],
+          learning_path: [
+            "Foundation building",
+            "Skill development",
+            "Practical application",
+            "Professional expertise"
+          ],
+          time_to_proficiency: career.difficultyLevel === "Beginner" ? "6-12 months" : 
+                             career.difficultyLevel === "Intermediate" ? "8-15 months" : "12-24 months",
+          difficulty_level: career.difficultyLevel,
+          industry_demand: "High",
+          reasons: [
+            "Matches your interests and responses",
+            "Strong growth potential",
+            "Good market demand"
+          ]
+        });
+      }
+      
+      // Ensure we have exactly 3 recommendations by filling with popular careers if needed
+      if (recommendations.length < 3) {
+        const remainingCareers = availableCareers.slice(0, 5);
+        for (let i = 0; i < remainingCareers.length && recommendations.length < 3; i++) {
+          const career = remainingCareers[i];
+          if (!recommendations.some(r => r.title === career.title)) {
+            recommendations.push({
+              title: career.title,
+              description: career.description,
+              match_percentage: 70 + Math.floor(Math.random() * 10),
+              salary_range: `₹${Math.floor(career.salaryMin / 100000)}-${Math.floor(career.salaryMax / 100000)} LPA`,
+              growth_outlook: career.growthOutlook || "Good growth prospects",
+              key_skills: career.requiredSkills || ["Core Skills", "Communication", "Problem Solving"],
+              daily_tasks: ["Professional responsibilities", "Team collaboration", "Skill application"],
+              learning_path: ["Basic knowledge", "Skill building", "Experience gaining", "Mastery"],
+              time_to_proficiency: career.difficultyLevel === "Beginner" ? "6-12 months" : 
+                                 career.difficultyLevel === "Intermediate" ? "8-15 months" : "12-24 months",
+              difficulty_level: career.difficultyLevel,
+              industry_demand: "Medium",
+              reasons: ["Popular career choice", "Good career prospects", "Transferable skills"]
+            });
+          }
         }
       }
     }
@@ -497,170 +577,138 @@ router.post("/roadmap", async (req, res) => {
         throw new Error("Failed to parse AI response");
       }
     } catch (aiError) {
-      console.log("AI service unavailable, generating intelligent fallback roadmap for", career);
+      console.log("AI service unavailable, generating intelligent fallback roadmap for", career, "using dynamic database data");
       
-      // Generate career-specific roadmap based on the career title
-      const careerLower = career.toLowerCase();
+      // Try to find a matching career path in the database
+      const careerPaths = await db.select().from(careerPaths)
+        .where(sql`LOWER(${careerPaths.title}) LIKE ${`%${career.toLowerCase()}%`}`);
       
-      // Determine career category and customize roadmap
-      let careerData: {
-        overview: string;
-        duration: string;
-        skills: string[];
-        certifications: string[];
-        phases: Array<{
-          phase: string;
-          duration: string;
-          description: string;
-          milestones: string[];
-          resources: string[];
-          projects: string[];
-        }>;
-      } = {
-        overview: "",
-        duration: "12-18 months",
-        skills: [] as string[],
-        certifications: [] as string[],
-        phases: [] as Array<{
-          phase: string;
-          duration: string;
-          description: string;
-          milestones: string[];
-          resources: string[];
-          projects: string[];
-        }>
-      };
-      
-      if (careerLower.includes('developer') || careerLower.includes('software') || careerLower.includes('frontend') || careerLower.includes('backend')) {
-        careerData = {
-          overview: `This comprehensive roadmap will guide you through becoming a skilled ${career}. You'll master programming fundamentals, build real projects, and develop the technical expertise needed to excel in software development.`,
-          duration: "12-18 months",
-          skills: ["Programming Languages", "Problem Solving", "Version Control", "Testing", "Debugging", "System Design"],
-          certifications: ["Platform-specific developer certifications", "Cloud computing credentials", "Framework certifications"],
-          phases: [
-            {
-              phase: "Programming Fundamentals",
-              duration: "3-4 months",
-              description: "Master core programming concepts and basic development tools",
-              milestones: ["Learn programming language syntax", "Understand data structures", "Master version control", "Write clean, readable code"],
-              resources: ["Online coding platforms", "Programming books", "Developer documentation", "Coding communities"],
-              projects: ["Calculator app", "To-do list application", "Personal website", "Small automation scripts"]
-            },
-            {
-              phase: "Framework & Tools Mastery",
-              duration: "4-5 months",
-              description: "Learn frameworks, libraries, and development tools",
-              milestones: ["Master main framework", "Build complex applications", "Understand testing", "Learn deployment basics"],
-              resources: ["Framework documentation", "Advanced tutorials", "Open source projects", "Mentorship"],
-              projects: ["E-commerce website", "Social media clone", "API development", "Mobile-responsive apps"]
-            },
-            {
-              phase: "Advanced Development",
-              duration: "3-4 months",
-              description: "Dive into advanced concepts and specialization areas",
-              milestones: ["System design understanding", "Performance optimization", "Security best practices", "Choose specialization"],
-              resources: ["Advanced courses", "Technical blogs", "Conference talks", "Industry forums"],
-              projects: ["Microservices architecture", "Performance optimized app", "Security-focused project", "Open source contribution"]
-            },
-            {
-              phase: "Professional Readiness",
-              duration: "2-5 months",
-              description: "Prepare for the job market and career advancement",
-              milestones: ["Complete portfolio", "Interview preparation", "Technical communication", "Industry networking"],
-              resources: ["Interview prep platforms", "Tech meetups", "Professional networks", "Career coaching"],
-              projects: ["Comprehensive portfolio", "Technical blog posts", "Conference presentation", "Mentoring others"]
-            }
+      let matchingCareerPath = null;
+      if (careerPaths.length > 0) {
+        matchingCareerPath = careerPaths[0];
+        console.log(`Found matching career path in database: ${matchingCareerPath.title}`);
+        
+        // Get related data
+        const [skills, courses, projects, resources] = await Promise.all([
+          db.select().from(careerSkills).where(eq(careerSkills.careerPathId, matchingCareerPath.id)),
+          db.select().from(careerCourses).where(eq(careerCourses.careerPathId, matchingCareerPath.id)),
+          db.select().from(careerProjects).where(eq(careerProjects.careerPathId, matchingCareerPath.id)),
+          db.select().from(careerResources).where(eq(careerResources.careerPathId, matchingCareerPath.id))
+        ]);
+        
+        // Create phases based on difficulty progression
+        const phases = [];
+        const technicalSkills = skills.filter(s => s.skillType === 'technical');
+        const softSkills = skills.filter(s => s.skillType === 'soft');
+        const beginnerCourses = courses.filter(c => c.difficulty === 'Beginner').slice(0, 3);
+        const intermediateCourses = courses.filter(c => c.difficulty === 'Intermediate').slice(0, 3);
+        const advancedCourses = courses.filter(c => c.difficulty === 'Advanced').slice(0, 2);
+        const beginnerProjects = projects.filter(p => p.difficulty === 'Beginner').slice(0, 2);
+        const intermediateProjects = projects.filter(p => p.difficulty === 'Intermediate').slice(0, 2);
+        const advancedProjects = projects.filter(p => p.difficulty === 'Advanced').slice(0, 2);
+        
+        phases.push({
+          phase: "Foundation Building",
+          duration: "3-4 months",
+          description: "Establish fundamental knowledge and basic skills",
+          milestones: [
+            ...technicalSkills.slice(0, 3).map(s => `Learn ${s.skillName}`),
+            ...softSkills.slice(0, 2).map(s => `Develop ${s.skillName}`)
+          ],
+          resources: [
+            ...beginnerCourses.map(c => c.title),
+            ...resources.filter(r => r.resourceType === 'book').slice(0, 2).map(r => r.title)
+          ],
+          projects: beginnerProjects.map(p => p.title)
+        });
+        
+        if (intermediateCourses.length > 0 || intermediateProjects.length > 0) {
+          phases.push({
+            phase: "Skill Development",
+            duration: "4-6 months",
+            description: "Develop intermediate skills and practical experience",
+            milestones: [
+              ...technicalSkills.slice(3, 6).map(s => `Master ${s.skillName}`),
+              "Build complex projects",
+              "Gain practical experience"
+            ],
+            resources: [
+              ...intermediateCourses.map(c => c.title),
+              ...resources.filter(r => r.resourceType === 'website').slice(0, 2).map(r => r.title)
+            ],
+            projects: intermediateProjects.map(p => p.title)
+          });
+        }
+        
+        if (advancedCourses.length > 0 || advancedProjects.length > 0) {
+          phases.push({
+            phase: "Advanced Specialization",
+            duration: "3-5 months",
+            description: "Focus on advanced concepts and specialization",
+            milestones: [
+              ...technicalSkills.slice(6, 8).map(s => `Expert level ${s.skillName}`),
+              "Advanced project completion",
+              "Industry recognition"
+            ],
+            resources: [
+              ...advancedCourses.map(c => c.title),
+              ...resources.filter(r => r.resourceType === 'certification').slice(0, 2).map(r => r.title)
+            ],
+            projects: advancedProjects.map(p => p.title)
+          });
+        }
+        
+        phases.push({
+          phase: "Professional Readiness",
+          duration: "2-3 months",
+          description: "Prepare for career advancement and job market",
+          milestones: [
+            "Portfolio completion",
+            "Interview preparation",
+            "Industry networking",
+            "Professional branding"
+          ],
+          resources: [
+            "Portfolio development guides",
+            "Interview preparation resources",
+            "Professional networking platforms",
+            "Career advancement strategies"
+          ],
+          projects: [
+            "Comprehensive professional portfolio",
+            "Industry presentation or publication",
+            "Open source contribution"
           ]
-        };
-      } else if (careerLower.includes('data') || careerLower.includes('analyst')) {
-        careerData = {
-          overview: `This roadmap will transform you into a proficient ${career}. You'll learn to extract insights from data, master analytical tools, and develop the skills to drive data-informed business decisions.`,
-          duration: "10-15 months",
-          skills: ["Statistical Analysis", "Data Visualization", "SQL", "Python/R", "Business Intelligence", "Critical Thinking"],
-          certifications: ["Google Data Analytics", "Microsoft Power BI", "Tableau certification", "SQL certifications"],
-          phases: [
-            {
-              phase: "Data Fundamentals",
-              duration: "2-3 months",
-              description: "Learn data basics, statistics, and foundational tools",
-              milestones: ["Understand data types", "Basic statistics knowledge", "Excel proficiency", "SQL basics"],
-              resources: ["Statistics courses", "Excel tutorials", "SQL learning platforms", "Data literacy resources"],
-              projects: ["Sales data analysis", "Survey data interpretation", "Basic dashboard creation", "Data cleaning exercises"]
-            },
-            {
-              phase: "Analytics Tools Mastery",
-              duration: "4-5 months",
-              description: "Master key analytical tools and visualization platforms",
-              milestones: ["Advanced SQL skills", "Python/R for data analysis", "Visualization tool mastery", "Statistical modeling"],
-              resources: ["Python/R tutorials", "Visualization tool documentation", "Statistical analysis courses", "Practice datasets"],
-              projects: ["Customer behavior analysis", "Sales forecasting model", "Interactive dashboards", "A/B testing analysis"]
-            },
-            {
-              phase: "Advanced Analytics",
-              duration: "2-4 months",
-              description: "Develop advanced analytical and machine learning skills",
-              milestones: ["Machine learning basics", "Advanced statistical methods", "Big data concepts", "Business intelligence"],
-              resources: ["ML courses", "Advanced statistics", "Big data platforms", "Business case studies"],
-              projects: ["Predictive modeling project", "Customer segmentation", "Market research analysis", "Business intelligence dashboard"]
-            },
-            {
-              phase: "Professional Analytics",
-              duration: "2-3 months",
-              description: "Build professional skills and prepare for analyst roles",
-              milestones: ["Storytelling with data", "Business presentation skills", "Domain expertise", "Portfolio completion"],
-              resources: ["Communication courses", "Industry reports", "Professional communities", "Mentorship"],
-              projects: ["Executive presentation", "Industry-specific analysis", "Comprehensive portfolio", "Business recommendation report"]
-            }
-          ]
-        };
-      } else if (careerLower.includes('design') || careerLower.includes('ux') || careerLower.includes('ui')) {
-        careerData = {
-          overview: `This roadmap will develop you into a skilled ${career}. You'll learn design principles, user research methods, and create beautiful, functional designs that solve real user problems.`,
-          duration: "10-16 months",
-          skills: ["Design Principles", "User Research", "Prototyping", "Visual Design", "Interaction Design", "Design Thinking"],
-          certifications: ["Google UX Design Certificate", "Adobe certification", "Figma certification", "Design thinking credentials"],
-          phases: [
-            {
-              phase: "Design Foundations",
-              duration: "2-3 months",
-              description: "Learn fundamental design principles and basic tools",
-              milestones: ["Design principles mastery", "Basic tool proficiency", "Color and typography understanding", "Design thinking process"],
-              resources: ["Design theory courses", "Tool tutorials", "Design inspiration sites", "Basic design books"],
-              projects: ["Logo design", "Simple app interface", "Typography poster", "Color palette creation"]
-            },
-            {
-              phase: "User Experience Design",
-              duration: "4-5 months",
-              description: "Master user research, wireframing, and UX design methods",
-              milestones: ["User research skills", "Wireframing proficiency", "Information architecture", "Usability testing"],
-              resources: ["UX research courses", "Wireframing tools", "IA resources", "Testing methodologies"],
-              projects: ["User research study", "App wireframes", "User journey mapping", "Usability testing project"]
-            },
-            {
-              phase: "Visual & Interaction Design",
-              duration: "2-4 months",
-              description: "Develop advanced visual design and interaction skills",
-              milestones: ["Advanced visual design", "Interaction design", "Animation basics", "Design systems"],
-              resources: ["Visual design courses", "Animation tutorials", "Design system guides", "Advanced tool training"],
-              projects: ["High-fidelity mockups", "Interactive prototypes", "Design system creation", "Animated micro-interactions"]
-            },
-            {
-              phase: "Professional Design Practice",
-              duration: "2-4 months",
-              description: "Build portfolio and prepare for design career",
-              milestones: ["Portfolio completion", "Design critique skills", "Client communication", "Industry knowledge"],
-              resources: ["Portfolio guides", "Design communities", "Industry events", "Mentorship programs"],
-              projects: ["Complete design portfolio", "Case study documentation", "Client project simulation", "Design presentation"]
-            }
+        });
+        
+        roadmap = {
+          career_path: matchingCareerPath.title,
+          overview: matchingCareerPath.overview || `This comprehensive roadmap will guide you through becoming a skilled ${career}. You'll develop both technical and professional skills needed to excel in this field.`,
+          total_duration: "12-18 months",
+          phases: phases,
+          key_skills: technicalSkills.slice(0, 8).map(s => s.skillName),
+          certifications: resources.filter(r => r.resourceType === 'certification').map(r => r.title),
+          salary_progression: {
+            entry_level: "₹4-12 LPA",
+            mid_level: "₹12-28 LPA", 
+            senior_level: "₹28-50 LPA"
+          },
+          next_steps: [
+            "Begin with the foundation phase",
+            "Set up a structured learning schedule",
+            "Join relevant professional communities",
+            "Start your first hands-on project",
+            "Find mentors in your chosen field"
           ]
         };
       } else {
-        // Generic professional roadmap
-        careerData = {
+        console.log("No matching career path found in database, using generic roadmap");
+        
+        // Fallback to generic roadmap structure
+        roadmap = {
+          career_path: career,
           overview: `This comprehensive roadmap will guide you through building expertise in ${career}. You'll develop both technical and professional skills needed to excel in this field.`,
-          duration: "12-18 months",
-          skills: ["Domain Knowledge", "Professional Communication", "Problem Solving", "Project Management", "Industry Tools", "Continuous Learning"],
-          certifications: ["Industry-standard certifications", "Professional credentials", "Skill-specific certifications"],
+          total_duration: "12-18 months",
           phases: [
             {
               phase: "Foundation Building",
@@ -668,57 +716,41 @@ router.post("/roadmap", async (req, res) => {
               description: "Establish fundamental knowledge and basic skills",
               milestones: ["Core concepts understanding", "Basic tools proficiency", "Industry terminology", "Professional network start"],
               resources: ["Foundational courses", "Industry publications", "Professional communities", "Basic certifications"],
-              projects: ["Skill demonstration project", "Industry case study", "Professional profile creation", "Basic portfolio"]
+              projects: ["Skill demonstration project", "Industry case study", "Professional profile creation"]
             },
             {
-              phase: "Skill Development",
+              phase: "Skill Development", 
               duration: "4-6 months",
               description: "Develop intermediate skills and practical experience",
               milestones: ["Advanced skill acquisition", "Practical project completion", "Industry tool mastery", "Professional relationships"],
               resources: ["Advanced training", "Hands-on workshops", "Mentorship", "Industry events"],
-              projects: ["Real-world project simulation", "Collaborative team project", "Industry-specific solution", "Professional presentation"]
-            },
-            {
-              phase: "Specialization",
-              duration: "3-4 months",
-              description: "Focus on specific expertise areas and advanced concepts",
-              milestones: ["Specialization choice", "Expert-level skills", "Industry recognition", "Thought leadership"],
-              resources: ["Specialized courses", "Expert mentorship", "Industry conferences", "Advanced certifications"],
-              projects: ["Specialized expertise project", "Industry innovation", "Professional publication", "Conference presentation"]
+              projects: ["Real-world project simulation", "Collaborative team project", "Industry-specific solution"]
             },
             {
               phase: "Professional Excellence",
-              duration: "2-4 months",
+              duration: "4-8 months",
               description: "Achieve professional readiness and career advancement",
               milestones: ["Career readiness", "Leadership skills", "Industry expertise", "Professional brand"],
               resources: ["Leadership training", "Career coaching", "Professional branding", "Executive mentorship"],
-              projects: ["Capstone professional project", "Leadership initiative", "Industry contribution", "Career advancement plan"]
+              projects: ["Capstone professional project", "Leadership initiative", "Industry contribution"]
             }
+          ],
+          key_skills: ["Domain Knowledge", "Professional Communication", "Problem Solving", "Project Management", "Industry Tools", "Continuous Learning"],
+          certifications: ["Industry-standard certifications", "Professional credentials", "Skill-specific certifications"],
+          salary_progression: {
+            entry_level: "₹4-10 LPA",
+            mid_level: "₹10-25 LPA",
+            senior_level: "₹25-50 LPA"
+          },
+          next_steps: [
+            "Begin with the foundation phase",
+            "Set up a structured learning schedule", 
+            "Join relevant professional communities",
+            "Start your first hands-on project",
+            "Find mentors in your chosen field"
           ]
         };
       }
-      
-      // Create the complete roadmap structure
-      roadmap = {
-        career_path: career,
-        overview: careerData.overview,
-        total_duration: careerData.duration,
-        phases: careerData.phases,
-        key_skills: careerData.skills,
-        certifications: careerData.certifications,
-        salary_progression: {
-          entry_level: "₹4-10 LPA",
-          mid_level: "₹10-25 LPA",
-          senior_level: "₹25-50 LPA"
-        },
-        next_steps: [
-          "Begin with the foundation phase",
-          "Set up a structured learning schedule",
-          "Join relevant professional communities",
-          "Start your first hands-on project",
-          "Find mentors in your chosen field"
-        ]
-      };
     }
 
     res.json({

@@ -5,7 +5,7 @@ export function useUserRole() {
   const { user } = useAuthContext();
   
   const { data: roleData, isLoading, error } = useQuery({
-    queryKey: ['/api/rbac/my-info'],
+    queryKey: ['/api/rbac/my-info', user?.id],
     queryFn: async () => {
       const response = await fetch('/api/rbac/my-info', {
         credentials: "include",

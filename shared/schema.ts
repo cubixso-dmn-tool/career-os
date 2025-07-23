@@ -611,6 +611,126 @@ export const localEventAttendees = pgTable("local_event_attendees", {
   registeredAt: timestamp("registered_at").defaultNow().notNull()
 });
 
+// Career Guide Dynamic Tables
+
+export const careerOptions = pgTable("career_options", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  category: text("category").notNull(),
+  description: text("description").notNull(),
+  salaryMin: integer("salary_min"),
+  salaryMax: integer("salary_max"),
+  difficultyLevel: text("difficulty_level"),
+  requiredSkills: text("required_skills").array(),
+  growthOutlook: text("growth_outlook"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const careerAssessmentQuestions = pgTable("career_assessment_questions", {
+  id: serial("id").primaryKey(),
+  question: text("question").notNull(),
+  questionType: text("question_type").notNull(),
+  options: jsonb("options"), // For multiple choice options
+  category: text("category"), // interests, work_style, tech_comfort, etc.
+  weight: integer("weight").default(1),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const careerMatchingRules = pgTable("career_matching_rules", {
+  id: serial("id").primaryKey(),
+  careerId: integer("career_id").references(() => careerOptions.id).notNull(),
+  questionCategory: text("question_category"),
+  matchingCriteria: jsonb("matching_criteria"),
+  weight: numeric("weight", { precision: 3, scale: 2 }).default(sql`1.0`)
+});
+
+export const userCareerAssessments = pgTable("user_career_assessments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  responses: jsonb("responses").notNull(),
+  recommendations: jsonb("recommendations"),
+  completedAt: timestamp("completed_at").defaultNow().notNull()
+});
+
+// Career Roadmap Dynamic Tables
+
+export const careerPaths = pgTable("career_paths", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  category: text("category").notNull(),
+  description: text("description"),
+  overview: text("overview"),
+  dayInLife: text("day_in_life"),
+  salaryExpectations: jsonb("salary_expectations"),
+  growthOutlook: text("growth_outlook"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const careerSkills = pgTable("career_skills", {
+  id: serial("id").primaryKey(),
+  careerPathId: integer("career_path_id").references(() => careerPaths.id).notNull(),
+  skillName: text("skill_name").notNull(),
+  skillType: text("skill_type").notNull(),
+  importanceLevel: integer("importance_level"),
+  description: text("description")
+});
+
+export const careerCourses = pgTable("career_courses", {
+  id: serial("id").primaryKey(),
+  careerPathId: integer("career_path_id").references(() => careerPaths.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  provider: text("provider"),
+  url: text("url"),
+  difficulty: text("difficulty"),
+  duration: text("duration"),
+  isFree: boolean("is_free").default(false).notNull(),
+  price: integer("price"),
+  category: text("category"),
+  sortOrder: integer("sort_order").default(0)
+});
+
+export const careerProjects = pgTable("career_projects", {
+  id: serial("id").primaryKey(),
+  careerPathId: integer("career_path_id").references(() => careerPaths.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  difficulty: text("difficulty"),
+  technologies: text("technologies").array(),
+  estimatedDuration: text("estimated_duration"),
+  projectUrl: text("project_url"),
+  githubRepo: text("github_repo"),
+  sortOrder: integer("sort_order").default(0)
+});
+
+export const careerResources = pgTable("career_resources", {
+  id: serial("id").primaryKey(),
+  careerPathId: integer("career_path_id").references(() => careerPaths.id).notNull(),
+  resourceType: text("resource_type").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  url: text("url"),
+  isFree: boolean("is_free").default(false).notNull(),
+  rating: numeric("rating", { precision: 2, scale: 1 })
+});
+
+export const userCareerProgress = pgTable("user_career_progress", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  careerPathId: integer("career_path_id").references(() => careerPaths.id).notNull(),
+  currentPhase: integer("current_phase").default(1),
+  completedSkills: text("completed_skills").array().default(sql`'{}'::text[]`),
+  completedCourses: text("completed_courses").array().default(sql`'{}'::text[]`),
+  completedProjects: text("completed_projects").array().default(sql`'{}'::text[]`),
+  progressPercentage: integer("progress_percentage").default(0),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  lastUpdated: timestamp("last_updated").defaultNow().notNull()
+});
+
 // Insert schemas
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
@@ -666,6 +786,20 @@ export const insertNetworkingEventSchema = createInsertSchema(networkingEvents).
 export const insertCollegeEventRegistrationSchema = createInsertSchema(collegeEventRegistrations).omit({ id: true, registeredAt: true });
 export const insertExpertMentorshipSchema = createInsertSchema(expertMentorship).omit({ id: true, createdAt: true });
 export const insertExpertAvailabilitySchema = createInsertSchema(expertAvailability).omit({ id: true });
+
+// Career Guide schemas
+export const insertCareerOptionSchema = createInsertSchema(careerOptions).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertCareerAssessmentQuestionSchema = createInsertSchema(careerAssessmentQuestions).omit({ id: true, createdAt: true });
+export const insertCareerMatchingRuleSchema = createInsertSchema(careerMatchingRules).omit({ id: true });
+export const insertUserCareerAssessmentSchema = createInsertSchema(userCareerAssessments).omit({ id: true, completedAt: true });
+
+// Career Roadmap schemas
+export const insertCareerPathSchema = createInsertSchema(careerPaths).omit({ id: true, createdAt: true });
+export const insertCareerSkillSchema = createInsertSchema(careerSkills).omit({ id: true });
+export const insertCareerCourseSchema = createInsertSchema(careerCourses).omit({ id: true });
+export const insertCareerProjectSchema = createInsertSchema(careerProjects).omit({ id: true });
+export const insertCareerResourceSchema = createInsertSchema(careerResources).omit({ id: true });
+export const insertUserCareerProgressSchema = createInsertSchema(userCareerProgress).omit({ id: true, startedAt: true, lastUpdated: true });
 
 // Types
 
@@ -1003,3 +1137,35 @@ export type LocalEvent = typeof localEvents.$inferSelect;
 
 export type InsertLocalEventAttendee = z.infer<typeof insertLocalEventAttendeeSchema>;
 export type LocalEventAttendee = typeof localEventAttendees.$inferSelect;
+
+// Career Guide Types
+export type InsertCareerOption = z.infer<typeof insertCareerOptionSchema>;
+export type CareerOption = typeof careerOptions.$inferSelect;
+
+export type InsertCareerAssessmentQuestion = z.infer<typeof insertCareerAssessmentQuestionSchema>;
+export type CareerAssessmentQuestion = typeof careerAssessmentQuestions.$inferSelect;
+
+export type InsertCareerMatchingRule = z.infer<typeof insertCareerMatchingRuleSchema>;
+export type CareerMatchingRule = typeof careerMatchingRules.$inferSelect;
+
+export type InsertUserCareerAssessment = z.infer<typeof insertUserCareerAssessmentSchema>;
+export type UserCareerAssessment = typeof userCareerAssessments.$inferSelect;
+
+// Career Roadmap Types
+export type InsertCareerPath = z.infer<typeof insertCareerPathSchema>;
+export type CareerPath = typeof careerPaths.$inferSelect;
+
+export type InsertCareerSkill = z.infer<typeof insertCareerSkillSchema>;
+export type CareerSkill = typeof careerSkills.$inferSelect;
+
+export type InsertCareerCourse = z.infer<typeof insertCareerCourseSchema>;
+export type CareerCourse = typeof careerCourses.$inferSelect;
+
+export type InsertCareerProject = z.infer<typeof insertCareerProjectSchema>;
+export type CareerProject = typeof careerProjects.$inferSelect;
+
+export type InsertCareerResource = z.infer<typeof insertCareerResourceSchema>;
+export type CareerResource = typeof careerResources.$inferSelect;
+
+export type InsertUserCareerProgress = z.infer<typeof insertUserCareerProgressSchema>;
+export type UserCareerProgress = typeof userCareerProgress.$inferSelect;
