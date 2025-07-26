@@ -100,8 +100,9 @@ const AdminCareerManagement = () => {
     queryFn: async (): Promise<CareerOption[]> => {
       const response = await fetch('/api/admin/career-options');
       if (!response.ok) throw new Error('Failed to fetch career options');
-      const data = await response.json();
-      return data.data || [];
+      const result = await response.json();
+      console.log('Career options API response:', result);
+      return Array.isArray(result.data) ? result.data : [];
     }
   });
 
@@ -111,8 +112,8 @@ const AdminCareerManagement = () => {
     queryFn: async (): Promise<CareerPath[]> => {
       const response = await fetch('/api/admin/career-paths');
       if (!response.ok) throw new Error('Failed to fetch career paths');
-      const data = await response.json();
-      return data.data || [];
+      const result = await response.json();
+      return Array.isArray(result.data) ? result.data : [];
     }
   });
 
