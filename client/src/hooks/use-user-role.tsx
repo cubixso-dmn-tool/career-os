@@ -4,7 +4,7 @@ import { useAuthContext } from "./use-auth-context";
 export function useUserRole() {
   const { user } = useAuthContext();
   
-  const { data: roleData, isLoading, error } = useQuery({
+  const { data: roleData, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/rbac/my-info', user?.id],
     queryFn: async () => {
       const response = await fetch('/api/rbac/my-info', {
@@ -18,6 +18,8 @@ export function useUserRole() {
       return response.json();
     },
     enabled: !!user, // Only run query if user is authenticated
+    staleTime: 0, // Don't cache role data to ensure fresh data on each load
+    cacheTime: 0, // Don't cache role data to ensure fresh data on each load
   });
 
   // Determine the primary role (highest priority role)
@@ -58,6 +60,7 @@ export function useUserRole() {
     permissions: roleData?.permissions || [],
     isLoading,
     error,
+    refetch, // Expose refetch function
     checkPermission,
     hasRole,
     hasAnyRole,

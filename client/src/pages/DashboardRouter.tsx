@@ -7,8 +7,13 @@ import AdminDashboard from "./AdminDashboard";
 import Layout from "@/components/layout/Layout";
 
 export default function DashboardRouter() {
-  const { primaryRole, isLoading } = useUserRole();
+  const { primaryRole, isLoading, refetch } = useUserRole();
   const [, navigate] = useLocation();
+
+  useEffect(() => {
+    // Force refetch role data on component mount to ensure fresh data
+    refetch();
+  }, [refetch]);
 
   useEffect(() => {
     // Wait for role data to be fully loaded before redirecting

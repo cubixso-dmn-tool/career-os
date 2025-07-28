@@ -32,6 +32,9 @@ import { AuthProvider } from "@/hooks/use-auth-context";
 import { LearningModeProvider } from "@/hooks/use-learning-mode";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
+// Debug component - only shown in development or when explicitly enabled
+import RoleDebug from "@/components/debug/RoleDebug";
+
 function Router() {
   return (
     <Switch>
@@ -172,6 +175,7 @@ function App() {
         <LearningModeProvider>
           <Router />
           <Toaster />
+          <RoleDebug />
         </LearningModeProvider>
       </AuthProvider>
     </QueryClientProvider>

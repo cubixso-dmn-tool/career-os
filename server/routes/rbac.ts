@@ -197,15 +197,26 @@ router.get("/my-info", async (req, res) => {
       return res.status(401).json({ message: "Authentication required" });
     }
     
-    // Roles and permissions should already be loaded by the middleware
+    // Force reload user roles and permissions to ensure fresh data
+    const userRoles = await storage.getUserRoles(req.user.id);
+    const roleIds = userRoles.map(role => role.roleId);
+    
+    // Get permissions based on roles
+    const permissions = [];
+    for (const roleId of roleIds) {
+      const rolePermissions = await storage.getRolePermissions(roleId);
+      permissions.push(...rolePermissions);
+    }
+    
+    // Attach unique permission names
+    const permissionNames = Array.from(new Set(permissions.map(p => p.name)));
+    
     const userInfo = {
       id: req.user.id,
       username: req.user.username,
-      roles: req.user.roles || [],
-      permissions: req.user.permissions || []
+      roles: roleIds,
+      permissions: permissionNames
     };
-    
-
     
     res.status(200).json(userInfo);
   } catch (error) {
