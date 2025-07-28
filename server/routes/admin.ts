@@ -1,8 +1,7 @@
 import { Router } from "express";
-import { storage } from "../storage.js";
 import { loadUserRolesMiddleware, requirePermission } from "../middleware/rbac.js";
 import { db } from "../db.js";
-import { users, userRoles, roles, posts, communityPosts, enrollments, courses, userEvents, projects, industryExperts, expertSessions, sessionRegistrations, careerSuccessStories, networkingEvents, eventRegistrations, expertAvailability, careerOptions, careerAssessmentQuestions, careerMatchingRules, careerPaths, careerSkills, careerCourses, careerProjects, careerResources } from "../../shared/schema.js";
+import { users, userRoles, roles, posts, communityPosts, enrollments, courses, userEvents, projects, industryExperts, expertSessions, careerSuccessStories, networkingEvents, careerOptions, careerPaths } from "../../shared/schema.js";
 import { count, sql, and, gte, eq, desc } from "drizzle-orm";
 
 const router = Router();
@@ -615,8 +614,8 @@ router.put("/experts/:id", requirePermission("update:experts"), async (req, res)
     if (hourlyRate !== undefined) updateData.hourlyRate = hourlyRate;
     if (availability !== undefined) updateData.availability = availability;
     if (isActive !== undefined) updateData.isActive = isActive;
-    if (isFeatured !== undefined) updateData.is_featured = isFeatured;
-    if (featuredOrder !== undefined) updateData.featured_order = featuredOrder;
+    if (isFeatured !== undefined) updateData.isFeatured = isFeatured;
+    if (featuredOrder !== undefined) updateData.featuredOrder = featuredOrder;
 
     const [updatedExpert] = await db
       .update(industryExperts)
@@ -666,8 +665,8 @@ router.patch("/experts/:id/featured", requirePermission("update:experts"), async
     const [updatedExpert] = await db
       .update(industryExperts)
       .set({
-        is_featured: isFeatured,
-        featured_order: isFeatured ? Date.now() : null
+        isFeatured: isFeatured,
+        featuredOrder: isFeatured ? 1 : 0
       })
       .where(eq(industryExperts.id, expertId))
       .returning();
@@ -1109,10 +1108,11 @@ router.post("/networking-events", requirePermission("create:events"), async (req
         targetAudience: targetAudience || [],
         organizer,
         scheduledAt: new Date(scheduledAt),
-        endTime: endTime ? new Date(endTime) : null,
+        endTime: endTime ? new Date(endTime) : new Date(new Date(scheduledAt).getTime() + 2 * 60 * 60 * 1000), // Default 2 hours if not provided
         location: location || null,
         meetingLink: meetingLink || null,
         maxAttendees: maxAttendees ? parseInt(maxAttendees) : null,
+        currentAttendees: 0,
         isOnline: isOnline !== undefined ? isOnline : true,
         isFree: isFree !== undefined ? isFree : true,
         tags: tags || [],
@@ -1305,7 +1305,7 @@ router.get("/career-options", requirePermission("read:careers"), async (req, res
       await db.select({ count: sql`count(*)` }).from(careerOptions).where(and(...conditions)) :
       await db.select({ count: sql`count(*)` }).from(careerOptions);
 
-    const total = parseInt(totalResult.count.toString());
+    const total = Number(totalResult.count) || 0;
     const totalPages = Math.ceil(total / limitNum);
 
     res.json({
@@ -1516,7 +1516,7 @@ router.get("/career-paths", requirePermission("read:careers"), async (req, res) 
       await db.select({ count: sql`count(*)` }).from(careerPaths).where(and(...conditions)) :
       await db.select({ count: sql`count(*)` }).from(careerPaths);
 
-    const total = parseInt(totalResult.count.toString());
+    const total = Number(totalResult.count) || 0;
     const totalPages = Math.ceil(total / limitNum);
 
     res.json({
@@ -1576,8 +1576,8 @@ router.get("/sessions", requirePermission("read:sessions"), async (req, res) => 
         sessionType: expertSessions.sessionType,
         scheduledAt: expertSessions.scheduledAt,
         duration: expertSessions.duration,
-        maxParticipants: expertSessions.maxParticipants,
-        currentParticipants: expertSessions.currentParticipants,
+        maxParticipants: expertSessions.maxAttendees,
+        currentParticipants: expertSessions.currentAttendees,
         status: expertSessions.status,
         meetingLink: expertSessions.meetingLink,
         price: expertSessions.price,
@@ -1598,7 +1598,7 @@ router.get("/sessions", requirePermission("read:sessions"), async (req, res) => 
       await db.select({ count: sql`count(*)` }).from(expertSessions).where(and(...conditions)) :
       await db.select({ count: sql`count(*)` }).from(expertSessions);
 
-    const total = parseInt(totalResult.count.toString());
+    const total = Number(totalResult.count) || 0;
     const totalPages = Math.ceil(total / limitNum);
 
     res.json({
@@ -1653,15 +1653,17 @@ router.post("/sessions", requirePermission("create:sessions"), async (req, res) 
       .values({
         expertId: parseInt(expertId),
         title,
-        description: description || null,
+        description: description || "",
         sessionType,
+        category: "general",
         scheduledAt: new Date(scheduledAt),
         duration: parseInt(duration),
-        maxParticipants: maxParticipants ? parseInt(maxParticipants) : null,
-        price: price ? parseFloat(price) : null,
+        maxAttendees: maxParticipants ? parseInt(maxParticipants) : 100,
+        currentAttendees: 0,
         meetingLink: meetingLink || null,
         status: 'scheduled',
-        currentParticipants: 0
+        isFree: price ? false : true,
+        price: price ? parseInt(price) : 0
       })
       .returning();
 
@@ -1822,7 +1824,7 @@ router.get("/events", requirePermission("read:events"), async (req, res) => {
       await db.select({ count: sql`count(*)` }).from(networkingEvents).where(and(...conditions)) :
       await db.select({ count: sql`count(*)` }).from(networkingEvents);
 
-    const total = parseInt(totalResult.count.toString());
+    const total = Number(totalResult.count) || 0;
     const totalPages = Math.ceil(total / limitNum);
 
     res.json({
@@ -1876,16 +1878,17 @@ router.post("/events", requirePermission("create:events"), async (req, res) => {
       .insert(networkingEvents)
       .values({
         title,
-        description: description || null,
+        description: description || "",
         eventType,
+        organizer: "Admin",
         scheduledAt: new Date(scheduledAt),
-        duration: parseInt(duration),
-        location,
-        maxParticipants: maxParticipants ? parseInt(maxParticipants) : null,
-        registrationRequired: registrationRequired !== undefined ? registrationRequired : true,
-        price: price ? parseFloat(price) : null,
-        status: 'upcoming',
-        currentParticipants: 0
+        endTime: new Date(new Date(scheduledAt).getTime() + (duration ? parseInt(duration) * 60 * 1000 : 2 * 60 * 60 * 1000)),
+        location: location || null,
+        maxAttendees: maxParticipants ? parseInt(maxParticipants) : null,
+        currentAttendees: 0,
+        isOnline: !location || location === "Online",
+        isFree: price ? false : true,
+        status: 'upcoming'
       })
       .returning();
 

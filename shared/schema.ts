@@ -276,6 +276,8 @@ export const industryExperts = pgTable("industry_experts", {
   expertise: text("expertise").array().notNull(), // ["AI/ML", "Startups", "Product Management"]
   rating: integer("rating").default(0), // Average rating from sessions
   totalSessions: integer("total_sessions").default(0),
+  isFeatured: boolean("is_featured").default(false),
+  featuredOrder: integer("featured_order").default(0),
   isActive: boolean("is_active").default(true).notNull(),
   joinedAt: timestamp("joined_at").defaultNow().notNull()
 });
