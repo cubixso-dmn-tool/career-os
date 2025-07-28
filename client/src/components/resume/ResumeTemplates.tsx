@@ -869,9 +869,20 @@ export const TechnicalTemplate: React.FC<ResumeTemplateProps> = ({
       {/* Header */}
       <div className="border-b-2 border-gray-200 pb-6 mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{data.personalInfo.name}</h1>
-            <h2 className="text-xl text-primary my-2">{data.personalInfo.title}</h2>
+          <div className="flex items-start gap-4">
+            {data.personalInfo.profileImage && (
+              <div className="w-20 h-20 rounded-lg overflow-hidden border-2 border-gray-300 flex-shrink-0">
+                <img 
+                  src={data.personalInfo.profileImage} 
+                  alt={data.personalInfo.name} 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">{data.personalInfo.name}</h1>
+              <h2 className="text-xl text-primary my-2">{data.personalInfo.title}</h2>
+            </div>
           </div>
           
           <div className="flex flex-col md:flex-row md:items-end gap-4 mt-4 md:mt-0">
@@ -1206,6 +1217,16 @@ export const AcademicTemplate: React.FC<ResumeTemplateProps> = ({
     <div className="bg-white p-8 font-serif max-w-[800px] mx-auto shadow-lg rounded-md">
       {/* Header */}
       <div className="text-center border-b border-gray-300 pb-6 mb-8">
+        {data.personalInfo.profileImage && (
+          <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200 mx-auto mb-4">
+            <img 
+              src={data.personalInfo.profileImage} 
+              alt={data.personalInfo.name} 
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+        
         <h1 className="text-3xl font-bold text-gray-900 mb-2">{data.personalInfo.name}</h1>
         <h2 className="text-xl text-primary mb-4">{data.personalInfo.title}</h2>
         
@@ -1603,29 +1624,41 @@ export const StartupTemplate: React.FC<ResumeTemplateProps> = ({
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20 z-0"></div>
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full -ml-20 -mb-20 z-0"></div>
         
-        <div className="relative z-10">
-          <h1 className="text-4xl md:text-5xl font-bold">{data.personalInfo.name}</h1>
-          <h2 className="text-xl md:text-2xl mt-2 text-white/90">{data.personalInfo.title}</h2>
+        <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6">
+          {data.personalInfo.profileImage && (
+            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg flex-shrink-0">
+              <img 
+                src={data.personalInfo.profileImage} 
+                alt={data.personalInfo.name} 
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
           
-          <div className="flex flex-wrap gap-4 mt-4">
-            <div className="flex items-center text-white/90">
-              <Mail className="h-4 w-4 mr-2" />
-              <span>{data.personalInfo.email}</span>
-            </div>
-            <div className="flex items-center text-white/90">
-              <Phone className="h-4 w-4 mr-2" />
-              <span>{data.personalInfo.phone}</span>
-            </div>
-            <div className="flex items-center text-white/90">
-              <MapPin className="h-4 w-4 mr-2" />
-              <span>{data.personalInfo.location}</span>
-            </div>
-            {data.personalInfo.website && (
+          <div className="text-center md:text-left">
+            <h1 className="text-4xl md:text-5xl font-bold">{data.personalInfo.name}</h1>
+            <h2 className="text-xl md:text-2xl mt-2 text-white/90">{data.personalInfo.title}</h2>
+            
+            <div className="flex flex-wrap gap-4 mt-4 justify-center md:justify-start">
               <div className="flex items-center text-white/90">
-                <Globe className="h-4 w-4 mr-2" />
-                <span>{data.personalInfo.website}</span>
+                <Mail className="h-4 w-4 mr-2" />
+                <span>{data.personalInfo.email}</span>
               </div>
-            )}
+              <div className="flex items-center text-white/90">
+                <Phone className="h-4 w-4 mr-2" />
+                <span>{data.personalInfo.phone}</span>
+              </div>
+              <div className="flex items-center text-white/90">
+                <MapPin className="h-4 w-4 mr-2" />
+                <span>{data.personalInfo.location}</span>
+              </div>
+              {data.personalInfo.website && (
+                <div className="flex items-center text-white/90">
+                  <Globe className="h-4 w-4 mr-2" />
+                  <span>{data.personalInfo.website}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

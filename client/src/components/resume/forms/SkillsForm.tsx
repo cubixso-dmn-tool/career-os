@@ -78,6 +78,8 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
     category: undefined
   });
   const [isAdding, setIsAdding] = useState(false);
+  const [customCategory, setCustomCategory] = useState('');
+  const [editingCustomCategory, setEditingCustomCategory] = useState('');
 
   // Generate a unique ID for new skills
   const generateId = () => `sk${Date.now()}`;
@@ -85,12 +87,17 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
   const handleAddSkill = () => {
     if (!newSkill.name.trim()) return;
     
+    // Use custom category if "Other" is selected and custom category is provided
+    const finalCategory = newSkill.category === 'Other' && customCategory.trim() 
+      ? customCategory.trim() 
+      : newSkill.category;
+    
     // Ensure we don't have empty strings for optional fields
     const skillToAdd: Skill = {
       id: generateId(),
       name: newSkill.name.trim(),
       level: newSkill.level?.trim() as SkillLevel | undefined,
-      category: newSkill.category?.trim() as SkillCategory | undefined
+      category: finalCategory?.trim() as SkillCategory | undefined
     };
     
     setSkills([...skills, skillToAdd]);
@@ -99,18 +106,24 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
       level: undefined,
       category: undefined
     });
+    setCustomCategory('');
     setIsAdding(false);
   };
 
   const handleUpdateSkill = () => {
     if (!editingSkill) return;
     
+    // Use custom category if "Other" is selected and custom category is provided
+    const finalCategory = editingSkill.category === 'Other' && editingCustomCategory.trim() 
+      ? editingCustomCategory.trim() 
+      : editingSkill.category;
+    
     // Ensure we don't have empty strings for optional fields
     const updatedSkill: Skill = {
       ...editingSkill,
       name: editingSkill.name.trim(),
       level: editingSkill.level?.trim() as SkillLevel | undefined,
-      category: editingSkill.category?.trim() as SkillCategory | undefined
+      category: finalCategory?.trim() as SkillCategory | undefined
     };
     
     setSkills(skills.map(skill => 
@@ -118,6 +131,7 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
     ));
     
     setEditingSkill(null);
+    setEditingCustomCategory('');
   };
 
   const handleDeleteSkill = (id: string) => {
@@ -207,7 +221,16 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
                           )}
                           <button 
                             className="ml-1 text-gray-400 hover:text-gray-800"
-                            onClick={() => setEditingSkill(skill)}
+                            onClick={() => {
+                              setEditingSkill(skill);
+                              // If the skill category is not one of the predefined ones, set it as custom
+                              if (skill.category && !skillCategories.includes(skill.category as SkillCategory)) {
+                                setEditingCustomCategory(skill.category);
+                                setEditingSkill({...skill, category: 'Other'});
+                              } else {
+                                setEditingCustomCategory('');
+                              }
+                            }}
                           >
                             <Edit2 className="h-3 w-3" />
                           </button>
@@ -261,6 +284,16 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
                       ))}
                     </SelectContent>
                   </Select>
+                  
+                  {newSkill.category === 'Other' && (
+                    <div className="mt-2">
+                      <Input
+                        placeholder="Enter custom category"
+                        value={customCategory}
+                        onChange={(e) => setCustomCategory(e.target.value)}
+                      />
+                    </div>
+                  )}
                 </div>
                 
                 <div>
@@ -336,6 +369,16 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ initialData, onSubmit, onBack }
                       ))}
                     </SelectContent>
                   </Select>
+                  
+                  {editingSkill.category === 'Other' && (
+                    <div className="mt-2">
+                      <Input
+                        placeholder="Enter custom category"
+                        value={editingCustomCategory}
+                        onChange={(e) => setEditingCustomCategory(e.target.value)}
+                      />
+                    </div>
+                  )}
                 </div>
                 
                 <div>

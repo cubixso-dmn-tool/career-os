@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import resumeService, { SavedResume } from '@/services/resumeService';
 
 import TemplateSelector from './TemplateSelector';
 import { 
@@ -238,22 +239,93 @@ const ResumeBuilder: React.FC = () => {
   });
   const [hasStartedEditing, setHasStartedEditing] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [currentResumeId, setCurrentResumeId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   
-  // If we have a real user and haven't started editing, update the personal info with their data
+  // Load existing resume data on component mount
   useEffect(() => {
-    if (user && !hasStartedEditing) {
-      setResumeData(prevData => ({
-        ...prevData,
-        personalInfo: {
-          ...prevData.personalInfo,
-          name: user.name || '',
-          email: user.email || '',
-          // Only set profile image if user has one
-          ...(user.avatar ? { profileImage: user.avatar } : {})
+    const loadResumeData = async () => {
+      try {
+        if (user) {
+          const userResumes = await resumeService.getUserResumes();
+          if (userResumes.length > 0) {
+            // Load the most recent resume
+            const latestResume = userResumes[0];
+            setCurrentResumeId(latestResume.id);
+            setSelectedTemplateId(latestResume.templateId);
+            setResumeData(latestResume.data);
+            setHasStartedEditing(true);
+          } else {
+            // No existing resume, set up with user's basic info
+            setResumeData(prevData => ({
+              ...prevData,
+              personalInfo: {
+                ...prevData.personalInfo,
+                name: user.name || '',
+                email: user.email || '',
+                ...(user.avatar ? { profileImage: user.avatar } : {})
+              }
+            }));
+          }
         }
-      }));
+      } catch (error) {
+        console.error('Error loading resume data:', error);
+        toast({
+          title: "Error loading resume",
+          description: "Could not load your existing resume data. Starting fresh.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadResumeData();
+  }, [user, toast]);
+
+  // Auto-save functionality - debounced save after data changes
+  const triggerAutoSave = useCallback(() => {
+    if (!hasStartedEditing || !resumeData.personalInfo.name) {
+      return; // Don't auto-save until user has started editing and has a name
     }
-  }, [user, hasStartedEditing]);
+
+    setAutoSaveStatus('saving');
+    
+    resumeService.autoSave(
+      currentResumeId,
+      selectedTemplateId,
+      resumeData,
+      (savedResume: SavedResume) => {
+        setCurrentResumeId(savedResume.id);
+        setAutoSaveStatus('saved');
+        
+        // Reset to idle after showing saved status
+        setTimeout(() => setAutoSaveStatus('idle'), 2000);
+      },
+      (error: Error) => {
+        console.error('Auto-save error:', error);
+        setAutoSaveStatus('error');
+        
+        // Reset to idle after showing error status
+        setTimeout(() => setAutoSaveStatus('idle'), 3000);
+      }
+    );
+  }, [currentResumeId, selectedTemplateId, resumeData, hasStartedEditing]);
+
+  // Trigger auto-save when resume data changes
+  useEffect(() => {
+    if (hasStartedEditing) {
+      triggerAutoSave();
+    }
+  }, [resumeData, triggerAutoSave, hasStartedEditing]);
+
+  // Cleanup auto-save timeout on unmount
+  useEffect(() => {
+    return () => {
+      resumeService.cancelAutoSave();
+    };
+  }, []);
   
   const handleSelectTemplate = (templateId: string) => {
     setSelectedTemplateId(templateId);
@@ -333,9 +405,16 @@ const ResumeBuilder: React.FC = () => {
     setIsSaving(true);
     
     try {
-      // In a real app, you would save the resume to the database here
-      // For now, we'll just simulate a successful save
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      let savedResume: SavedResume;
+      
+      if (currentResumeId) {
+        // Update existing resume
+        savedResume = await resumeService.updateResume(currentResumeId, selectedTemplateId, resumeData);
+      } else {
+        // Create new resume
+        savedResume = await resumeService.saveResume(selectedTemplateId, resumeData);
+        setCurrentResumeId(savedResume.id);
+      }
       
       toast({
         title: "Resume saved successfully",
@@ -371,37 +450,116 @@ const ResumeBuilder: React.FC = () => {
         variant: "default",
       });
 
-      // Create a canvas from the resume element
-      const canvas = await html2canvas(resumeRef.current, {
+      // Create a temporary element for PDF generation with proper styling
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.top = '0';
+      tempDiv.style.width = '210mm'; // A4 width
+      tempDiv.style.backgroundColor = '#ffffff';
+      tempDiv.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+      tempDiv.style.fontSize = '12px';
+      tempDiv.style.lineHeight = '1.4';
+      tempDiv.style.color = '#000000';
+      
+      // Clone the resume content
+      const resumeClone = resumeRef.current.cloneNode(true) as HTMLElement;
+      
+      // Reset any transforms and scaling
+      resumeClone.style.transform = 'none';
+      resumeClone.style.transformOrigin = 'unset';
+      resumeClone.style.width = '100%';
+      resumeClone.style.maxWidth = 'none';
+      resumeClone.style.padding = '20px';
+      resumeClone.style.margin = '0';
+      resumeClone.style.boxSizing = 'border-box';
+      
+      // Fix all child elements positioning
+      const allElements = resumeClone.querySelectorAll('*');
+      allElements.forEach((element: any) => {
+        if (element.style) {
+          // Reset problematic CSS properties
+          element.style.transform = 'none';
+          element.style.position = 'static';
+          element.style.float = 'none';
+          element.style.clear = 'none';
+          
+          // Ensure proper box model
+          if (element.style.display === 'flex') {
+            element.style.display = 'flex';
+          } else if (element.style.display === 'grid') {
+            element.style.display = 'block'; // Convert grid to block for PDF
+          }
+          
+          // Fix text properties
+          if (element.style.color === 'transparent' || element.style.opacity === '0') {
+            element.style.color = '#000000';
+            element.style.opacity = '1';
+          }
+        }
+      });
+      
+      tempDiv.appendChild(resumeClone);
+      document.body.appendChild(tempDiv);
+
+      // Create canvas with proper options
+      const canvas = await html2canvas(tempDiv, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
-        width: resumeRef.current.scrollWidth,
-        height: resumeRef.current.scrollHeight,
+        width: tempDiv.scrollWidth,
+        height: tempDiv.scrollHeight,
+        onclone: (clonedDoc) => {
+          // Additional cleanup for cloned document
+          const clonedElement = clonedDoc.querySelector('div') as HTMLElement;
+          if (clonedElement) {
+            clonedElement.style.transform = 'none';
+            clonedElement.style.width = '100%';
+          }
+        }
       });
 
-      // Calculate dimensions for PDF
-      const imgData = canvas.toDataURL('image/png');
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 295; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
+      // Clean up temporary element
+      document.body.removeChild(tempDiv);
 
-      // Create PDF
+      // Calculate proper dimensions for PDF
+      const imgData = canvas.toDataURL('image/png', 1.0);
+      const pdfWidth = 210; // A4 width in mm
+      const pdfHeight = 297; // A4 height in mm
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      
+      // Calculate scaling to fit content properly
+      const ratio = Math.min(pdfWidth / (imgWidth * 0.264583), pdfHeight / (imgHeight * 0.264583));
+      const scaledWidth = imgWidth * 0.264583 * ratio;
+      const scaledHeight = imgHeight * 0.264583 * ratio;
+
+      // Create PDF with proper positioning
       const pdf = new jsPDF('p', 'mm', 'a4');
-      let position = 0;
+      
+      // Center the content on the page
+      const xOffset = (pdfWidth - scaledWidth) / 2;
+      const yOffset = Math.max(10, (pdfHeight - scaledHeight) / 2); // At least 10mm from top
 
-      // Add first page
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      // Add the image to PDF
+      pdf.addImage(imgData, 'PNG', xOffset, yOffset, scaledWidth, scaledHeight);
 
-      // Add additional pages if needed
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+      // Handle multi-page content if needed
+      if (scaledHeight > pdfHeight - 20) {
+        // Content is too tall, split into multiple pages
+        const pageHeight = pdfHeight - 20; // Leave margins
+        let remainingHeight = scaledHeight;
+        let currentY = yOffset;
+        let pageNum = 1;
+
+        while (remainingHeight > pageHeight && pageNum < 5) { // Limit to 5 pages max
+          pdf.addPage();
+          currentY = -pageHeight * pageNum + yOffset;
+          pdf.addImage(imgData, 'PNG', xOffset, currentY, scaledWidth, scaledHeight);
+          remainingHeight -= pageHeight;
+          pageNum++;
+        }
       }
 
       // Download the PDF
@@ -549,12 +707,22 @@ const ResumeBuilder: React.FC = () => {
               </div>
             </div>
             
-            <Card className="border-2 border-primary/10 p-0 overflow-hidden">
-              <div className="overflow-auto max-h-[650px]">
-                <div className="transform scale-[0.8] origin-top-left" style={{ width: '125%', minHeight: '1000px' }}>
-                  <div ref={resumeRef} style={{ transform: 'scale(1.25)', transformOrigin: 'top left', width: '80%' }}>
-                    <SelectedTemplate data={resumeData} editable={true} onEdit={() => {}} />
-                  </div>
+            <Card className="border-2 border-primary/10 p-4 overflow-hidden">
+              <div className="overflow-auto max-h-[800px]">
+                <div 
+                  ref={resumeRef} 
+                  className="bg-white shadow-lg mx-auto"
+                  style={{ 
+                    width: '210mm', 
+                    minHeight: '297mm',
+                    maxWidth: '100%',
+                    transform: 'scale(0.75)',
+                    transformOrigin: 'top center',
+                    padding: '20px',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <SelectedTemplate data={resumeData} editable={true} onEdit={() => {}} />
                 </div>
               </div>
             </Card>
@@ -566,6 +734,23 @@ const ResumeBuilder: React.FC = () => {
     }
   };
   
+  // Show loading state while fetching resume data
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card className="mb-6">
+          <CardContent className="p-8">
+            <div className="flex flex-col items-center justify-center min-h-[400px]">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+              <h3 className="text-lg font-medium mb-2">Loading your resume...</h3>
+              <p className="text-gray-600 text-center">We're fetching your saved resume data</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-8">
       <Card className="mb-6">
@@ -576,8 +761,20 @@ const ResumeBuilder: React.FC = () => {
                 <FileText className="mr-2 h-6 w-6 text-primary" />
                 Resume Builder
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="flex items-center gap-2">
                 Create a professional resume in minutes with our easy-to-use builder
+                {autoSaveStatus === 'saving' && (
+                  <span className="text-xs text-gray-500 flex items-center">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary mr-1"></div>
+                    Saving...
+                  </span>
+                )}
+                {autoSaveStatus === 'saved' && (
+                  <span className="text-xs text-green-600">✓ Saved</span>
+                )}
+                {autoSaveStatus === 'error' && (
+                  <span className="text-xs text-red-600">⚠ Save failed</span>
+                )}
               </CardDescription>
             </div>
             

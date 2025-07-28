@@ -25,12 +25,12 @@ interface PersonalInfoFormProps {
 
 const personalInfoSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
-  title: z.string().min(2, { message: 'Title must be at least 2 characters' }),
-  email: z.string().email({ message: 'Please enter a valid email address' }),
-  phone: z.string().min(5, { message: 'Phone number must be at least 5 characters' }),
-  location: z.string().min(2, { message: 'Location must be at least 2 characters' }),
+  title: z.string().optional(),
+  email: z.string().email({ message: 'Please enter a valid email address' }).or(z.literal('')),
+  phone: z.string().optional(),
+  location: z.string().optional(),
   website: z.string().optional(),
-  summary: z.string().min(20, { message: 'Summary must be at least 20 characters' }),
+  summary: z.string().optional(),
   profileImage: z.string().optional(),
 });
 
@@ -85,7 +85,7 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ initialData, onSubm
                 <FormItem>
                   <FormLabel className="flex items-center">
                     <FileText className="h-4 w-4 mr-2 text-primary" />
-                    Professional Title
+                    Professional Title (Optional)
                   </FormLabel>
                   <FormControl>
                     <Input placeholder="Full Stack Developer" {...field} />
@@ -102,7 +102,7 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ initialData, onSubm
                 <FormItem>
                   <FormLabel className="flex items-center">
                     <Mail className="h-4 w-4 mr-2 text-primary" />
-                    Email
+                    Email (Optional)
                   </FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="john.doe@example.com" {...field} />
@@ -119,7 +119,7 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ initialData, onSubm
                 <FormItem>
                   <FormLabel className="flex items-center">
                     <Phone className="h-4 w-4 mr-2 text-primary" />
-                    Phone
+                    Phone (Optional)
                   </FormLabel>
                   <FormControl>
                     <Input placeholder="+91 98765 43210" {...field} />
@@ -136,7 +136,7 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ initialData, onSubm
                 <FormItem>
                   <FormLabel className="flex items-center">
                     <MapPin className="h-4 w-4 mr-2 text-primary" />
-                    Location
+                    Location (Optional)
                   </FormLabel>
                   <FormControl>
                     <Input placeholder="New Delhi, India" {...field} />
@@ -174,7 +174,7 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ initialData, onSubm
               <FormItem>
                 <FormLabel className="flex items-center">
                   <FileText className="h-4 w-4 mr-2 text-primary" />
-                  Professional Summary
+                  Professional Summary (Optional)
                 </FormLabel>
                 <FormControl>
                   <Textarea 
