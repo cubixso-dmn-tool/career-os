@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Github } from "lucide-react";
+import { Loader2, Github, Eye, EyeOff } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 
 const loginSchema = z.object({
@@ -27,6 +27,7 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Debug: Check auth state
   console.log('🔍 Login page - Auth state:', { isAuthenticated, user, loading });
@@ -153,9 +154,30 @@ export default function Login() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
-                    </FormControl>
+                    <div className="relative">
+                      <FormControl>
+                        <Input 
+                          type={showPassword ? "text" : "password"} 
+                          placeholder="••••••••" 
+                          {...field} 
+                          className="pr-10"
+                        />
+                      </FormControl>
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                        <span className="sr-only">
+                          {showPassword ? "Hide password" : "Show password"}
+                        </span>
+                      </button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

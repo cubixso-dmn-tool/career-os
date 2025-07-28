@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
 import passport from "passport";
-import { storage } from "../simple-storage.js";
+import { storage } from "../storage.js";
 import { JWTManager, jwtAuthMiddleware } from "../lib/jwt.js";
 import { OAuthManager, isOAuthConfigured } from "../lib/oauth.js";
 import { EmailManager } from "../lib/email.js";
@@ -189,9 +189,11 @@ router.post("/jwt-login", async (req, res) => {
     //   return res.status(200).json({ requiresTwoFactor: true });
     // }
 
-    // Get user roles
-    // const roles = await storage.getUserRoles(user.id); // This would need to be implemented
-    const roles = ['user']; // Default role
+    // Get user roles from database
+    const userRoles = await storage.getUserRoles(user.id);
+    // Default to student role (4) if no roles found, and convert to strings
+    const roleIds = userRoles.length > 0 ? userRoles.map((ur: { roleId: number }) => ur.roleId) : [4];
+    const roles = roleIds.map(String); // Convert to strings for JWT
 
     // Generate JWT tokens
     const tokens = JWTManager.createTokenPair(user, roles);
