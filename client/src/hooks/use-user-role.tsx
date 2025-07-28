@@ -19,18 +19,74 @@ export function useUserRole() {
     queryFn: async () => {
       console.log('🔍 Fetching role data for user:', user?.id);
       const timestamp = Date.now();
+      
+      // Get access token from localStorage for authentication
+      const accessToken = localStorage.getItem('access_token');
+      
+      const headers: Record<string, string> = {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      };
+      
+      // Add Authorization header if we have a token
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+        console.log('🔑 Using JWT token for authentication');
+      } else {
+        console.log('🍪 Using session-based authentication');
+      }
+      
       const response = await fetch(`/api/rbac/my-info?t=${timestamp}`, {
-        credentials: "include",
-        cache: "no-cache", // Prevent browser caching
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
+        credentials: "include", // Include cookies for session-based auth
+        cache: "no-cache",
+        headers
       });
       
       if (!response.ok) {
         console.error('❌ Role fetch failed:', response.status, response.statusText);
+        
+        // If JWT auth failed, try to refresh token
+        if (response.status === 401 && accessToken) {
+          console.log('🔄 JWT token might be expired, attempting refresh...');
+          try {
+            const refreshToken = localStorage.getItem('refresh_token');
+            if (refreshToken) {
+              const refreshResponse = await fetch('/api/auth/refresh-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken }),
+              });
+              
+              if (refreshResponse.ok) {
+                const refreshData = await refreshResponse.json();
+                localStorage.setItem('access_token', refreshData.accessToken);
+                localStorage.setItem('refresh_token', refreshData.refreshToken);
+                
+                console.log('✅ Token refreshed, retrying role fetch...');
+                
+                // Retry the original request with new token
+                const retryResponse = await fetch(`/api/rbac/my-info?t=${timestamp}`, {
+                  credentials: "include",
+                  cache: "no-cache",
+                  headers: {
+                    ...headers,
+                    'Authorization': `Bearer ${refreshData.accessToken}`
+                  }
+                });
+                
+                if (retryResponse.ok) {
+                  const data = await retryResponse.json();
+                  console.log('✅ Role data received after token refresh:', data);
+                  return data;
+                }
+              }
+            }
+          } catch (refreshError) {
+            console.error('❌ Token refresh failed:', refreshError);
+          }
+        }
+        
         throw new Error(`HTTP ${response.status}`);
       }
       

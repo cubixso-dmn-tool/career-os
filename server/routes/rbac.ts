@@ -2,9 +2,50 @@ import { Router } from "express";
 import { storage } from "../storage.js";
 import { loadUserRolesMiddleware, requirePermission } from "../middleware/rbac.js";
 import { insertRoleSchema, insertPermissionSchema, insertRolePermissionSchema } from "../../shared/schema.js";
+import { JWTManager } from "../lib/jwt.js";
 
 // Create router
 const router = Router();
+
+// Hybrid authentication middleware that supports both JWT and session auth
+const hybridAuthMiddleware = async (req: any, res: any, next: any) => {
+  // Try JWT authentication first
+  const token = JWTManager.extractTokenFromHeader(req.headers.authorization);
+  
+  if (token) {
+    const payload = JWTManager.verifyAccessToken(token);
+    if (payload) {
+      console.log('🔑 RBAC - JWT authentication successful for user:', payload.userId);
+      // Get full user data from database
+      try {
+        const user = await storage.getUser(payload.userId);
+        if (user) {
+          req.user = user;
+          req.sessionId = payload.sessionId;
+          // Set isAuthenticated to true for JWT auth
+          req.isAuthenticated = () => true;
+          return next();
+        }
+      } catch (error) {
+        console.error('❌ RBAC - Failed to get user data for JWT:', error);
+      }
+    } else {
+      console.log('❌ RBAC - JWT token verification failed');
+    }
+  }
+  
+  // Fallback to session authentication
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    console.log('🍪 RBAC - Session authentication successful for user:', req.user?.id);
+    return next();
+  }
+  
+  console.log('❌ RBAC - No valid authentication found');
+  return res.status(401).json({ message: "Authentication required" });
+};
+
+// Apply hybrid auth middleware
+router.use(hybridAuthMiddleware);
 
 // Apply middleware to load user roles and permissions
 router.use(loadUserRolesMiddleware);
@@ -193,23 +234,25 @@ router.delete("/roles/:roleId/permissions/:permissionId", requirePermission("upd
 // Get current user's roles and permissions
 router.get("/my-info", async (req, res) => {
   try {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
+    console.log('🎭 RBAC /my-info - Getting roles for user:', req.user?.id);
     
     // Force reload user roles and permissions to ensure fresh data
     const userRoles = await storage.getUserRoles(req.user.id);
+    console.log('🎭 RBAC /my-info - User roles from DB:', userRoles);
     const roleIds = userRoles.map(role => role.roleId);
+    console.log('🎭 RBAC /my-info - Role IDs:', roleIds);
     
     // Get permissions based on roles
     const permissions = [];
     for (const roleId of roleIds) {
       const rolePermissions = await storage.getRolePermissions(roleId);
+      console.log(`🎭 RBAC /my-info - Permissions for role ${roleId}:`, rolePermissions);
       permissions.push(...rolePermissions);
     }
     
     // Attach unique permission names
     const permissionNames = Array.from(new Set(permissions.map(p => p.name)));
+    console.log('🎭 RBAC /my-info - Final permission names:', permissionNames);
     
     const userInfo = {
       id: req.user.id,
@@ -218,6 +261,7 @@ router.get("/my-info", async (req, res) => {
       permissions: permissionNames
     };
     
+    console.log('✅ RBAC /my-info - Returning user info:', userInfo);
     res.status(200).json(userInfo);
   } catch (error) {
     console.error("Error fetching user info:", error);
