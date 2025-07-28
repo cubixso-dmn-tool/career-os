@@ -1,30 +1,56 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthContext } from "./use-auth-context";
+import { useEffect } from "react";
 
 export function useUserRole() {
   const { user } = useAuthContext();
+  const queryClient = useQueryClient();
+  
+  // Clear any existing role cache when user changes
+  useEffect(() => {
+    if (user?.id) {
+      console.log('🗑️ Clearing role cache for user:', user.id);
+      queryClient.removeQueries({ queryKey: ['/api/rbac/my-info'] });
+    }
+  }, [user?.id, queryClient]);
   
   const { data: roleData, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/rbac/my-info', user?.id],
     queryFn: async () => {
-      const response = await fetch('/api/rbac/my-info', {
+      console.log('🔍 Fetching role data for user:', user?.id);
+      const timestamp = Date.now();
+      const response = await fetch(`/api/rbac/my-info?t=${timestamp}`, {
         credentials: "include",
+        cache: "no-cache", // Prevent browser caching
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       });
       
       if (!response.ok) {
+        console.error('❌ Role fetch failed:', response.status, response.statusText);
         throw new Error(`HTTP ${response.status}`);
       }
       
-      return response.json();
+      const data = await response.json();
+      console.log('✅ Role data received:', data);
+      return data;
     },
     enabled: !!user, // Only run query if user is authenticated
     staleTime: 0, // Don't cache role data to ensure fresh data on each load
-    cacheTime: 0, // Don't cache role data to ensure fresh data on each load
+    gcTime: 0, // Updated property name for cache garbage collection time
+    refetchOnMount: true, // Always refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when window regains focus
   });
 
   // Determine the primary role (highest priority role)
   const getPrimaryRole = () => {
+    console.log('🎭 Determining primary role from data:', roleData);
+    
     if (!roleData?.roles || roleData.roles.length === 0) {
+      console.log('⚠️ No roles found, defaulting to student');
       return 'student'; // Default role
     }
 
@@ -32,10 +58,21 @@ export function useUserRole() {
     // Role mappings: 1 = admin, 2 = moderator, 3 = mentor, 4 = student
     
     const roleIds = roleData.roles;
+    console.log('🔢 Role IDs from API:', roleIds);
     
-    if (roleIds.includes(1)) return 'admin';
-    if (roleIds.includes(2)) return 'moderator';
-    if (roleIds.includes(3)) return 'mentor';
+    if (roleIds.includes(1)) {
+      console.log('👑 Primary role determined: admin');
+      return 'admin';
+    }
+    if (roleIds.includes(2)) {
+      console.log('🛡️ Primary role determined: moderator');
+      return 'moderator';
+    }
+    if (roleIds.includes(3)) {
+      console.log('👨‍🎓 Primary role determined: mentor');
+      return 'mentor';
+    }
+    console.log('📚 Primary role determined: student (default)');
     return 'student';
   };
 

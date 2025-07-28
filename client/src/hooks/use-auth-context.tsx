@@ -137,11 +137,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Function to load user roles and permissions
   const loadUserRolesAndPermissions = async () => {
     try {
+      console.log('🔄 AuthContext - Loading user roles and permissions');
       const response = await authenticatedFetch('/api/rbac/my-info');
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ AuthContext - Role data loaded:', data);
         setUserRoles(data.roles || []);
         setUserPermissions(data.permissions || []);
+      } else {
+        console.error('❌ AuthContext - Failed to load roles:', response.status);
       }
     } catch (error) {
       console.error('Failed to fetch user roles and permissions', error);
