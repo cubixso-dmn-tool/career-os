@@ -50,29 +50,6 @@ interface IndustryExpert {
   isActive: boolean;
 }
 
-interface ExpertSession {
-  id: number;
-  expertId: number;
-  title: string;
-  description: string;
-  sessionType: 'lecture' | 'qa' | 'workshop' | 'mentoring';
-  category: string;
-  scheduledAt: Date;
-  duration: number;
-  maxAttendees: number;
-  currentAttendees: number;
-  meetingLink?: string;
-  status: 'scheduled' | 'live' | 'completed' | 'cancelled';
-  tags: string[];
-  isFree: boolean;
-  price: number;
-  expert: {
-    name: string;
-    title: string;
-    company: string;
-    avatar?: string;
-  };
-}
 
 interface SuccessStory {
   id: number;
@@ -126,7 +103,6 @@ interface NetworkingEvent {
 
 export default function IndustryExpertNetwork() {
   const [experts, setExperts] = useState<IndustryExpert[]>([]);
-  const [sessions, setSessions] = useState<ExpertSession[]>([]);
   const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
   const [networkingEvents, setNetworkingEvents] = useState<NetworkingEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,9 +119,8 @@ export default function IndustryExpertNetwork() {
     try {
       setLoading(true);
       
-      const [expertsRes, sessionsRes, storiesRes, eventsRes] = await Promise.all([
+      const [expertsRes, storiesRes, eventsRes] = await Promise.all([
         fetch('/api/industry-experts/experts', { credentials: 'include' }),
-        fetch('/api/industry-experts/sessions', { credentials: 'include' }),
         fetch('/api/industry-experts/success-stories', { credentials: 'include' }),
         fetch('/api/industry-experts/networking-events', { credentials: 'include' })
       ]);
@@ -156,14 +131,6 @@ export default function IndustryExpertNetwork() {
         setExperts(expertsData.experts || []);
       } else {
         console.error('Experts API failed:', expertsRes.status, expertsRes.statusText);
-      }
-
-      if (sessionsRes.ok) {
-        const sessionsData = await sessionsRes.json();
-        setSessions(sessionsData.sessions?.map((session: any) => ({
-          ...session,
-          scheduledAt: new Date(session.scheduledAt)
-        })) || []);
       }
 
       if (storiesRes.ok) {
@@ -193,31 +160,6 @@ export default function IndustryExpertNetwork() {
     }
   };
 
-  const registerForSession = async (sessionId: number) => {
-    try {
-      const response = await fetch(`/api/industry-experts/sessions/${sessionId}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ questions: [] })
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Registration Successful",
-          description: "You've been registered for the session. Check your email for details."
-        });
-      } else {
-        throw new Error('Registration failed');
-      }
-    } catch (error) {
-      toast({
-        title: "Registration Failed",
-        description: "Please try again or contact support.",
-        variant: "destructive"
-      });
-    }
-  };
 
   const registerForEvent = async (eventId: number) => {
     try {
@@ -294,14 +236,10 @@ export default function IndustryExpertNetwork() {
       </div>
 
       <Tabs defaultValue="experts" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="experts" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Experts
-          </TabsTrigger>
-          <TabsTrigger value="sessions" className="flex items-center gap-2">
-            <Video className="h-4 w-4" />
-            Sessions
           </TabsTrigger>
           <TabsTrigger value="stories" className="flex items-center gap-2">
             <BookOpen className="h-4 w-4" />
@@ -446,81 +384,6 @@ export default function IndustryExpertNetwork() {
           )}
         </TabsContent>
 
-        <TabsContent value="sessions" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {sessions.map((session) => (
-              <Card key={session.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg mb-2">{session.title}</CardTitle>
-                      <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {format(session.scheduledAt, 'MMM dd, yyyy')}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {session.duration} min
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 mb-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={session.expert.avatar} alt={session.expert.name} />
-                          <AvatarFallback>
-                            {session.expert.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-sm">{session.expert.name}</p>
-                          <p className="text-xs text-gray-600">{session.expert.title} at {session.expert.company}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <Badge 
-                      variant={session.sessionType === 'lecture' ? 'default' : 
-                               session.sessionType === 'workshop' ? 'secondary' : 
-                               session.sessionType === 'qa' ? 'outline' : 'destructive'}
-                    >
-                      {session.sessionType}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                
-                <CardContent>
-                  <p className="text-sm text-gray-600 mb-4">{session.description}</p>
-                  
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {session.tags.map((tag, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                  
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <span>{session.currentAttendees}/{session.maxAttendees} registered</span>
-                      {session.isFree ? (
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">Free</Badge>
-                      ) : (
-                        <Badge variant="secondary">₹{session.price}</Badge>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <Button 
-                    className="w-full"
-                    onClick={() => registerForSession(session.id)}
-                    disabled={session.currentAttendees >= session.maxAttendees}
-                  >
-                    {session.currentAttendees >= session.maxAttendees ? 'Full' : 'Register'}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
 
         <TabsContent value="stories" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

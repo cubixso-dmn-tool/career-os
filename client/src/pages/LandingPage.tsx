@@ -93,7 +93,7 @@ const LandingPage: React.FC = () => {
     if (isAuthenticated) {
       navigate('/dashboard');
     } else {
-      navigate('/login');
+      window.open('/login', '_blank');
     }
   };
 
@@ -113,8 +113,8 @@ const LandingPage: React.FC = () => {
               <Button onClick={() => navigate('/dashboard')}>Open Dashboard</Button>
             ) : (
               <>
-                <Button variant="outline" onClick={() => navigate('/login')}>Login</Button>
-                <Button onClick={() => navigate('/register')}>Sign Up</Button>
+                <Button variant="outline" onClick={() => window.open('/login', '_blank')}>Login</Button>
+                <Button onClick={() => window.open('/register', '_blank')}>Sign Up</Button>
               </>
             )}
           </div>

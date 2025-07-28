@@ -16,6 +16,8 @@ import Settings from "@/pages/Settings";
 import HowItWorks from "@/pages/HowItWorks";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import LandingPage from "@/pages/LandingPage";
 import AICareerCoachPage from "@/pages/AICareerCoach";
 import IndustryExpertNetworkPage from "@/pages/IndustryExpertNetwork";
@@ -162,6 +164,8 @@ function Router() {
 
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       <Route path="/how-it-works" component={HowItWorks} />
       <Route component={NotFound} />
     </Switch>

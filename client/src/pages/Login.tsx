@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Github, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 
 const loginSchema = z.object({
@@ -22,7 +22,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
-  const { login, loading, signInWithGoogle, signInWithGitHub, isAuthenticated, user } = useAuthContext();
+  const { login, loading, signInWithGoogle, isAuthenticated, user } = useAuthContext();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string | null>(null);
@@ -102,8 +102,6 @@ export default function Login() {
     try {
       if (provider === 'google') {
         await signInWithGoogle();
-      } else if (provider === 'github') {
-        await signInWithGitHub();
       }
     } catch (error: any) {
       console.error(`${provider} sign in error:`, error);
@@ -208,46 +206,31 @@ export default function Login() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Button
-              variant="outline"
-              onClick={() => handleOAuthLogin("google")}
-              disabled={loading || oauthLoading === "google"}
-              className="w-full"
-            >
-              {oauthLoading === "google" ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Connecting...
-                </>
-              ) : (
-                <>
-                  <SiGoogle className="mr-2 h-4 w-4" />
-                  {(oauthConfig as any)?.firebase ? "Google" : "Google (Demo)"}
-                </>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleOAuthLogin("github")}
-              disabled={loading || oauthLoading === "github"}
-              className="w-full"
-            >
-              {oauthLoading === "github" ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Connecting...
-                </>
-              ) : (
-                <>
-                  <Github className="mr-2 h-4 w-4" />
-                  {(oauthConfig as any)?.firebase ? "GitHub" : "GitHub (Demo)"}
-                </>
-              )}
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            onClick={() => handleOAuthLogin("google")}
+            disabled={loading || oauthLoading === "google"}
+            className="w-full"
+          >
+            {oauthLoading === "google" ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Connecting...
+              </>
+            ) : (
+              <>
+                <SiGoogle className="mr-2 h-4 w-4" />
+                {(oauthConfig as any)?.firebase ? "Continue with Google" : "Continue with Google (Demo)"}
+              </>
+            )}
+          </Button>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
+          <div className="text-sm text-center text-muted-foreground">
+            <Button variant="link" className="p-0" onClick={() => setLocation("/forgot-password")}>
+              Forgot your password?
+            </Button>
+          </div>
           <div className="text-sm text-center text-muted-foreground">
             Don't have an account?{" "}
             <Button variant="link" className="p-0" onClick={() => setLocation("/register")}>
