@@ -86,11 +86,11 @@ export const userSoftSkills = pgTable("user_soft_skills", {
 export const resumes = pgTable("resumes", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
-  education: jsonb("education").array().notNull(),
-  experience: jsonb("experience").array().notNull(),
-  skills: text("skills").array().notNull(),
-  projects: jsonb("projects").array(),
+  name: text("name"), // Resume name for identification
   templateId: text("template_id").notNull(),
+  // Complete resume data as JSONB to match ResumeData interface
+  data: jsonb("data").notNull(), // This will store the complete ResumeData object
+  createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
@@ -743,7 +743,7 @@ export const insertProjectSchema = createInsertSchema(projects).omit({ id: true 
 export const insertUserProjectSchema = createInsertSchema(userProjects).omit({ id: true, startedAt: true });
 export const insertSoftSkillSchema = createInsertSchema(softSkills).omit({ id: true });
 export const insertUserSoftSkillSchema = createInsertSchema(userSoftSkills).omit({ id: true });
-export const insertResumeSchema = createInsertSchema(resumes).omit({ id: true, updatedAt: true });
+export const insertResumeSchema = createInsertSchema(resumes).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertPostSchema = createInsertSchema(posts).omit({ id: true, likes: true, replies: true, createdAt: true });
 export const insertCommentSchema = createInsertSchema(comments).omit({ id: true, createdAt: true });
 export const insertAchievementSchema = createInsertSchema(achievements).omit({ id: true });

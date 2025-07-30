@@ -102,6 +102,10 @@ const EducationForm: React.FC<EducationFormProps> = ({ initialData, onSubmit, on
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   
+  // State for custom "Other" inputs
+  const [customDegree, setCustomDegree] = useState('');
+  const [customField, setCustomField] = useState('');
+  
   // Empty education template
   const emptyEducation: Education = {
     id: '',
@@ -123,13 +127,30 @@ const EducationForm: React.FC<EducationFormProps> = ({ initialData, onSubmit, on
       id: `edu-${Date.now()}`
     });
     setEditIndex(null);
+    setCustomDegree('');
+    setCustomField('');
     setIsDialogOpen(true);
   };
   
   // Function to handle editing an existing education entry
   const handleEditEducation = (index: number) => {
-    setCurrentEducation({...educations[index]});
+    const education = educations[index];
+    setCurrentEducation({...education});
     setEditIndex(index);
+    
+    // Check if degree or field has custom "Other" values
+    if (education.degree?.startsWith('Other - ')) {
+      setCustomDegree(education.degree.replace('Other - ', ''));
+    } else {
+      setCustomDegree('');
+    }
+    
+    if (education.field?.startsWith('Other - ')) {
+      setCustomField(education.field.replace('Other - ', ''));
+    } else {
+      setCustomField('');
+    }
+    
     setIsDialogOpen(true);
   };
   
@@ -184,6 +205,64 @@ const EducationForm: React.FC<EducationFormProps> = ({ initialData, onSubmit, on
     setExpandedIndex(expandedIndex === index ? null : index);
   };
   
+  // Handle degree selection with custom "Other" support
+  const handleDegreeChange = (value: string) => {
+    if (!currentEducation) return;
+    
+    if (value === 'Other') {
+      setCurrentEducation({
+        ...currentEducation,
+        degree: customDegree ? `Other - ${customDegree}` : 'Other'
+      });
+    } else {
+      setCurrentEducation({
+        ...currentEducation,
+        degree: value
+      });
+      setCustomDegree(''); // Clear custom input when selecting predefined option
+    }
+  };
+
+  // Handle field selection with custom "Other" support
+  const handleFieldChange = (value: string) => {
+    if (!currentEducation) return;
+    
+    if (value === 'Other') {
+      setCurrentEducation({
+        ...currentEducation,
+        field: customField ? `Other - ${customField}` : 'Other'
+      });
+    } else {
+      setCurrentEducation({
+        ...currentEducation,
+        field: value
+      });
+      setCustomField(''); // Clear custom input when selecting predefined option
+    }
+  };
+
+  // Handle custom degree input
+  const handleCustomDegreeChange = (value: string) => {
+    setCustomDegree(value);
+    if (currentEducation && currentEducation.degree === 'Other') {
+      setCurrentEducation({
+        ...currentEducation,
+        degree: value ? `Other - ${value}` : 'Other'
+      });
+    }
+  };
+
+  // Handle custom field input
+  const handleCustomFieldChange = (value: string) => {
+    setCustomField(value);
+    if (currentEducation && currentEducation.field === 'Other') {
+      setCurrentEducation({
+        ...currentEducation,
+        field: value ? `Other - ${value}` : 'Other'
+      });
+    }
+  };
+
   // Function to handle saving a new or edited education
   const handleSaveEducation = () => {
     if (!currentEducation) return;
@@ -475,11 +554,8 @@ const EducationForm: React.FC<EducationFormProps> = ({ initialData, onSubmit, on
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Degree</label>
                     <Select
-                      value={currentEducation.degree}
-                      onValueChange={(value) => setCurrentEducation({
-                        ...currentEducation,
-                        degree: value
-                      })}
+                      value={currentEducation.degree?.startsWith('Other - ') ? 'Other' : currentEducation.degree}
+                      onValueChange={handleDegreeChange}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select degree" />
@@ -492,16 +568,24 @@ const EducationForm: React.FC<EducationFormProps> = ({ initialData, onSubmit, on
                         ))}
                       </SelectContent>
                     </Select>
+                    
+                    {/* Custom degree input when "Other" is selected */}
+                    {(currentEducation.degree === 'Other' || currentEducation.degree?.startsWith('Other - ')) && (
+                      <div className="mt-2">
+                        <Input
+                          placeholder="Enter custom degree (e.g., BArch, BSW)"
+                          value={customDegree}
+                          onChange={(e) => handleCustomDegreeChange(e.target.value)}
+                        />
+                      </div>
+                    )}
                   </div>
                   
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Field of Study</label>
                     <Select
-                      value={currentEducation.field}
-                      onValueChange={(value) => setCurrentEducation({
-                        ...currentEducation,
-                        field: value
-                      })}
+                      value={currentEducation.field?.startsWith('Other - ') ? 'Other' : currentEducation.field}
+                      onValueChange={handleFieldChange}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select field" />
@@ -514,6 +598,17 @@ const EducationForm: React.FC<EducationFormProps> = ({ initialData, onSubmit, on
                         ))}
                       </SelectContent>
                     </Select>
+                    
+                    {/* Custom field input when "Other" is selected */}
+                    {(currentEducation.field === 'Other' || currentEducation.field?.startsWith('Other - ')) && (
+                      <div className="mt-2">
+                        <Input
+                          placeholder="Enter custom field (e.g., Data Science, Psychology)"
+                          value={customField}
+                          onChange={(e) => handleCustomFieldChange(e.target.value)}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
                 

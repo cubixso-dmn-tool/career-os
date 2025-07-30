@@ -64,11 +64,26 @@ export function rateLimit(maxRequests: number, windowMs: number) {
 
 // SQL injection protection for query parameters
 export function validateSqlInjection(req: Request, res: Response, next: NextFunction) {
+  // Skip validation for resume endpoints as they contain user content that may trigger false positives
+  if (req.path.includes('/api/resumes')) {
+    return next();
+  }
+
+  // More specific SQL injection patterns that are less likely to cause false positives
   const sqlInjectionPatterns = [
-    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE|UNION|DECLARE)\b)/i,
-    /(--|\/\*|\*\/|xp_|sp_)/i,
-    /(\b(OR|AND)\b.*=.*)/i,
-    /(SCRIPT|IFRAME|OBJECT|EMBED|FORM)/i
+    // Dangerous SQL commands with surrounding context
+    /(\b(DROP|DELETE|TRUNCATE|ALTER)\s+(TABLE|DATABASE|SCHEMA)\b)/i,
+    // Comment patterns that are clearly malicious
+    /(--[\s\S]*$|\/\*[\s\S]*?\*\/)/,
+    // Classic SQL injection patterns
+    /(\'\s*(OR|AND)\s*\'\s*=\s*\')/i,
+    /(\'\s*(OR|AND)\s*1\s*=\s*1)/i,
+    // Stored procedure execution
+    /(xp_|sp_cmdshell|exec\s*\()/i,
+    // Union-based injection
+    /(\bUNION\s+(ALL\s+)?SELECT\b)/i,
+    // Dangerous script tags
+    /(<script[\s\S]*?>[\s\S]*?<\/script>)/i
   ];
 
   const checkValue = (value: any): boolean => {

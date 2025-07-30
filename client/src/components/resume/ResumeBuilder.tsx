@@ -25,6 +25,8 @@ import {
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import resumeService, { SavedResume } from '@/services/resumeService';
+import { StorageIndicator, LocalStorageWarning } from '@/components/ui/storage-indicator';
+import { useResumeStorage } from '@/hooks/useResumeStorage';
 
 import TemplateSelector from './TemplateSelector';
 import { 
@@ -214,6 +216,7 @@ const templateComponentMap: Record<string, React.FC<any>> = {
 const ResumeBuilder: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { storageInfo } = useResumeStorage();
   const resumeRef = useRef<HTMLDivElement>(null);
   
   const [step, setStep] = useState<BuilderStep>(BuilderStep.SELECT_TEMPLATE);
@@ -248,15 +251,25 @@ const ResumeBuilder: React.FC = () => {
     const loadResumeData = async () => {
       try {
         if (user) {
+          console.log('Loading resume data for user:', user.id);
           const userResumes = await resumeService.getUserResumes();
+          console.log('Found resumes:', userResumes.length);
+          
           if (userResumes.length > 0) {
             // Load the most recent resume
             const latestResume = userResumes[0];
+            console.log('Loading latest resume:', latestResume.id, 'with data:', latestResume.data.personalInfo);
             setCurrentResumeId(latestResume.id);
             setSelectedTemplateId(latestResume.templateId);
             setResumeData(latestResume.data);
             setHasStartedEditing(true);
+            
+            // If we have data, advance to a meaningful step
+            if (latestResume.data.personalInfo.name) {
+              setStep(BuilderStep.PERSONAL_INFO);
+            }
           } else {
+            console.log('No existing resumes found, setting up with user basic info');
             // No existing resume, set up with user's basic info
             setResumeData(prevData => ({
               ...prevData,
@@ -267,6 +280,23 @@ const ResumeBuilder: React.FC = () => {
                 ...(user.avatar ? { profileImage: user.avatar } : {})
               }
             }));
+          }
+        } else {
+          console.log('No user found, checking localStorage for resumes');
+          // No user, but check localStorage for any local resumes
+          const localResumes = await resumeService.getUserResumes();
+          if (localResumes.length > 0) {
+            const latestResume = localResumes[0];
+            console.log('Loading local resume:', latestResume.id);
+            setCurrentResumeId(latestResume.id);
+            setSelectedTemplateId(latestResume.templateId);
+            setResumeData(latestResume.data);
+            setHasStartedEditing(true);
+            
+            // If we have data, advance to a meaningful step
+            if (latestResume.data.personalInfo.name) {
+              setStep(BuilderStep.PERSONAL_INFO);
+            }
           }
         }
       } catch (error) {
@@ -286,17 +316,25 @@ const ResumeBuilder: React.FC = () => {
 
   // Auto-save functionality - debounced save after data changes
   const triggerAutoSave = useCallback(() => {
-    if (!hasStartedEditing || !resumeData.personalInfo.name) {
-      return; // Don't auto-save until user has started editing and has a name
+    if (!hasStartedEditing) {
+      return; // Don't auto-save until user has started editing
+    }
+    
+    // Only require a name if we're creating a new resume (no currentResumeId)
+    if (!currentResumeId && (!resumeData.personalInfo.name || resumeData.personalInfo.name.trim() === '')) {
+      return; // Don't auto-save new resumes without a name
     }
 
     setAutoSaveStatus('saving');
+    
+    console.log('Triggering auto-save for resume:', currentResumeId, 'with title:', resumeData.personalInfo.title);
     
     resumeService.autoSave(
       currentResumeId,
       selectedTemplateId,
       resumeData,
       (savedResume: SavedResume) => {
+        console.log('Auto-save successful, saved resume:', savedResume.id);
         setCurrentResumeId(savedResume.id);
         setAutoSaveStatus('saved');
         
@@ -330,27 +368,32 @@ const ResumeBuilder: React.FC = () => {
   const handleSelectTemplate = (templateId: string) => {
     setSelectedTemplateId(templateId);
     setStep(BuilderStep.PERSONAL_INFO);
+    
+    // Only clear the form data if we don't have existing resume data
+    // This prevents data loss when user changes template on existing resume
+    if (!currentResumeId && !hasStartedEditing) {
+      setResumeData({
+        personalInfo: {
+          name: user?.name || '',
+          title: '',
+          email: user?.email || '',
+          phone: '',
+          location: '',
+          website: '',
+          summary: '',
+          profileImage: user?.avatar || ''
+        },
+        experience: [],
+        education: [],
+        skills: [],
+        projects: [],
+        certifications: [],
+        languages: [],
+        achievements: []
+      });
+    }
+    
     setHasStartedEditing(true);
-    // Clear the form data when user starts editing
-    setResumeData({
-      personalInfo: {
-        name: user?.name || '',
-        title: '',
-        email: user?.email || '',
-        phone: '',
-        location: '',
-        website: '',
-        summary: '',
-        profileImage: user?.avatar || ''
-      },
-      experience: [],
-      education: [],
-      skills: [],
-      projects: [],
-      certifications: [],
-      languages: [],
-      achievements: []
-    });
   };
   
   const handleUpdatePersonalInfo = (personalInfo: ResumeData['personalInfo']) => {
@@ -753,6 +796,14 @@ const ResumeBuilder: React.FC = () => {
 
   return (
     <div className="container mx-auto py-8">
+      {/* Local Storage Warning */}
+      {storageInfo.localResumeCount > 0 && (
+        <LocalStorageWarning 
+          resumeCount={storageInfo.localResumeCount} 
+          className="mb-6"
+        />
+      )}
+      
       <Card className="mb-6">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -760,6 +811,12 @@ const ResumeBuilder: React.FC = () => {
               <CardTitle className="text-2xl flex items-center">
                 <FileText className="mr-2 h-6 w-6 text-primary" />
                 Resume Builder
+                {currentResumeId && (
+                  <StorageIndicator 
+                    isLocal={currentResumeId.startsWith('local_')} 
+                    className="ml-3"
+                  />
+                )}
               </CardTitle>
               <CardDescription className="flex items-center gap-2">
                 Create a professional resume in minutes with our easy-to-use builder
@@ -770,7 +827,12 @@ const ResumeBuilder: React.FC = () => {
                   </span>
                 )}
                 {autoSaveStatus === 'saved' && (
-                  <span className="text-xs text-green-600">✓ Saved</span>
+                  <span className="text-xs text-green-600 flex items-center">
+                    ✓ Saved
+                    {currentResumeId?.startsWith('local_') && (
+                      <span className="ml-1 text-orange-600">(locally)</span>
+                    )}
+                  </span>
                 )}
                 {autoSaveStatus === 'error' && (
                   <span className="text-xs text-red-600">⚠ Save failed</span>

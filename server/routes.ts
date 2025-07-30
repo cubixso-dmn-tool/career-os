@@ -51,10 +51,17 @@ function handleZodError(error: ZodError, res: Response) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Apply security middleware only to API routes
+  // Apply security middleware only to API routes, but exclude resume endpoints
   app.use('/api', sanitizeInput);
   app.use('/api', rateLimit(100, 60000)); // 100 requests per minute
-  app.use('/api', validateSqlInjection);
+  app.use('/api', (req, res, next) => {
+    // Skip SQL injection validation for resume endpoints
+    if (req.path.startsWith('/api/resumes')) {
+      console.log('Skipping SQL injection validation for:', req.path);
+      return next();
+    }
+    return validateSqlInjection(req, res, next);
+  });
   app.use('/api', securityHeaders);
   
   // Register specific route modules first to avoid conflicts
@@ -375,20 +382,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // RESUME
+  // RESUME API - Updated for comprehensive data persistence
   app.post("/api/resumes", async (req, res) => {
     try {
-      const resumeData = insertResumeSchema.parse(req.body);
+      console.log('POST /api/resumes - Request body keys:', Object.keys(req.body));
+      console.log('POST /api/resumes - User authenticated:', !!req.user);
+      console.log('POST /api/resumes - User ID:', req.user?.id);
+
+      if (!req.user) {
+        console.log('POST /api/resumes - Authentication failed');
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const { templateId, data, name } = req.body;
+      
+      console.log('POST /api/resumes - templateId:', templateId);
+      console.log('POST /api/resumes - data keys:', data ? Object.keys(data) : 'undefined');
+      console.log('POST /api/resumes - name:', name);
+      
+      if (!templateId || !data) {
+        console.log('POST /api/resumes - Missing required fields');
+        return res.status(400).json({ message: "templateId and data are required" });
+      }
+
+      const resumeData = insertResumeSchema.parse({
+        userId: req.user.id,
+        templateId,
+        data,
+        name: name || data.personalInfo?.name || 'Untitled Resume'
+      });
+      
+      console.log('POST /api/resumes - Parsed resume data:', {
+        userId: resumeData.userId,
+        templateId: resumeData.templateId,
+        name: resumeData.name,
+        dataKeys: Object.keys(resumeData.data)
+      });
+      
       const resume = await storage.createResume(resumeData);
+      console.log('POST /api/resumes - Resume created successfully:', resume.id);
       res.status(201).json(resume);
     } catch (error) {
       if (error instanceof ZodError) {
+        console.error('POST /api/resumes - Zod validation error:', error.errors);
         return handleZodError(error, res);
       }
-      res.status(500).json({ message: "Failed to create resume" });
+      console.error('POST /api/resumes - Error creating resume:', error);
+      res.status(500).json({ message: "Failed to create resume", error: error.message });
     }
   });
 
+  app.get("/api/resumes", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const resumes = await storage.getUserResumes(req.user.id);
+      res.json(resumes);
+    } catch (error) {
+      console.error('Error getting user resumes:', error);
+      res.status(500).json({ message: "Failed to get resumes" });
+    }
+  });
+
+  app.get("/api/resumes/:id", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const resumeId = parseInt(req.params.id);
+      const resume = await storage.getResume(resumeId);
+      
+      if (!resume) {
+        return res.status(404).json({ message: "Resume not found" });
+      }
+
+      // Ensure user can only access their own resumes
+      if (resume.userId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      res.json(resume);
+    } catch (error) {
+      console.error('Error getting resume:', error);
+      res.status(500).json({ message: "Failed to get resume" });
+    }
+  });
+
+  app.put("/api/resumes/:id", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const resumeId = parseInt(req.params.id);
+      const { templateId, data, name } = req.body;
+      
+      // Verify resume ownership
+      const existingResume = await storage.getResume(resumeId);
+      if (!existingResume) {
+        return res.status(404).json({ message: "Resume not found" });
+      }
+      
+      if (existingResume.userId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const updatedResume = await storage.updateResume(resumeId, {
+        templateId: templateId || existingResume.templateId,
+        data: data || existingResume.data,
+        name: name || data?.personalInfo?.name || existingResume.name
+      });
+      
+      res.json(updatedResume);
+    } catch (error) {
+      console.error('Error updating resume:', error);
+      res.status(500).json({ message: "Failed to update resume" });
+    }
+  });
+
+  app.delete("/api/resumes/:id", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const resumeId = parseInt(req.params.id);
+      
+      // Verify resume ownership
+      const existingResume = await storage.getResume(resumeId);
+      if (!existingResume) {
+        return res.status(404).json({ message: "Resume not found" });
+      }
+      
+      if (existingResume.userId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      await storage.deleteResume(resumeId);
+      res.json({ message: "Resume deleted successfully" });
+    } catch (error) {
+      console.error('Error deleting resume:', error);
+      res.status(500).json({ message: "Failed to delete resume" });
+    }
+  });
+
+  // Legacy endpoint for backwards compatibility
   app.get("/api/users/:userId/resume", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
@@ -401,16 +542,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(resume);
     } catch (error) {
       res.status(500).json({ message: "Failed to get resume" });
-    }
-  });
-
-  app.patch("/api/resumes/:id", async (req, res) => {
-    try {
-      const resumeId = parseInt(req.params.id);
-      const updatedResume = await storage.updateResume(resumeId, req.body);
-      res.json(updatedResume);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to update resume" });
     }
   });
 

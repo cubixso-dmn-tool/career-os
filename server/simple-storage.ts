@@ -69,8 +69,10 @@ export interface IStorage {
   // Resume operations
   getResume(id: number): Promise<Resume | undefined>;
   getResumeByUser(userId: number): Promise<Resume | undefined>;
+  getUserResumes(userId: number): Promise<Resume[]>;
   createResume(resume: InsertResume): Promise<Resume>;
   updateResume(id: number, updates: Partial<Resume>): Promise<Resume>;
+  deleteResume(id: number): Promise<void>;
 
   // Post operations
   getPost(id: number): Promise<Post | undefined>;
@@ -375,17 +377,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getResumeByUser(userId: number): Promise<Resume | undefined> {
-    const [resume] = await db.select().from(resumes).where(eq(resumes.userId, userId));
+    const [resume] = await db
+      .select()
+      .from(resumes)
+      .where(eq(resumes.userId, userId))
+      .orderBy(desc(resumes.updatedAt));
     return resume || undefined;
   }
 
+  async getUserResumes(userId: number): Promise<Resume[]> {
+    const userResumes = await db
+      .select()
+      .from(resumes)
+      .where(eq(resumes.userId, userId))
+      .orderBy(desc(resumes.updatedAt));
+    return userResumes;
+  }
+
   async createResume(insertResume: InsertResume): Promise<Resume> {
-    const resumeData = {
-      ...insertResume,
-      updatedAt: new Date()
-    };
-    
-    const [resume] = await db.insert(resumes).values(resumeData).returning();
+    const [resume] = await db.insert(resumes).values(insertResume).returning();
     return resume;
   }
 
@@ -403,6 +413,10 @@ export class DatabaseStorage implements IStorage {
     
     if (!updatedResume) throw new Error("Resume not found");
     return updatedResume;
+  }
+
+  async deleteResume(id: number): Promise<void> {
+    await db.delete(resumes).where(eq(resumes.id, id));
   }
 
   // Post operations

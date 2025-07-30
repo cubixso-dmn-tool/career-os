@@ -79,6 +79,9 @@ const ProjectsForm: React.FC<ProjectsFormProps> = ({ initialData, onSubmit, onBa
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [newTechTag, setNewTechTag] = useState('');
   
+  // State for custom "Other" project type
+  const [customProjectType, setCustomProjectType] = useState('');
+  
   // Empty project template
   const emptyProject: Project = {
     id: '',
@@ -99,14 +102,53 @@ const ProjectsForm: React.FC<ProjectsFormProps> = ({ initialData, onSubmit, onBa
       id: `proj-${Date.now()}`
     });
     setEditIndex(null);
+    setCustomProjectType('');
     setIsDialogOpen(true);
   };
   
   // Open dialog for editing an existing project
   const handleEditProject = (index: number) => {
-    setCurrentProject({...projects[index]});
+    const project = projects[index];
+    setCurrentProject({...project});
     setEditIndex(index);
+    
+    // Check if project type has custom "Other" value
+    if (project.type?.startsWith('Other - ')) {
+      setCustomProjectType(project.type.replace('Other - ', ''));
+    } else {
+      setCustomProjectType('');
+    }
+    
     setIsDialogOpen(true);
+  };
+
+  // Handle project type selection with custom "Other" support
+  const handleProjectTypeChange = (value: string) => {
+    if (!currentProject) return;
+    
+    if (value === 'Other') {
+      setCurrentProject({
+        ...currentProject,
+        type: customProjectType ? `Other - ${customProjectType}` : 'Other'
+      });
+    } else {
+      setCurrentProject({
+        ...currentProject,
+        type: value
+      });
+      setCustomProjectType(''); // Clear custom input when selecting predefined option
+    }
+  };
+
+  // Handle custom project type input
+  const handleCustomProjectTypeChange = (value: string) => {
+    setCustomProjectType(value);
+    if (currentProject && (currentProject.type === 'Other' || currentProject.type?.startsWith('Other - '))) {
+      setCurrentProject({
+        ...currentProject,
+        type: value ? `Other - ${value}` : 'Other'
+      });
+    }
   };
   
   // Delete a project
@@ -321,8 +363,8 @@ const ProjectsForm: React.FC<ProjectsFormProps> = ({ initialData, onSubmit, onBa
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Project Type</label>
                   <Select
-                    value={currentProject.type}
-                    onValueChange={(value) => setCurrentProject({...currentProject, type: value})}
+                    value={currentProject.type?.startsWith('Other - ') ? 'Other' : currentProject.type}
+                    onValueChange={handleProjectTypeChange}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select project type" />
@@ -335,6 +377,17 @@ const ProjectsForm: React.FC<ProjectsFormProps> = ({ initialData, onSubmit, onBa
                       ))}
                     </SelectContent>
                   </Select>
+                  
+                  {/* Custom project type input when "Other" is selected */}
+                  {(currentProject.type === 'Other' || currentProject.type?.startsWith('Other - ')) && (
+                    <div className="mt-2">
+                      <Input
+                        placeholder="Enter custom project type (e.g., Research Project, AI Chatbot)"
+                        value={customProjectType}
+                        onChange={(e) => handleCustomProjectTypeChange(e.target.value)}
+                      />
+                    </div>
+                  )}
                 </div>
                 
                 <div className="space-y-2">

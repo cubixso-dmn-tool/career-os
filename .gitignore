@@ -6,3 +6,6 @@ vite.config.ts.*
 *.tar.gz
 .env
 .vercel
+.env.example
+.env.local
+.env*
