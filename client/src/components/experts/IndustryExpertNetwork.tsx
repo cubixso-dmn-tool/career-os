@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ExpertConnectionModal from './ExpertConnectionModal';
+import ExpertChatInterface from './ExpertChatInterface';
 import { 
   Users, 
   Calendar, 
@@ -109,6 +111,10 @@ export default function IndustryExpertNetwork() {
   const [selectedExpert, setSelectedExpert] = useState<IndustryExpert | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIndustry, setSelectedIndustry] = useState<string>('');
+  const [connectionModalOpen, setConnectionModalOpen] = useState(false);
+  const [chatInterfaceOpen, setChatInterfaceOpen] = useState(false);
+  const [currentConnectionId, setCurrentConnectionId] = useState<number | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<number>(1); // TODO: Get from auth context
   const { toast } = useToast();
 
   useEffect(() => {
@@ -160,6 +166,26 @@ export default function IndustryExpertNetwork() {
     }
   };
 
+  const handleConnectClick = (expert: IndustryExpert) => {
+    setSelectedExpert(expert);
+    setConnectionModalOpen(true);
+  };
+
+  const handleConnectionSuccess = (connectionId: number) => {
+    setCurrentConnectionId(connectionId);
+    setConnectionModalOpen(false);
+    setChatInterfaceOpen(true);
+  };
+
+  const handleCloseConnectionModal = () => {
+    setConnectionModalOpen(false);
+    setSelectedExpert(null);
+  };
+
+  const handleCloseChatInterface = () => {
+    setChatInterfaceOpen(false);
+    setCurrentConnectionId(null);
+  };
 
   const registerForEvent = async (eventId: number) => {
     try {
@@ -361,7 +387,7 @@ export default function IndustryExpertNetwork() {
                           <Button 
                             size="sm" 
                             className="flex-1"
-                            onClick={() => setSelectedExpert(expert)}
+                            onClick={() => handleConnectClick(expert)}
                           >
                             <UserPlus className="h-4 w-4 mr-1" />
                             Connect
@@ -540,6 +566,22 @@ export default function IndustryExpertNetwork() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Connection Modal */}
+      <ExpertConnectionModal
+        expert={selectedExpert}
+        isOpen={connectionModalOpen}
+        onClose={handleCloseConnectionModal}
+        onConnect={handleConnectionSuccess}
+      />
+
+      {/* Chat Interface */}
+      <ExpertChatInterface
+        connectionId={currentConnectionId}
+        isOpen={chatInterfaceOpen}
+        onClose={handleCloseChatInterface}
+        currentUserId={currentUserId}
+      />
     </div>
   );
 }

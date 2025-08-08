@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "../db.js";
-import { industryExperts, expertSessions } from "../../shared/schema.js";
-import { eq, sql, and, desc } from "drizzle-orm";
+import { industryExperts, expertSessions, expertConnections, expertMessages } from "../../shared/schema.js";
+import { eq, sql, and, desc, or } from "drizzle-orm";
 
 // Interfaces for type checking
 interface CareerSuccessStory {
@@ -645,6 +645,348 @@ router.post("/experts/:id/mentorship", async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: "Failed to book mentorship session" 
+    });
+  }
+});
+
+// EXPERT CONNECTIONS
+// Create new connection
+router.post("/connect", async (req, res) => {
+  try {
+    const userId = (req.user as any)?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Authentication required" 
+      });
+    }
+
+    const { expertId, connectionType, purpose, message } = req.body;
+
+    if (!expertId || !connectionType || !purpose) {
+      return res.status(400).json({
+        success: false,
+        message: "Expert ID, connection type, and purpose are required"
+      });
+    }
+
+    // Check if expert exists and is active
+    const expert = await db
+      .select()
+      .from(industryExperts)
+      .where(and(
+        eq(industryExperts.id, expertId),
+        eq(industryExperts.isActive, true)
+      ))
+      .limit(1);
+
+    if (expert.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Expert not found or inactive"
+      });
+    }
+
+    // Check if connection already exists
+    const existingConnection = await db
+      .select()
+      .from(expertConnections)
+      .where(and(
+        eq(expertConnections.expertId, expertId),
+        eq(expertConnections.userId, userId),
+        eq(expertConnections.status, 'active')
+      ))
+      .limit(1);
+
+    if (existingConnection.length > 0) {
+      return res.json({
+        success: true,
+        connectionId: existingConnection[0].id,
+        message: "Connection already exists"
+      });
+    }
+
+    // Create new connection
+    const [newConnection] = await db
+      .insert(expertConnections)
+      .values({
+        expertId,
+        userId,
+        connectionType,
+        purpose,
+        message
+      })
+      .returning();
+
+    // Send initial message if provided
+    if (message && message.trim()) {
+      await db
+        .insert(expertMessages)
+        .values({
+          connectionId: newConnection.id,
+          senderId: userId,
+          receiverId: expert[0].userId || expertId, // Use expert's user ID if available
+          message: message.trim()
+        });
+    }
+
+    res.json({ 
+      success: true, 
+      connectionId: newConnection.id,
+      connection: newConnection,
+      message: "Connection established successfully" 
+    });
+  } catch (error) {
+    console.error("Error creating connection:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to create connection" 
+    });
+  }
+});
+
+// Get user's connections
+router.get("/connections", async (req, res) => {
+  try {
+    const userId = (req.user as any)?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Authentication required" 
+      });
+    }
+
+    // Get connections with expert details
+    const connections = await db
+      .select({
+        id: expertConnections.id,
+        expertId: expertConnections.expertId,
+        connectionType: expertConnections.connectionType,
+        status: expertConnections.status,
+        purpose: expertConnections.purpose,
+        createdAt: expertConnections.createdAt,
+        lastActivityAt: expertConnections.lastActivityAt,
+        // Expert details
+        expertName: industryExperts.name,
+        expertTitle: industryExperts.title,
+        expertCompany: industryExperts.company,
+        expertAvatar: industryExperts.avatar,
+        expertIndustry: industryExperts.industry
+      })
+      .from(expertConnections)
+      .leftJoin(industryExperts, eq(expertConnections.expertId, industryExperts.id))
+      .where(eq(expertConnections.userId, userId))
+      .orderBy(desc(expertConnections.lastActivityAt));
+
+    res.json({ 
+      success: true, 
+      connections 
+    });
+  } catch (error) {
+    console.error("Error fetching connections:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to fetch connections" 
+    });
+  }
+});
+
+// Get messages for a connection
+router.get("/connections/:id/messages", async (req, res) => {
+  try {
+    const userId = (req.user as any)?.id;
+    const connectionId = parseInt(req.params.id);
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Authentication required" 
+      });
+    }
+
+    if (isNaN(connectionId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid connection ID"
+      });
+    }
+
+    // Verify user has access to this connection
+    const connection = await db
+      .select()
+      .from(expertConnections)
+      .where(and(
+        eq(expertConnections.id, connectionId),
+        or(
+          eq(expertConnections.userId, userId),
+          eq(expertConnections.expertId, userId) // In case user is an expert
+        )
+      ))
+      .limit(1);
+
+    if (connection.length === 0) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied to this connection"
+      });
+    }
+
+    // Get messages
+    const messages = await db
+      .select()
+      .from(expertMessages)
+      .where(eq(expertMessages.connectionId, connectionId))
+      .orderBy(expertMessages.createdAt);
+
+    // Mark messages as read for the current user
+    await db
+      .update(expertMessages)
+      .set({ isRead: true })
+      .where(and(
+        eq(expertMessages.connectionId, connectionId),
+        eq(expertMessages.receiverId, userId),
+        eq(expertMessages.isRead, false)
+      ));
+
+    res.json({ 
+      success: true, 
+      messages 
+    });
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to fetch messages" 
+    });
+  }
+});
+
+// Send message
+router.post("/connections/:id/messages", async (req, res) => {
+  try {
+    const userId = (req.user as any)?.id;
+    const connectionId = parseInt(req.params.id);
+    const { message, messageType = 'text' } = req.body;
+    
+    console.log('POST /messages - connectionId:', connectionId, 'userId:', userId, 'message:', message);
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Authentication required" 
+      });
+    }
+
+    if (isNaN(connectionId) || !message?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid connection ID or empty message"
+      });
+    }
+
+    // Verify user has access to this connection
+    // First, check if user is the regular user in the connection
+    let connection = await db
+      .select()
+      .from(expertConnections)
+      .where(and(
+        eq(expertConnections.id, connectionId),
+        eq(expertConnections.userId, userId),
+        eq(expertConnections.status, 'active')
+      ))
+      .limit(1);
+
+    // If not found, check if user is the expert (by checking if their userId matches any expert's userId)
+    if (connection.length === 0) {
+      connection = await db
+        .select({
+          id: expertConnections.id,
+          expertId: expertConnections.expertId,
+          userId: expertConnections.userId,
+          connectionType: expertConnections.connectionType,
+          status: expertConnections.status,
+          purpose: expertConnections.purpose,
+          message: expertConnections.message,
+          createdAt: expertConnections.createdAt,
+          lastActivityAt: expertConnections.lastActivityAt
+        })
+        .from(expertConnections)
+        .innerJoin(industryExperts, eq(expertConnections.expertId, industryExperts.id))
+        .where(and(
+          eq(expertConnections.id, connectionId),
+          eq(industryExperts.userId, userId),
+          eq(expertConnections.status, 'active')
+        ))
+        .limit(1);
+    }
+
+    if (connection.length === 0) {
+      console.log('Connection not found for connectionId:', connectionId, 'userId:', userId);
+      return res.status(403).json({
+        success: false,
+        message: "Connection not found or inactive"
+      });
+    }
+    
+    console.log('Found connection:', connection[0]);
+
+    // Determine receiver ID
+    let receiverId;
+    if (connection[0].userId === userId) {
+      // User is sending to expert, get expert's user_id
+      const expert = await db
+        .select({ userId: industryExperts.userId })
+        .from(industryExperts)
+        .where(eq(industryExperts.id, connection[0].expertId))
+        .limit(1);
+      
+      if (expert.length === 0 || !expert[0].userId) {
+        console.log('Expert not found or not linked to user:', expert);
+        return res.status(400).json({
+          success: false,
+          message: "Expert account not properly linked"
+        });
+      }
+      receiverId = expert[0].userId;
+      console.log('User sending to expert, receiverId:', receiverId);
+    } else {
+      // Expert is sending to user
+      receiverId = connection[0].userId;
+      console.log('Expert sending to user, receiverId:', receiverId);
+    }
+    
+    console.log('About to insert message with senderId:', userId, 'receiverId:', receiverId);
+
+    // Insert message
+    const [newMessage] = await db
+      .insert(expertMessages)
+      .values({
+        connectionId,
+        senderId: userId,
+        receiverId,
+        message: message.trim(),
+        messageType
+      })
+      .returning();
+
+    // Update connection's last activity
+    await db
+      .update(expertConnections)
+      .set({ lastActivityAt: new Date() })
+      .where(eq(expertConnections.id, connectionId));
+
+    res.json({ 
+      success: true, 
+      message: newMessage 
+    });
+  } catch (error) {
+    console.error("Error sending message:", error);
+    console.error("Error details:", error?.message, error?.code, error?.detail);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to send message" 
     });
   }
 });

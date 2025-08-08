@@ -1,0 +1,822 @@
+{
+  "careerPaths": {
+    "full-stack-developer": {
+      "id": "full-stack-developer",
+      "title": "Full Stack Developer",
+      "category": "Software Development",
+      "description": "Design and develop both front-end and back-end components of web applications",
+      "estimatedDuration": "6-12 months",
+      "salaryRange": {
+        "min": 400000,
+        "max": 1500000,
+        "currency": "INR"
+      },
+      "overview": {
+        "intro": "Full Stack Developers are versatile tech professionals who can work on all aspects of application development. In India's rapidly growing tech industry, full stack developers are highly sought after for their ability to handle end-to-end development.",
+        "marketDemand": "Very High",
+        "growth": "25% year-over-year",
+        "successStories": [
+          "Arjun Reddy transitioned from a backend role to full stack and now works remotely for a US-based company at 3x his previous salary.",
+          "Many Indian full stack developers have successfully launched their own startups or work as high-earning freelancers serving global clients."
+        ]
+      },
+      "roadmapSteps": [
+        {
+          "id": "fundamentals",
+          "title": "Programming Fundamentals",
+          "order": 1,
+          "icon": "Target",
+          "description": "Build a strong foundation in programming concepts and web development basics",
+          "estimatedTime": "4-6 weeks",
+          "difficulty": "Beginner",
+          "status": "locked",
+          "tasks": [
+            "Learn HTML5 semantic markup and accessibility",
+            "Master CSS3 including Flexbox and Grid",
+            "Understand JavaScript ES6+ fundamentals",
+            "Practice with DOM manipulation and events",
+            "Build responsive design principles"
+          ],
+          "skills": ["HTML5", "CSS3", "JavaScript", "Responsive Design", "Git"],
+          "resources": {
+            "courses": [
+              {
+                "name": "Web Development Fundamentals",
+                "provider": "FreeCodeCamp",
+                "duration": "40 hours",
+                "type": "free",
+                "link": "https://www.freecodecamp.org/learn/responsive-web-design/"
+              }
+            ],
+            "books": [
+              {
+                "title": "HTML and CSS: Design and Build Websites",
+                "author": "Jon Duckett",
+                "difficulty": "Beginner"
+              }
+            ],
+            "projects": [
+              {
+                "name": "Personal Portfolio Website",
+                "description": "Create a responsive personal website showcasing your skills",
+                "difficulty": "Beginner",
+                "estimatedTime": "1 week"
+              }
+            ]
+          },
+          "prerequisites": [],
+          "completionCriteria": [
+            "Build 3 responsive web pages",
+            "Complete JavaScript fundamentals assessment",
+            "Set up Git repository and version control"
+          ]
+        },
+        {
+          "id": "frontend-framework",
+          "title": "Frontend Framework Mastery",
+          "order": 2,
+          "icon": "Zap",
+          "description": "Master modern frontend frameworks and state management",
+          "estimatedTime": "6-8 weeks",
+          "difficulty": "Intermediate",
+          "status": "locked",
+          "tasks": [
+            "Learn React.js fundamentals and hooks",
+            "Understand component lifecycle and state management",
+            "Master React Router for navigation",
+            "Implement state management with Redux or Context API",
+            "Learn modern development tools and workflows"
+          ],
+          "skills": ["React.js", "Redux", "React Router", "Webpack", "NPM"],
+          "resources": {
+            "courses": [
+              {
+                "name": "React - The Complete Guide",
+                "provider": "Udemy",
+                "duration": "60 hours",
+                "type": "paid",
+                "price": 3499
+              }
+            ],
+            "books": [
+              {
+                "title": "Learning React",
+                "author": "Alex Banks & Eve Porcello",
+                "difficulty": "Intermediate"
+              }
+            ],
+            "projects": [
+              {
+                "name": "Todo App with React",
+                "description": "Build a full-featured todo application with CRUD operations",
+                "difficulty": "Intermediate",
+                "estimatedTime": "2 weeks"
+              }
+            ]
+          },
+          "prerequisites": ["fundamentals"],
+          "completionCriteria": [
+            "Build 2 React applications",
+            "Implement state management",
+            "Deploy to production"
+          ]
+        },
+        {
+          "id": "backend-development",
+          "title": "Backend Development",
+          "order": 3,
+          "icon": "BookOpen",
+          "description": "Learn server-side development, databases, and API creation",
+          "estimatedTime": "8-10 weeks",
+          "difficulty": "Intermediate",
+          "status": "locked",
+          "tasks": [
+            "Learn Node.js and Express.js fundamentals",
+            "Understand RESTful API design principles",
+            "Master database operations with MongoDB/PostgreSQL",
+            "Implement authentication and authorization",
+            "Learn about security best practices"
+          ],
+          "skills": ["Node.js", "Express.js", "MongoDB", "PostgreSQL", "JWT", "API Design"],
+          "resources": {
+            "courses": [
+              {
+                "name": "Node.js Backend Development",
+                "provider": "Coursera",
+                "duration": "50 hours",
+                "type": "paid",
+                "price": 4999
+              }
+            ],
+            "books": [
+              {
+                "title": "Node.js Design Patterns",
+                "author": "Mario Casciaro",
+                "difficulty": "Advanced"
+              }
+            ],
+            "projects": [
+              {
+                "name": "REST API for Blog Platform",
+                "description": "Create a complete backend API with authentication and CRUD operations",
+                "difficulty": "Intermediate",
+                "estimatedTime": "3 weeks"
+              }
+            ]
+          },
+          "prerequisites": ["frontend-framework"],
+          "completionCriteria": [
+            "Build REST API with authentication",
+            "Implement database operations",
+            "Deploy backend to cloud"
+          ]
+        },
+        {
+          "id": "full-stack-project",
+          "title": "Full Stack Integration",
+          "order": 4,
+          "icon": "Code",
+          "description": "Combine frontend and backend to build complete applications",
+          "estimatedTime": "6-8 weeks",
+          "difficulty": "Advanced",
+          "status": "locked",
+          "tasks": [
+            "Connect React frontend with Node.js backend",
+            "Implement real-time features with WebSockets",
+            "Add file upload and media handling",
+            "Implement advanced features like search and filtering",
+            "Optimize performance and add monitoring"
+          ],
+          "skills": ["Full Stack Integration", "WebSockets", "File Upload", "Performance Optimization"],
+          "resources": {
+            "courses": [
+              {
+                "name": "MERN Stack Development",
+                "provider": "Udemy",
+                "duration": "80 hours",
+                "type": "paid",
+                "price": 5999
+              }
+            ],
+            "projects": [
+              {
+                "name": "E-commerce Platform",
+                "description": "Build a complete e-commerce application with payment integration",
+                "difficulty": "Advanced",
+                "estimatedTime": "6 weeks"
+              }
+            ]
+          },
+          "prerequisites": ["backend-development"],
+          "completionCriteria": [
+            "Deploy full stack application",
+            "Implement real-time features",
+            "Add payment integration"
+          ]
+        },
+        {
+          "id": "deployment-devops",
+          "title": "Deployment & DevOps",
+          "order": 5,
+          "icon": "FileText",
+          "description": "Learn deployment, CI/CD, and production best practices",
+          "estimatedTime": "4-6 weeks",
+          "difficulty": "Intermediate",
+          "status": "locked",
+          "tasks": [
+            "Learn cloud deployment with AWS/Vercel/Netlify",
+            "Set up CI/CD pipelines",
+            "Implement monitoring and logging",
+            "Understand containerization with Docker",
+            "Learn about scalability and performance optimization"
+          ],
+          "skills": ["AWS", "Docker", "CI/CD", "Monitoring", "Performance Optimization"],
+          "resources": {
+            "courses": [
+              {
+                "name": "DevOps for Full Stack Developers",
+                "provider": "Pluralsight",
+                "duration": "30 hours",
+                "type": "paid"
+              }
+            ],
+            "projects": [
+              {
+                "name": "Production Deployment Pipeline",
+                "description": "Set up automated deployment for your full stack application",
+                "difficulty": "Intermediate",
+                "estimatedTime": "2 weeks"
+              }
+            ]
+          },
+          "prerequisites": ["full-stack-project"],
+          "completionCriteria": [
+            "Deploy application to cloud",
+            "Set up CI/CD pipeline",
+            "Implement monitoring"
+          ]
+        },
+        {
+          "id": "advanced-topics",
+          "title": "Advanced Topics & Specialization",
+          "order": 6,
+          "icon": "Users",
+          "description": "Explore advanced topics and choose your specialization",
+          "estimatedTime": "Ongoing",
+          "difficulty": "Advanced",
+          "status": "locked",
+          "tasks": [
+            "Learn advanced React patterns and performance optimization",
+            "Explore microservices architecture",
+            "Study advanced database concepts",
+            "Learn about system design principles",
+            "Choose specialization (frontend, backend, or DevOps focus)"
+          ],
+          "skills": ["System Design", "Microservices", "Advanced React", "Database Design"],
+          "resources": {
+            "courses": [
+              {
+                "name": "System Design for Developers",
+                "provider": "Educative",
+                "duration": "40 hours",
+                "type": "paid"
+              }
+            ],
+            "projects": [
+              {
+                "name": "Scalable Social Media Platform",
+                "description": "Build a complex application handling thousands of concurrent users",
+                "difficulty": "Advanced",
+                "estimatedTime": "8 weeks"
+              }
+            ]
+          },
+          "prerequisites": ["deployment-devops"],
+          "completionCriteria": [
+            "Build scalable application",
+            "Demonstrate system design knowledge",
+            "Choose and develop specialization"
+          ]
+        }
+      ],
+      "learningResources": {
+        "recommendedBooks": [
+          {
+            "title": "You Don't Know JS (series)",
+            "author": "Kyle Simpson",
+            "category": "JavaScript",
+            "difficulty": "Intermediate",
+            "description": "Deep dive into JavaScript concepts"
+          },
+          {
+            "title": "Clean Code",
+            "author": "Robert C. Martin",
+            "category": "Programming",
+            "difficulty": "Intermediate",
+            "description": "Best practices for writing maintainable code"
+          },
+          {
+            "title": "System Design Interview",
+            "author": "Alex Xu",
+            "category": "System Design",
+            "difficulty": "Advanced",
+            "description": "Comprehensive guide to system design"
+          }
+        ],
+        "onlineResources": [
+          {
+            "name": "MDN Web Docs",
+            "type": "Documentation",
+            "description": "Comprehensive web development documentation",
+            "url": "https://developer.mozilla.org",
+            "isFree": true
+          },
+          {
+            "name": "Stack Overflow",
+            "type": "Community",
+            "description": "Q&A platform for developers",
+            "url": "https://stackoverflow.com",
+            "isFree": true
+          },
+          {
+            "name": "GitHub",
+            "type": "Platform",
+            "description": "Code repository and collaboration platform",
+            "url": "https://github.com",
+            "isFree": true
+          }
+        ],
+        "practiceplatforms": [
+          {
+            "name": "LeetCode",
+            "type": "Coding Practice",
+            "description": "Algorithm and data structure problems",
+            "url": "https://leetcode.com",
+            "isFree": false,
+            "focus": "Problem Solving"
+          },
+          {
+            "name": "HackerRank",
+            "type": "Coding Practice",
+            "description": "Programming challenges and contests",
+            "url": "https://hackerrank.com",
+            "isFree": true,
+            "focus": "Programming Skills"
+          }
+        ]
+      },
+      "networking": {
+        "communities": [
+          "Full Stack Developers India",
+          "React India",
+          "Node.js India",
+          "JavaScript Developers India"
+        ],
+        "events": [
+          "ReactConf India",
+          "JSFoo",
+          "DevFest",
+          "Local meetups and hackathons"
+        ],
+        "tips": [
+          "Create a portfolio showcasing full-stack projects",
+          "Contribute to open-source projects",
+          "Attend hackathons and coding competitions",
+          "Join developer meetups both online and offline",
+          "Build a professional GitHub profile",
+          "Share your learning journey through blogs or social media"
+        ]
+      },
+      "careerProgression": {
+        "entryLevel": {
+          "title": "Junior Full Stack Developer",
+          "salary": "4-8 LPA",
+          "experience": "0-2 years",
+          "responsibilities": [
+            "Develop features under supervision",
+            "Fix bugs and minor enhancements",
+            "Write unit tests",
+            "Participate in code reviews"
+          ]
+        },
+        "midLevel": {
+          "title": "Full Stack Developer",
+          "salary": "8-15 LPA",
+          "experience": "2-5 years",
+          "responsibilities": [
+            "Lead feature development",
+            "Make architectural decisions",
+            "Mentor junior developers",
+            "Work directly with stakeholders"
+          ]
+        },
+        "seniorLevel": {
+          "title": "Senior Full Stack Developer / Tech Lead",
+          "salary": "15-30+ LPA",
+          "experience": "5+ years",
+          "responsibilities": [
+            "Design system architecture",
+            "Lead development teams",
+            "Drive technical strategy",
+            "Evaluate and adopt new technologies"
+          ]
+        }
+      },
+      "industryInsights": {
+        "topCompaniesHiring": [
+          "FAANG (Google, Meta, Amazon, etc.)",
+          "Indian Unicorns (Zomato, Swiggy, Paytm, etc.)",
+          "Product Companies (Atlassian, Adobe, Microsoft)",
+          "Consulting Firms (TCS, Infosys, Wipro)",
+          "Startups across various domains"
+        ],
+        "emergingTrends": [
+          "JAMstack Architecture",
+          "Serverless Development",
+          "Progressive Web Apps",
+          "Micro-frontends",
+          "GraphQL adoption"
+        ],
+        "mustHaveSkills2024": [
+          "React/Vue.js/Angular",
+          "Node.js/Python/Java backend",
+          "Cloud platforms (AWS/Azure/GCP)",
+          "Docker and containerization",
+          "CI/CD pipelines"
+        ]
+      }
+    },
+    "data-scientist": {
+      "id": "data-scientist",
+      "title": "Data Scientist",
+      "category": "Data & AI",
+      "description": "Apply advanced analytics and machine learning to solve complex business problems",
+      "estimatedDuration": "8-12 months",
+      "salaryRange": {
+        "min": 600000,
+        "max": 2500000,
+        "currency": "INR"
+      },
+      "roadmapSteps": [
+        {
+          "id": "math-stats-foundation",
+          "title": "Mathematics & Statistics Foundation",
+          "order": 1,
+          "icon": "Target",
+          "description": "Build strong mathematical foundation essential for data science",
+          "estimatedTime": "6-8 weeks",
+          "difficulty": "Intermediate",
+          "status": "locked",
+          "tasks": [
+            "Linear Algebra fundamentals",
+            "Statistics and Probability theory",
+            "Calculus basics for optimization",
+            "Descriptive and Inferential Statistics",
+            "Hypothesis Testing"
+          ],
+          "skills": ["Linear Algebra", "Statistics", "Probability", "Calculus"],
+          "prerequisites": [],
+          "completionCriteria": [
+            "Complete statistics assessment",
+            "Solve 50+ probability problems",
+            "Understand matrix operations"
+          ]
+        },
+        {
+          "id": "programming-tools",
+          "title": "Programming & Tools",
+          "order": 2,
+          "icon": "Code",
+          "description": "Master essential programming languages and data science tools",
+          "estimatedTime": "8-10 weeks",
+          "difficulty": "Intermediate",
+          "status": "locked",
+          "tasks": [
+            "Python for Data Science (Pandas, NumPy)",
+            "R Programming basics",
+            "SQL for data manipulation",
+            "Jupyter Notebooks and development environment",
+            "Git for version control"
+          ],
+          "skills": ["Python", "R", "SQL", "Jupyter", "Pandas", "NumPy"],
+          "prerequisites": ["math-stats-foundation"],
+          "completionCriteria": [
+            "Complete 10 data manipulation projects",
+            "Write complex SQL queries",
+            "Build data analysis scripts"
+          ]
+        },
+        {
+          "id": "data-visualization",
+          "title": "Data Visualization & EDA",
+          "order": 3,
+          "icon": "BookOpen",
+          "description": "Learn to explore, clean, and visualize data effectively",
+          "estimatedTime": "4-6 weeks",
+          "difficulty": "Intermediate",
+          "status": "locked",
+          "tasks": [
+            "Matplotlib and Seaborn for Python",
+            "ggplot2 for R",
+            "Tableau/Power BI fundamentals",
+            "Data cleaning and preprocessing",
+            "Exploratory Data Analysis techniques"
+          ],
+          "skills": ["Matplotlib", "Seaborn", "Tableau", "Data Cleaning", "EDA"],
+          "prerequisites": ["programming-tools"],
+          "completionCriteria": [
+            "Create 5 comprehensive visualizations",
+            "Complete EDA on 3 datasets",
+            "Build interactive dashboard"
+          ]
+        },
+        {
+          "id": "machine-learning",
+          "title": "Machine Learning",
+          "order": 4,
+          "icon": "Zap",
+          "description": "Master machine learning algorithms and model building",
+          "estimatedTime": "10-12 weeks",
+          "difficulty": "Advanced",
+          "status": "locked",
+          "tasks": [
+            "Supervised learning algorithms",
+            "Unsupervised learning techniques",
+            "Model evaluation and validation",
+            "Feature engineering and selection",
+            "Hyperparameter tuning"
+          ],
+          "skills": ["Scikit-learn", "Model Building", "Feature Engineering", "Cross-validation"],
+          "prerequisites": ["data-visualization"],
+          "completionCriteria": [
+            "Build 5 different ML models",
+            "Complete Kaggle competition",
+            "Achieve 80%+ accuracy on test project"
+          ]
+        },
+        {
+          "id": "deep-learning",
+          "title": "Deep Learning & Advanced ML",
+          "order": 5,
+          "icon": "FileText",
+          "description": "Explore deep learning and advanced machine learning techniques",
+          "estimatedTime": "8-10 weeks",
+          "difficulty": "Advanced",
+          "status": "locked",
+          "tasks": [
+            "Neural Networks fundamentals",
+            "TensorFlow/PyTorch basics",
+            "Convolutional Neural Networks",
+            "Natural Language Processing",
+            "Time Series Analysis"
+          ],
+          "skills": ["TensorFlow", "PyTorch", "Neural Networks", "CNN", "NLP"],
+          "prerequisites": ["machine-learning"],
+          "completionCriteria": [
+            "Build neural network from scratch",
+            "Complete image classification project",
+            "Implement NLP application"
+          ]
+        },
+        {
+          "id": "deployment-production",
+          "title": "Model Deployment & Production",
+          "order": 6,
+          "icon": "Users",
+          "description": "Learn to deploy models and work in production environments",
+          "estimatedTime": "6-8 weeks",
+          "difficulty": "Advanced",
+          "status": "locked",
+          "tasks": [
+            "MLOps fundamentals",
+            "Model deployment with Flask/FastAPI",
+            "Cloud platforms (AWS/GCP/Azure)",
+            "Model monitoring and maintenance",
+            "A/B testing for ML models"
+          ],
+          "skills": ["MLOps", "Flask", "FastAPI", "AWS", "Model Monitoring"],
+          "prerequisites": ["deep-learning"],
+          "completionCriteria": [
+            "Deploy model to production",
+            "Set up monitoring pipeline",
+            "Implement A/B testing"
+          ]
+        }
+      ]
+    },
+    "ui-ux-designer": {
+      "id": "ui-ux-designer",
+      "title": "UI/UX Designer",
+      "category": "Design",
+      "description": "Create user-centered designs and experiences for digital products",
+      "estimatedDuration": "6-9 months",
+      "salaryRange": {
+        "min": 350000,
+        "max": 1200000,
+        "currency": "INR"
+      },
+      "roadmapSteps": [
+        {
+          "id": "design-fundamentals",
+          "title": "Design Fundamentals",
+          "order": 1,
+          "icon": "Target",
+          "description": "Learn core design principles and visual design basics",
+          "estimatedTime": "4-6 weeks",
+          "difficulty": "Beginner",
+          "status": "locked",
+          "tasks": [
+            "Color theory and psychology",
+            "Typography principles",
+            "Layout and composition",
+            "Design principles (contrast, hierarchy, etc.)",
+            "Basic drawing and sketching"
+          ],
+          "skills": ["Color Theory", "Typography", "Layout Design", "Visual Hierarchy"],
+          "prerequisites": [],
+          "completionCriteria": [
+            "Create 10 design compositions",
+            "Complete color theory assessment",
+            "Design typography poster"
+          ]
+        },
+        {
+          "id": "design-tools",
+          "title": "Design Tools Mastery",
+          "order": 2,
+          "icon": "Code",
+          "description": "Master industry-standard design tools and software",
+          "estimatedTime": "4-6 weeks",
+          "difficulty": "Beginner",
+          "status": "locked",
+          "tasks": [
+            "Figma for UI design and prototyping",
+            "Adobe Creative Suite (Photoshop, Illustrator)",
+            "Sketch (optional)",
+            "Design systems and component libraries",
+            "Collaborative design workflows"
+          ],
+          "skills": ["Figma", "Adobe Creative Suite", "Design Systems", "Prototyping"],
+          "prerequisites": ["design-fundamentals"],
+          "completionCriteria": [
+            "Complete 5 Figma projects",
+            "Build component library",
+            "Create interactive prototype"
+          ]
+        },
+        {
+          "id": "user-research",
+          "title": "User Research & Psychology",
+          "order": 3,
+          "icon": "BookOpen",
+          "description": "Understand users through research and behavioral psychology",
+          "estimatedTime": "6-8 weeks",
+          "difficulty": "Intermediate",
+          "status": "locked",
+          "tasks": [
+            "User research methodologies",
+            "Creating user personas and journey maps",
+            "Conducting user interviews",
+            "Usability testing principles",
+            "Psychology of user behavior"
+          ],
+          "skills": ["User Research", "Personas", "Journey Mapping", "Usability Testing"],
+          "prerequisites": ["design-tools"],
+          "completionCriteria": [
+            "Conduct 5 user interviews",
+            "Create comprehensive persona set",
+            "Complete usability test"
+          ]
+        },
+        {
+          "id": "interaction-design",
+          "title": "Interaction & Interface Design",
+          "order": 4,
+          "icon": "Zap",
+          "description": "Design intuitive interactions and user interfaces",
+          "estimatedTime": "8-10 weeks",
+          "difficulty": "Intermediate",
+          "status": "locked",
+          "tasks": [
+            "Information architecture principles",
+            "Wireframing and low-fidelity prototyping",
+            "Interaction design patterns",
+            "Micro-interactions and animations",
+            "Accessibility and inclusive design"
+          ],
+          "skills": ["Information Architecture", "Wireframing", "Interaction Design", "Accessibility"],
+          "prerequisites": ["user-research"],
+          "completionCriteria": [
+            "Design complete user flow",
+            "Create high-fidelity mockups",
+            "Build interactive prototype"
+          ]
+        },
+        {
+          "id": "advanced-prototyping",
+          "title": "Advanced Prototyping & Testing",
+          "order": 5,
+          "icon": "FileText",
+          "description": "Create advanced prototypes and validate designs through testing",
+          "estimatedTime": "6-8 weeks",
+          "difficulty": "Advanced",
+          "status": "locked",
+          "tasks": [
+            "Advanced prototyping techniques",
+            "A/B testing for design decisions",
+            "Design validation methodologies",
+            "Collaborative design processes",
+            "Design handoff to development"
+          ],
+          "skills": ["Advanced Prototyping", "A/B Testing", "Design Validation", "Design Handoff"],
+          "prerequisites": ["interaction-design"],
+          "completionCriteria": [
+            "Build complex interactive prototype",
+            "Conduct A/B test on design",
+            "Complete design-to-development handoff"
+          ]
+        },
+        {
+          "id": "portfolio-career",
+          "title": "Portfolio & Career Development",
+          "order": 6,
+          "icon": "Users",
+          "description": "Build professional portfolio and develop career skills",
+          "estimatedTime": "4-6 weeks",
+          "difficulty": "Intermediate",
+          "status": "locked",
+          "tasks": [
+            "Create compelling design portfolio",
+            "Case study documentation",
+            "Personal branding for designers",
+            "Interview preparation",
+            "Networking and community building"
+          ],
+          "skills": ["Portfolio Development", "Case Studies", "Personal Branding", "Networking"],
+          "prerequisites": ["advanced-prototyping"],
+          "completionCriteria": [
+            "Launch professional portfolio",
+            "Document 3 detailed case studies",
+            "Present design work professionally"
+          ]
+        }
+      ]
+    }
+  },
+  "userProgress": {
+    "userId": "sample-user-123",
+    "selectedCareerPath": "full-stack-developer",
+    "currentStep": 1,
+    "completedSteps": [],
+    "inProgressSteps": ["fundamentals"],
+    "startDate": "2024-01-15T00:00:00Z",
+    "lastActivity": "2024-01-20T10:30:00Z",
+    "statistics": {
+      "totalSteps": 6,
+      "completedSteps": 0,
+      "progressPercentage": 0,
+      "coursesCompleted": 0,
+      "projectsCompleted": 0,
+      "hoursLogged": 25,
+      "streakDays": 5
+    },
+    "achievements": [
+      {
+        "id": "first-commit",
+        "title": "First Commit",
+        "description": "Made your first Git commit",
+        "unlockedAt": "2024-01-16T00:00:00Z",
+        "icon": "🚀"
+      }
+    ],
+    "personalizedRecommendations": [
+      {
+        "type": "resource",
+        "title": "JavaScript Fundamentals Course",
+        "description": "Based on your learning pace, we recommend this course",
+        "priority": "high"
+      }
+    ]
+  },
+  "assessmentData": {
+    "careerPathId": "full-stack-developer",
+    "assessmentScore": 85,
+    "strengths": ["Problem Solving", "Logical Thinking", "Continuous Learning"],
+    "areasForImprovement": ["System Design", "Database Optimization"],
+    "personalityTraits": ["Detail-oriented", "Team Player", "Self-motivated"],
+    "recommendedLearningStyle": "hands-on",
+    "estimatedTimeToCompletion": "8-10 months"
+  },
+  "metadata": {
+    "version": "1.0",
+    "lastUpdated": "2024-01-20T00:00:00Z",
+    "dataSource": "CareerCompass Platform",
+    "supportedFeatures": [
+      "progress tracking",
+      "personalized recommendations",
+      "achievement system",
+      "community integration",
+      "mentor matching"
+    ]
+  }
+}

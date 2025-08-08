@@ -415,6 +415,33 @@ export const expertAvailability = pgTable("expert_availability", {
   sessionTypes: text("session_types").array().notNull() // ["mentoring", "qa", "lecture"]
 });
 
+// Expert Connection & Payment Tables
+export const expertConnections = pgTable("expert_connections", {
+  id: serial("id").primaryKey(),
+  expertId: integer("expert_id").notNull().references(() => industryExperts.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  connectionType: text("connection_type").notNull(), // "chat", "mentorship", "consultation"
+  status: text("status").default("active").notNull(), // "active", "closed", "blocked"
+  purpose: text("purpose").notNull(), // User's reason for connecting
+  message: text("message"), // Initial connection message
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastActivityAt: timestamp("last_activity_at").defaultNow()
+});
+
+export const expertMessages = pgTable("expert_messages", {
+  id: serial("id").primaryKey(),
+  connectionId: integer("connection_id").notNull().references(() => expertConnections.id),
+  senderId: integer("sender_id").notNull().references(() => users.id),
+  receiverId: integer("receiver_id").notNull().references(() => users.id),
+  message: text("message").notNull(),
+  messageType: text("message_type").default("text").notNull(), // "text", "image", "file", "voice"
+  attachmentUrl: text("attachment_url"),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  editedAt: timestamp("edited_at")
+});
+
+
 // Project Collaboration Tables
 export const communityProjects = pgTable("community_projects", {
   id: serial("id").primaryKey(),
@@ -787,6 +814,8 @@ export const insertCareerSuccessStorySchema = createInsertSchema(careerSuccessSt
 export const insertNetworkingEventSchema = createInsertSchema(networkingEvents).omit({ id: true, createdAt: true, currentAttendees: true });
 export const insertCollegeEventRegistrationSchema = createInsertSchema(collegeEventRegistrations).omit({ id: true, registeredAt: true });
 export const insertExpertMentorshipSchema = createInsertSchema(expertMentorship).omit({ id: true, createdAt: true });
+export const insertExpertConnectionSchema = createInsertSchema(expertConnections).omit({ id: true, createdAt: true, lastActivityAt: true });
+export const insertExpertMessageSchema = createInsertSchema(expertMessages).omit({ id: true, createdAt: true, editedAt: true });
 export const insertExpertAvailabilitySchema = createInsertSchema(expertAvailability).omit({ id: true });
 
 // Career Guide schemas
@@ -897,6 +926,12 @@ export type SessionRegistration = typeof sessionRegistrations.$inferSelect;
 
 export type InsertExpertQnaSession = z.infer<typeof insertExpertQnaSessionSchema>;
 export type ExpertQnaSession = typeof expertQnaSessions.$inferSelect;
+
+export type InsertExpertConnection = z.infer<typeof insertExpertConnectionSchema>;
+export type ExpertConnection = typeof expertConnections.$inferSelect;
+
+export type InsertExpertMessage = z.infer<typeof insertExpertMessageSchema>;
+export type ExpertMessage = typeof expertMessages.$inferSelect;
 
 export type InsertCareerSuccessStory = z.infer<typeof insertCareerSuccessStorySchema>;
 export type CareerSuccessStory = typeof careerSuccessStories.$inferSelect;
