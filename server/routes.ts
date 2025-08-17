@@ -23,6 +23,7 @@ import {
   chatWithPathFinder
 } from "./lib/openai.js";
 import communityRoutes from "./routes/community.js";
+import communityFeaturesRoutes from "./routes/community-features.js";
 import rbacRoutes from "./routes/rbac.js";
 import careerRoutes from "./routes/career.js";
 import careerRoadmapRoutes from "./routes/career-roadmap.js";
@@ -83,6 +84,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/auth-advanced', authAdvancedRoutes);
   app.use('/api/admin-logs', adminLogsRoutes);
   app.use('/api/rbac', rbacRoutes);
+  app.use('/api/community-features', communityFeaturesRoutes);
   app.use('/api', communityRoutes);
   
   // Load user roles middleware

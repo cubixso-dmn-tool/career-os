@@ -388,6 +388,21 @@ export const eventRegistrations = pgTable("event_registrations", {
   interests: text("interests").array()
 });
 
+// Community Feature Cards - for admin managed content
+export const communityFeatureCards = pgTable("community_feature_cards", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  imageUrl: text("image_url"),
+  redirectUrl: text("redirect_url").notNull(), // External link to redirect to
+  category: text("category").notNull(), // "communities", "projects", "events", "competitions"
+  isActive: boolean("is_active").default(true).notNull(),
+  displayOrder: integer("display_order").default(0),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
 export const expertMentorship = pgTable("expert_mentorship", {
   id: serial("id").primaryKey(),
   expertId: integer("expert_id").notNull().references(() => industryExperts.id),
@@ -804,6 +819,7 @@ export const insertCommunityMemberSchema = createInsertSchema(communityMembers).
 export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({ id: true, likes: true, replies: true, createdAt: true, updatedAt: true, userId: true, communityId: true });
 export const insertCommunityPostCommentSchema = createInsertSchema(communityPostComments).omit({ id: true, createdAt: true, updatedAt: true, userId: true, postId: true });
 export const insertModerationActionSchema = createInsertSchema(moderationActions).omit({ id: true, createdAt: true });
+export const insertCommunityFeatureCardSchema = createInsertSchema(communityFeatureCards).omit({ id: true, createdAt: true, updatedAt: true });
 
 // Industry Expert Network schemas
 export const insertIndustryExpertSchema = createInsertSchema(industryExperts).omit({ id: true, joinedAt: true, rating: true, totalSessions: true });
@@ -913,6 +929,9 @@ export type CommunityPostComment = typeof communityPostComments.$inferSelect;
 
 export type InsertModerationAction = z.infer<typeof insertModerationActionSchema>;
 export type ModerationAction = typeof moderationActions.$inferSelect;
+
+export type InsertCommunityFeatureCard = z.infer<typeof insertCommunityFeatureCardSchema>;
+export type CommunityFeatureCard = typeof communityFeatureCards.$inferSelect;
 
 // Industry Expert Network types
 export type InsertIndustryExpert = z.infer<typeof insertIndustryExpertSchema>;

@@ -29,6 +29,8 @@ import AdminModeration from "@/pages/AdminModeration";
 import AdminExpertManagement from "@/pages/AdminExpertManagement";
 import AdminSessionManagement from "@/pages/AdminSessionManagement";
 import AdminCareerManagement from "@/pages/AdminCareerManagement";
+import AdminCommunityManagement from "@/pages/AdminCommunityManagement";
+import CommunityDashboardSimple from "@/pages/CommunityDashboardSimple";
 
 import { AuthProvider } from "@/hooks/use-auth-context";
 import { LearningModeProvider } from "@/hooks/use-learning-mode";
@@ -83,7 +85,7 @@ function Router() {
       </Route>
       <Route path="/community">
         <ProtectedRoute>
-          <CommunityHub />
+          <CommunityDashboardSimple />
         </ProtectedRoute>
       </Route>
       <Route path="/community-hub">
@@ -159,6 +161,16 @@ function Router() {
       <Route path="/careers">
         <ProtectedRoute>
           <AdminCareerManagement />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin/community">
+        <ProtectedRoute>
+          <AdminCommunityManagement />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/community-dashboard">
+        <ProtectedRoute>
+          <CommunityDashboardSimple />
         </ProtectedRoute>
       </Route>
 

@@ -39,7 +39,8 @@ import {
   Globe,
   Zap,
   Database,
-  Bell
+  Bell,
+  FolderOpen
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -329,6 +330,7 @@ export default function AdminDashboard() {
                   <TabsTrigger value="experts">Experts</TabsTrigger>
                   <TabsTrigger value="sessions">Sessions</TabsTrigger>
                   <TabsTrigger value="careers">Careers</TabsTrigger>
+                  <TabsTrigger value="community">Community</TabsTrigger>
                   <TabsTrigger value="content">Content</TabsTrigger>
                   <TabsTrigger value="analytics">Analytics</TabsTrigger>
                 </TabsList>
@@ -629,6 +631,103 @@ export default function AdminDashboard() {
                               <li>• Skill-based career roadmaps</li>
                               <li>• Assessment questions and matching algorithms</li>
                               <li>• Course and resource recommendations</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Community Management Tab */}
+                <TabsContent value="community">
+                  <Card className="shadow-lg border-0">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            <Users className="h-5 w-5 text-purple-600" />
+                            Community Feature Management
+                          </CardTitle>
+                          <CardDescription>Manage community cards displayed to users</CardDescription>
+                        </div>
+                        <Link href="/admin/community">
+                          <Button className="bg-purple-600 hover:bg-purple-700">
+                            <Users className="h-4 w-4 mr-2" />
+                            Manage Community
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-100 rounded-lg">
+                              <Users className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600">Communities</p>
+                              <p className="text-lg font-semibold">Manage Cards</p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-500">Create and manage community group cards</p>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-green-100 rounded-lg">
+                              <FolderOpen className="h-5 w-5 text-green-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600">Projects</p>
+                              <p className="text-lg font-semibold">Project Cards</p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-500">Manage collaborative project opportunities</p>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-orange-100 rounded-lg">
+                              <Calendar className="h-5 w-5 text-orange-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600">Events</p>
+                              <p className="text-lg font-semibold">Event Cards</p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-500">Create and promote community events</p>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-purple-100 rounded-lg">
+                              <Crown className="h-5 w-5 text-purple-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600">Competitions</p>
+                              <p className="text-lg font-semibold">Contest Cards</p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-500">Showcase competitions and challenges</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                        <div className="flex items-start gap-3">
+                          <Users className="h-5 w-5 text-purple-600 mt-0.5" />
+                          <div>
+                            <h4 className="font-medium text-purple-900">Community Management Features</h4>
+                            <p className="text-sm text-purple-700 mt-1">
+                              Create and manage community feature cards that redirect users to external platforms. 
+                              Each card can have a title, description, image, and redirect URL that opens in a new tab.
+                            </p>
+                            <ul className="text-sm text-purple-600 mt-2 space-y-1">
+                              <li>• Community group cards with external links</li>
+                              <li>• Project collaboration opportunities</li>
+                              <li>• Event promotion and registration</li>
+                              <li>• Competition and challenge showcases</li>
                             </ul>
                           </div>
                         </div>

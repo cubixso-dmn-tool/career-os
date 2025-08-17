@@ -33,7 +33,7 @@ interface SidebarProps {
 export default function Sidebar({ user }: SidebarProps) {
   const [location] = useLocation();
   const { isCollapsed, toggleCollapse } = useSidebar();
-  const { primaryRole } = useUserRole();
+  const { primaryRole, isLoading } = useUserRole();
 
   // Define role-specific navigation items
   const getNavItems = () => {
@@ -58,6 +58,7 @@ export default function Sidebar({ user }: SidebarProps) {
         { path: "/admin-users", icon: Users, label: "User Management" },
         { path: "/experts", icon: ContactRound, label: "Expert Network" },
         { path: "/careers", icon: BriefcaseBusiness, label: "Career Management" },
+        { path: "/admin/community", icon: MessageSquare, label: "Community Management" },
         { path: "/admin-analytics", icon: BarChart3, label: "Analytics" },
         { path: "/admin-moderation", icon: MessageSquare, label: "Moderation" },
         { path: "/admin-content", icon: FileText, label: "Content" },

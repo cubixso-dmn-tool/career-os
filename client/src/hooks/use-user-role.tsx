@@ -6,11 +6,16 @@ export function useUserRole() {
   const { user } = useAuthContext();
   const queryClient = useQueryClient();
   
-  // Clear any existing role cache when user changes
+  // Only clear role cache when user actually changes (not on every render)
   useEffect(() => {
-    if (user?.id) {
-      console.log('🗑️ Clearing role cache for user:', user.id);
+    // Only clear cache if we have a user ID and it's different from the cached one
+    const cachedUserId = queryClient.getQueryData(['/api/rbac/my-info', 'user-id']);
+    if (user?.id && cachedUserId && cachedUserId !== user.id) {
+      console.log('🗑️ User changed, clearing role cache. Old:', cachedUserId, 'New:', user.id);
       queryClient.removeQueries({ queryKey: ['/api/rbac/my-info'] });
+    }
+    if (user?.id) {
+      queryClient.setQueryData(['/api/rbac/my-info', 'user-id'], user.id);
     }
   }, [user?.id, queryClient]);
   
@@ -95,41 +100,61 @@ export function useUserRole() {
       return data;
     },
     enabled: !!user, // Only run query if user is authenticated
-    staleTime: 0, // Don't cache role data to ensure fresh data on each load
-    gcTime: 0, // Updated property name for cache garbage collection time
-    refetchOnMount: true, // Always refetch when component mounts
-    refetchOnWindowFocus: true, // Refetch when window regains focus
+    staleTime: 5 * 60 * 1000, // Cache role data for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep cache for 10 minutes
+    refetchOnMount: false, // Don't always refetch on mount - use cache if available
+    refetchOnWindowFocus: false, // Don't refetch on window focus to prevent flickering
   });
 
   // Determine the primary role (highest priority role)
   const getPrimaryRole = () => {
     console.log('🎭 Determining primary role from data:', roleData);
     
-    if (!roleData?.roles || roleData.roles.length === 0) {
-      console.log('⚠️ No roles found, defaulting to student');
-      return 'student'; // Default role
+    // Check if we have cached data even during loading
+    const cachedData = queryClient.getQueryData(['/api/rbac/my-info', user?.id]);
+    const dataToUse = roleData || cachedData;
+    
+    if (!dataToUse?.roles || dataToUse.roles.length === 0) {
+      // Only default to student if we're not loading and have no cached data
+      if (!isLoading) {
+        console.log('⚠️ No roles found, defaulting to student');
+        return 'student';
+      }
+      // If still loading and no cached data, try to maintain previous state
+      const previousRole = queryClient.getQueryData(['user-primary-role']) as string;
+      if (previousRole) {
+        console.log('⏳ Using previous role during loading:', previousRole);
+        return previousRole;
+      }
+      console.log('⏳ Role data still loading, defaulting to student');
+      return 'student'; // Safe default
     }
 
     // Role hierarchy: admin > moderator > mentor > student
     // Role mappings: 1 = admin, 2 = moderator, 3 = mentor, 4 = student
     
-    const roleIds = roleData.roles;
+    const roleIds = dataToUse.roles;
     console.log('🔢 Role IDs from API:', roleIds);
+    
+    let determinedRole = 'student';
     
     if (roleIds.includes(1)) {
       console.log('👑 Primary role determined: admin');
-      return 'admin';
-    }
-    if (roleIds.includes(2)) {
+      determinedRole = 'admin';
+    } else if (roleIds.includes(2)) {
       console.log('🛡️ Primary role determined: moderator');
-      return 'moderator';
-    }
-    if (roleIds.includes(3)) {
+      determinedRole = 'moderator';
+    } else if (roleIds.includes(3)) {
       console.log('👨‍🎓 Primary role determined: mentor');
-      return 'mentor';
+      determinedRole = 'mentor';
+    } else {
+      console.log('📚 Primary role determined: student (default)');
+      determinedRole = 'student';
     }
-    console.log('📚 Primary role determined: student (default)');
-    return 'student';
+    
+    // Cache the determined role for stability
+    queryClient.setQueryData(['user-primary-role'], determinedRole);
+    return determinedRole;
   };
 
   const checkPermission = (permission: string): boolean => {
