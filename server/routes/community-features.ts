@@ -10,7 +10,9 @@ const router = Router();
 const createCardSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100, 'Title too long'),
   description: z.string().min(1, 'Description is required').max(500, 'Description too long'),
-  imageUrl: z.string().url('Invalid image URL').optional(),
+  imageUrl: z.string().optional().refine((val) => !val || val === '' || z.string().url().safeParse(val).success, {
+    message: 'Invalid image URL'
+  }),
   redirectUrl: z.string().url('Invalid redirect URL'),
   category: z.enum(['communities', 'projects', 'events', 'competitions']),
   displayOrder: z.number().int().min(0).default(0),
@@ -111,6 +113,7 @@ router.post('/admin/cards', async (req, res) => {
     const [card] = await db.insert(communityFeatureCards)
       .values({
         ...validatedData,
+        imageUrl: validatedData.imageUrl === '' ? null : validatedData.imageUrl,
         createdBy: req.user.id
       })
       .returning();
@@ -142,6 +145,7 @@ router.put('/admin/cards/:id', async (req, res) => {
     const [updatedCard] = await db.update(communityFeatureCards)
       .set({
         ...validatedData,
+        imageUrl: validatedData.imageUrl === '' ? null : validatedData.imageUrl,
         updatedAt: new Date()
       })
       .where(eq(communityFeatureCards.id, cardId))

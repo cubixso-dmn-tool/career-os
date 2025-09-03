@@ -246,19 +246,29 @@ const ResumeBuilder: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   
+  console.log('🔍 ResumeBuilder render - User:', user?.name || 'No user', 'Step:', step, 'Loading:', isLoading);
+  
   // Load existing resume data on component mount
   useEffect(() => {
     const loadResumeData = async () => {
+      console.log('🚀 ResumeBuilder: Starting to load resume data');
+      
+      // Add a timeout to prevent infinite loading
+      const loadingTimeout = setTimeout(() => {
+        console.warn('⚠️ ResumeBuilder: Loading timeout reached, forcing component to render');
+        setIsLoading(false);
+      }, 5000);
+
       try {
         if (user) {
-          console.log('Loading resume data for user:', user.id);
+          console.log('👤 Loading resume data for user:', user.id);
           const userResumes = await resumeService.getUserResumes();
-          console.log('Found resumes:', userResumes.length);
+          console.log('📄 Found resumes:', userResumes.length);
           
           if (userResumes.length > 0) {
             // Load the most recent resume
             const latestResume = userResumes[0];
-            console.log('Loading latest resume:', latestResume.id, 'with data:', latestResume.data.personalInfo);
+            console.log('📋 Loading latest resume:', latestResume.id, 'with data:', latestResume.data.personalInfo);
             setCurrentResumeId(latestResume.id);
             setSelectedTemplateId(latestResume.templateId);
             setResumeData(latestResume.data);
@@ -269,7 +279,7 @@ const ResumeBuilder: React.FC = () => {
               setStep(BuilderStep.PERSONAL_INFO);
             }
           } else {
-            console.log('No existing resumes found, setting up with user basic info');
+            console.log('🆕 No existing resumes found, setting up with user basic info');
             // No existing resume, set up with user's basic info
             setResumeData(prevData => ({
               ...prevData,
@@ -282,12 +292,12 @@ const ResumeBuilder: React.FC = () => {
             }));
           }
         } else {
-          console.log('No user found, checking localStorage for resumes');
+          console.log('🏠 No user found, checking localStorage for resumes');
           // No user, but check localStorage for any local resumes
           const localResumes = await resumeService.getUserResumes();
           if (localResumes.length > 0) {
             const latestResume = localResumes[0];
-            console.log('Loading local resume:', latestResume.id);
+            console.log('💾 Loading local resume:', latestResume.id);
             setCurrentResumeId(latestResume.id);
             setSelectedTemplateId(latestResume.templateId);
             setResumeData(latestResume.data);
@@ -297,16 +307,20 @@ const ResumeBuilder: React.FC = () => {
             if (latestResume.data.personalInfo.name) {
               setStep(BuilderStep.PERSONAL_INFO);
             }
+          } else {
+            console.log('🎯 No resumes found, starting fresh');
           }
         }
       } catch (error) {
-        console.error('Error loading resume data:', error);
+        console.error('❌ Error loading resume data:', error);
         toast({
           title: "Error loading resume",
           description: "Could not load your existing resume data. Starting fresh.",
           variant: "destructive",
         });
       } finally {
+        clearTimeout(loadingTimeout);
+        console.log('✅ ResumeBuilder: Loading complete, setting isLoading to false');
         setIsLoading(false);
       }
     };
@@ -777,7 +791,7 @@ const ResumeBuilder: React.FC = () => {
     }
   };
   
-  // Show loading state while fetching resume data
+  // Show loading state while fetching resume data - with fallback
   if (isLoading) {
     return (
       <div className="container mx-auto py-8">
@@ -787,6 +801,18 @@ const ResumeBuilder: React.FC = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
               <h3 className="text-lg font-medium mb-2">Loading your resume...</h3>
               <p className="text-gray-600 text-center">We're fetching your saved resume data</p>
+              <div className="mt-6">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    console.log('🔧 User clicked skip loading');
+                    setIsLoading(false);
+                    setStep(BuilderStep.SELECT_TEMPLATE);
+                  }}
+                >
+                  Skip Loading & Start Fresh
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -797,7 +823,7 @@ const ResumeBuilder: React.FC = () => {
   return (
     <div className="container mx-auto py-8">
       {/* Local Storage Warning */}
-      {storageInfo.localResumeCount > 0 && (
+      {storageInfo?.localResumeCount > 0 && (
         <LocalStorageWarning 
           resumeCount={storageInfo.localResumeCount} 
           className="mb-6"
@@ -811,32 +837,9 @@ const ResumeBuilder: React.FC = () => {
               <CardTitle className="text-2xl flex items-center">
                 <FileText className="mr-2 h-6 w-6 text-primary" />
                 Resume Builder
-                {currentResumeId && (
-                  <StorageIndicator 
-                    isLocal={currentResumeId.startsWith('local_')} 
-                    className="ml-3"
-                  />
-                )}
               </CardTitle>
-              <CardDescription className="flex items-center gap-2">
+              <CardDescription>
                 Create a professional resume in minutes with our easy-to-use builder
-                {autoSaveStatus === 'saving' && (
-                  <span className="text-xs text-gray-500 flex items-center">
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary mr-1"></div>
-                    Saving...
-                  </span>
-                )}
-                {autoSaveStatus === 'saved' && (
-                  <span className="text-xs text-green-600 flex items-center">
-                    ✓ Saved
-                    {currentResumeId?.startsWith('local_') && (
-                      <span className="ml-1 text-orange-600">(locally)</span>
-                    )}
-                  </span>
-                )}
-                {autoSaveStatus === 'error' && (
-                  <span className="text-xs text-red-600">⚠ Save failed</span>
-                )}
               </CardDescription>
             </div>
             

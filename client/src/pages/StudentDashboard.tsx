@@ -26,7 +26,8 @@ import {
   Lightbulb,
   Heart,
   Flame,
-  Gift
+  Gift,
+  File
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -227,7 +228,7 @@ export default function StudentDashboard() {
                     </div>
 
                     {/* Learning Milestones */}
-                    <div className="space-y-4">
+                    {/* <div className="space-y-4">
                       <h4 className="font-semibold text-gray-900">Current Milestones</h4>
                       {(courses.slice(0, 2).map((course: any, index: number) => ({
                         title: course.title,
@@ -277,10 +278,10 @@ export default function StudentDashboard() {
                           </Button>
                         </div>
                       ))}
-                    </div>
+                    </div> */}
 
                     <div className="mt-6 pt-4 border-t border-gray-200">
-                      <Link href="/learning">
+                      <Link href="/career-roadmap">
                         <Button className="w-full">
                           <Target className="h-4 w-4 mr-2" />
                           View Full Learning Path
@@ -291,7 +292,8 @@ export default function StudentDashboard() {
                 </Card>
               </motion.div>
 
-              {/* Today's Learning */}
+              {/* Today's Learning - Hidden for now */}
+              {false && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -350,8 +352,10 @@ export default function StudentDashboard() {
                   </CardContent>
                 </Card>
               </motion.div>
+              )}
 
-              {/* Recent Activity */}
+              {/* Recent Activity - Hidden for now */}
+              {false && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -421,11 +425,13 @@ export default function StudentDashboard() {
                   </CardContent>
                 </Card>
               </motion.div>
+              )}
             </div>
 
             {/* Right Column - Stats & Quick Actions */}
             <div className="space-y-6">
-              {/* Learning Stats */}
+              {/* Learning Stats - Hidden for now */}
+              {false && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -468,6 +474,7 @@ export default function StudentDashboard() {
                   </CardContent>
                 </Card>
               </motion.div>
+              )}
 
               {/* Quick Actions */}
               <motion.div
@@ -483,24 +490,18 @@ export default function StudentDashboard() {
                     <Link href="/career-guide" className="block">
                       <Button variant="outline" size="sm" className="w-full justify-start">
                         <Brain className="h-4 w-4 mr-2" />
-                        Take Career Quiz
-                      </Button>
-                    </Link>
-                    <Link href="/ai-career-coach" className="block">
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <MessageSquare className="h-4 w-4 mr-2" />
                         Ask AI Coach
                       </Button>
                     </Link>
                     <Link href="/community" className="block">
                       <Button variant="outline" size="sm" className="w-full justify-start">
                         <Users className="h-4 w-4 mr-2" />
-                        Join Study Group
+                        Events, Workshops & Webinars
                       </Button>
                     </Link>
                     <Link href="/resume-builder" className="block">
                       <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Award className="h-4 w-4 mr-2" />
+                        <File className="h-4 w-4 mr-2" />
                         Build Resume
                       </Button>
                     </Link>
@@ -508,7 +509,8 @@ export default function StudentDashboard() {
                 </Card>
               </motion.div>
 
-              {/* Achievements */}
+              {/* Achievements - Hidden for now */}
+              {false && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -545,6 +547,7 @@ export default function StudentDashboard() {
                   </CardContent>
                 </Card>
               </motion.div>
+              )}
 
               {/* Motivational Quote */}
               <motion.div
