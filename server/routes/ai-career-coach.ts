@@ -11,8 +11,9 @@ import {
   type LearningPathRequest
 } from "../services/openai.js";
 import { db } from "../db.js";
-import { careerOptions, careerPaths, careerSkills, careerCourses, careerProjects, careerResources } from "../../shared/schema.js";
+import { careerOptions, careerPaths, careerSkills, careerCourses, careerProjects, careerResources, aiCareerChatConversations, aiCareerChatMessages } from "../../shared/schema.js";
 import { eq, desc, sql } from "drizzle-orm";
+import { randomUUID } from "crypto";
 
 const router = Router();
 
@@ -805,6 +806,252 @@ router.post("/chat", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to get chat response",
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Get or Create Chat Conversation
+ * POST /api/ai-career-coach/conversation
+ */
+router.post("/conversation", async (req, res) => {
+  try {
+    const { sessionId, conversationType = "assessment" } = req.body;
+    const userId = req.user ? (req.user as any).id : undefined;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required"
+      });
+    }
+
+    let conversation;
+    
+    if (sessionId) {
+      // Try to get existing conversation
+      const existing = await db.select()
+        .from(aiCareerChatConversations)
+        .where(eq(aiCareerChatConversations.sessionId, sessionId))
+        .limit(1);
+      
+      if (existing.length > 0) {
+        conversation = existing[0];
+      }
+    }
+    
+    if (!conversation) {
+      // Create new conversation
+      const newSessionId = sessionId || randomUUID();
+      const [created] = await db.insert(aiCareerChatConversations)
+        .values({
+          userId,
+          sessionId: newSessionId,
+          conversationType,
+          metadata: {}
+        })
+        .returning();
+      
+      conversation = created;
+    }
+
+    res.json({
+      success: true,
+      conversation
+    });
+  } catch (error: any) {
+    console.error("Conversation creation error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to manage conversation",
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Get Chat History
+ * GET /api/ai-career-coach/conversation/:sessionId/messages
+ */
+router.get("/conversation/:sessionId/messages", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const userId = req.user ? (req.user as any).id : undefined;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required"
+      });
+    }
+
+    // Get conversation
+    const conversation = await db.select()
+      .from(aiCareerChatConversations)
+      .where(eq(aiCareerChatConversations.sessionId, sessionId))
+      .limit(1);
+    
+    if (conversation.length === 0 || conversation[0].userId !== userId) {
+      return res.status(404).json({
+        success: false,
+        message: "Conversation not found"
+      });
+    }
+
+    // Get messages
+    const messages = await db.select()
+      .from(aiCareerChatMessages)
+      .where(eq(aiCareerChatMessages.conversationId, conversation[0].id))
+      .orderBy(aiCareerChatMessages.createdAt);
+
+    res.json({
+      success: true,
+      conversation: conversation[0],
+      messages: messages.map(msg => ({
+        id: msg.id.toString(),
+        role: msg.role as 'user' | 'ai',
+        content: msg.content,
+        timestamp: msg.createdAt,
+        messageType: msg.messageType,
+        metadata: msg.metadata
+      }))
+    });
+  } catch (error: any) {
+    console.error("Get messages error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get chat history",
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Save Chat Message
+ * POST /api/ai-career-coach/conversation/:sessionId/message
+ */
+router.post("/conversation/:sessionId/message", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { role, content, messageType = "text", metadata = {} } = req.body;
+    const userId = req.user ? (req.user as any).id : undefined;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required"
+      });
+    }
+
+    if (!role || !content) {
+      return res.status(400).json({
+        success: false,
+        message: "Role and content are required"
+      });
+    }
+
+    // Get conversation
+    const conversation = await db.select()
+      .from(aiCareerChatConversations)
+      .where(eq(aiCareerChatConversations.sessionId, sessionId))
+      .limit(1);
+    
+    if (conversation.length === 0 || conversation[0].userId !== userId) {
+      return res.status(404).json({
+        success: false,
+        message: "Conversation not found"
+      });
+    }
+
+    // Save message
+    const [message] = await db.insert(aiCareerChatMessages)
+      .values({
+        conversationId: conversation[0].id,
+        role,
+        content,
+        messageType,
+        metadata
+      })
+      .returning();
+
+    // Update conversation timestamp
+    await db.update(aiCareerChatConversations)
+      .set({ updatedAt: new Date() })
+      .where(eq(aiCareerChatConversations.id, conversation[0].id));
+
+    res.json({
+      success: true,
+      message: {
+        id: message.id.toString(),
+        role: message.role as 'user' | 'ai',
+        content: message.content,
+        timestamp: message.createdAt,
+        messageType: message.messageType,
+        metadata: message.metadata
+      }
+    });
+  } catch (error: any) {
+    console.error("Save message error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to save message",
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Update Conversation Metadata
+ * PUT /api/ai-career-coach/conversation/:sessionId/metadata
+ */
+router.put("/conversation/:sessionId/metadata", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { metadata, title, status } = req.body;
+    const userId = req.user ? (req.user as any).id : undefined;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required"
+      });
+    }
+
+    // Get conversation
+    const conversation = await db.select()
+      .from(aiCareerChatConversations)
+      .where(eq(aiCareerChatConversations.sessionId, sessionId))
+      .limit(1);
+    
+    if (conversation.length === 0 || conversation[0].userId !== userId) {
+      return res.status(404).json({
+        success: false,
+        message: "Conversation not found"
+      });
+    }
+
+    // Build update object
+    const updateData: any = { updatedAt: new Date() };
+    if (metadata !== undefined) updateData.metadata = metadata;
+    if (title !== undefined) updateData.title = title;
+    if (status !== undefined) updateData.status = status;
+
+    // Update conversation
+    const [updated] = await db.update(aiCareerChatConversations)
+      .set(updateData)
+      .where(eq(aiCareerChatConversations.id, conversation[0].id))
+      .returning();
+
+    res.json({
+      success: true,
+      conversation: updated
+    });
+  } catch (error: any) {
+    console.error("Update conversation metadata error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update conversation metadata",
       error: error.message
     });
   }

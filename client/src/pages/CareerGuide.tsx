@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Layout from "@/components/layout/Layout";
 import { 
   Card, 
@@ -125,6 +125,9 @@ export default function CareerGuide() {
     experience: '',
     interests: ''
   });
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<number | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -134,17 +137,190 @@ export default function CareerGuide() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Start career assessment
-  const startAssessment = () => {
-    setCurrentStep('assessment');
-    setMessages([{
-      id: '1',
-      role: 'ai',
-      content: `Hi! I'm your AI Career Guide. I'll help you discover the perfect career path based on your interests, skills, and goals. Let's start with a quick assessment.
+  // Initialize or restore conversation on component mount
+  useEffect(() => {
+    initializeConversation();
+  }, []);
 
-${ASSESSMENT_QUESTIONS[0]}`,
+  // Initialize conversation - check for existing session or create new one
+  const initializeConversation = async () => {
+    try {
+      // Check if there's a session in localStorage
+      const savedSessionId = localStorage.getItem('ai-career-chat-session');
+      
+      if (savedSessionId) {
+        // Try to restore existing conversation
+        const response = await apiRequest({
+          url: `/api/ai-career-coach/conversation/${savedSessionId}/messages`,
+          method: 'GET'
+        });
+        
+        if (response.success) {
+          setSessionId(savedSessionId);
+          setConversationId(response.conversation.id);
+          
+          // Restore messages
+          const restoredMessages = response.messages.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }));
+          
+          // Restore state based on conversation metadata
+          const metadata = response.conversation.metadata;
+          let restoredStep = 'welcome';
+          
+          if (metadata) {
+            if (metadata.currentStep) {
+              restoredStep = metadata.currentStep;
+              setCurrentStep(metadata.currentStep);
+            }
+            if (metadata.userResponses) setUserResponses(metadata.userResponses);
+            if (metadata.currentQuestionIndex !== undefined) setCurrentQuestionIndex(metadata.currentQuestionIndex);
+            if (metadata.recommendations) setRecommendations(metadata.recommendations);
+            if (metadata.selectedCareer) setSelectedCareer(metadata.selectedCareer);
+            if (metadata.generatedRoadmap) setGeneratedRoadmap(metadata.generatedRoadmap);
+            if (metadata.userProfile) setUserProfile(metadata.userProfile);
+          }
+          
+          // Set messages after state is restored to prevent conflicts
+          setMessages(restoredMessages);
+          
+          // If we have messages but no step saved, at least move to assessment
+          if (restoredMessages.length > 0 && restoredStep === 'welcome') {
+            setCurrentStep('assessment');
+          }
+          
+          console.log('Conversation restored:', {
+            messages: restoredMessages.length,
+            step: restoredStep,
+            sessionId: savedSessionId
+          });
+          
+          setIsInitializing(false);
+          return;
+        } else {
+          // Session exists but couldn't load - clear it
+          localStorage.removeItem('ai-career-chat-session');
+        }
+      }
+      
+      // If no existing session or failed to restore, we'll create one when starting assessment
+      setIsInitializing(false);
+    } catch (error) {
+      console.error('Failed to initialize conversation:', error);
+      // Clear potentially corrupted session
+      localStorage.removeItem('ai-career-chat-session');
+      setIsInitializing(false);
+    }
+  };
+
+  // Create new conversation session
+  const createConversation = async (conversationType = 'assessment') => {
+    try {
+      const newSessionId = crypto.randomUUID();
+      const response = await apiRequest({
+        url: '/api/ai-career-coach/conversation',
+        method: 'POST',
+        body: {
+          sessionId: newSessionId,
+          conversationType
+        }
+      });
+      
+      if (response.success) {
+        setSessionId(newSessionId);
+        setConversationId(response.conversation.id);
+        localStorage.setItem('ai-career-chat-session', newSessionId);
+        return response.conversation;
+      }
+    } catch (error) {
+      console.error('Failed to create conversation:', error);
+    }
+    return null;
+  };
+
+  // Save message to database
+  const saveMessage = useCallback(async (message: Message) => {
+    if (!sessionId) return;
+    
+    try {
+      await apiRequest({
+        url: `/api/ai-career-coach/conversation/${sessionId}/message`,
+        method: 'POST',
+        body: {
+          role: message.role,
+          content: message.content,
+          messageType: message.role === 'ai' ? 'assessment_question' : 'text',
+          metadata: {}
+        }
+      });
+    } catch (error) {
+      console.error('Failed to save message:', error);
+    }
+  }, [sessionId]);
+
+  // Save conversation state/metadata
+  const saveConversationState = useCallback(async () => {
+    if (!sessionId) return;
+    
+    try {
+      await apiRequest({
+        url: `/api/ai-career-coach/conversation/${sessionId}/metadata`,
+        method: 'PUT',
+        body: {
+          metadata: {
+            currentStep,
+            userResponses,
+            currentQuestionIndex,
+            recommendations,
+            selectedCareer,
+            generatedRoadmap,
+            userProfile
+          },
+          status: currentStep === 'roadmap' ? 'completed' : 'active'
+        }
+      });
+    } catch (error) {
+      console.error('Failed to save conversation state:', error);
+    }
+  }, [sessionId, currentStep, userResponses, currentQuestionIndex, recommendations, selectedCareer, generatedRoadmap, userProfile]);
+
+  // Save state whenever important changes happen
+  useEffect(() => {
+    if (sessionId) {
+      saveConversationState();
+    }
+  }, [currentStep, userResponses, currentQuestionIndex, recommendations, selectedCareer, generatedRoadmap, saveConversationState]);
+
+  // Start career assessment
+  const startAssessment = async () => {
+    // Don't start if we already have messages (restored session)
+    if (messages.length > 0) {
+      console.log('Assessment already in progress, not starting new one');
+      return;
+    }
+    
+    // Create conversation if we don't have one
+    if (!sessionId) {
+      await createConversation('assessment');
+    }
+    
+    setCurrentStep('assessment');
+    const initialMessage = {
+      id: '1',
+      role: 'ai' as const,
+      content: `Hi! I'm your AI Career Guide. I'll help you discover the perfect career path based on your interests, skills, and goals. Let's start with a quick assessment.\n\n${ASSESSMENT_QUESTIONS[0]}`,
       timestamp: new Date()
-    }]);
+    };
+    
+    setMessages([initialMessage]);
+    
+    // Save the initial message
+    setTimeout(() => {
+      if (sessionId) {
+        saveMessage(initialMessage);
+      }
+    }, 100);
   };
 
   // Handle assessment responses
@@ -158,6 +334,9 @@ ${ASSESSMENT_QUESTIONS[0]}`,
 
     setMessages(prev => [...prev, newUserMessage]);
     setUserResponses(prev => [...prev, response]);
+    
+    // Save user message
+    saveMessage(newUserMessage);
 
     if (currentQuestionIndex < ASSESSMENT_QUESTIONS.length - 1) {
       // Continue with next question
@@ -171,6 +350,9 @@ ${ASSESSMENT_QUESTIONS[0]}`,
         };
         setMessages(prev => [...prev, aiMessage]);
         setCurrentQuestionIndex(prev => prev + 1);
+        
+        // Save AI message
+        saveMessage(aiMessage);
       }, 1000);
     } else {
       // Assessment complete, analyze responses
@@ -217,12 +399,17 @@ Return only valid JSON.`;
         setRecommendations(response.recommendations);
         setCurrentStep('recommendations');
         
-        setMessages(prev => [...prev, {
+        const recommendationMessage = {
           id: Date.now().toString(),
-          role: 'ai',
+          role: 'ai' as const,
           content: `Great! Based on your responses, I've analyzed your preferences and generated personalized career recommendations. Here are the top 3 career paths that match your profile:`,
           timestamp: new Date()
-        }]);
+        };
+        
+        setMessages(prev => [...prev, recommendationMessage]);
+        
+        // Save the recommendation message
+        saveMessage(recommendationMessage);
       }
     } catch (error) {
       console.error('Error analyzing assessment:', error);
@@ -279,12 +466,17 @@ Return only valid JSON.`;
         setGeneratedRoadmap(response.roadmap);
         setCurrentStep('roadmap');
         
-        setMessages(prev => [...prev, {
+        const roadmapMessage = {
           id: Date.now().toString(),
-          role: 'ai',
+          role: 'ai' as const,
           content: `Perfect choice! I've created a comprehensive roadmap for becoming a ${career.title}. This personalized plan is based on your assessment and current industry standards.`,
           timestamp: new Date()
-        }]);
+        };
+        
+        setMessages(prev => [...prev, roadmapMessage]);
+        
+        // Save the roadmap message
+        saveMessage(roadmapMessage);
       }
     } catch (error) {
       console.error('Error generating roadmap:', error);
@@ -342,6 +534,9 @@ Return only valid JSON.`;
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setIsLoading(true);
+    
+    // Save user message
+    saveMessage(userMessage);
 
     try {
       const response = await apiRequest({
@@ -362,6 +557,9 @@ Return only valid JSON.`;
       };
 
       setMessages(prev => [...prev, aiMessage]);
+      
+      // Save AI response
+      saveMessage(aiMessage);
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -391,6 +589,20 @@ Return only valid JSON.`;
       default: return 'bg-gray-100 text-gray-700';
     }
   };
+
+  // Show loading while initializing
+  if (isInitializing) {
+    return (
+      <Layout>
+        <div className="max-w-7xl mx-auto p-6 flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">Loading your career journey...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -699,6 +911,10 @@ Return only valid JSON.`;
               <Button 
                 variant="outline" 
                 onClick={() => {
+                  // Clear session and start fresh
+                  localStorage.removeItem('ai-career-chat-session');
+                  setSessionId(null);
+                  setConversationId(null);
                   setCurrentStep('welcome');
                   setUserResponses([]);
                   setCurrentQuestionIndex(0);
@@ -707,7 +923,7 @@ Return only valid JSON.`;
                 }}
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
-                Retake Assessment
+                Start New Assessment
               </Button>
             </div>
           </div>

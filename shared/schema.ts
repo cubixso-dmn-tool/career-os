@@ -848,6 +848,33 @@ export const insertCareerProjectSchema = createInsertSchema(careerProjects).omit
 export const insertCareerResourceSchema = createInsertSchema(careerResources).omit({ id: true });
 export const insertUserCareerProgressSchema = createInsertSchema(userCareerProgress).omit({ id: true, startedAt: true, lastUpdated: true });
 
+// AI Career Chat Conversations
+export const aiCareerChatConversations = pgTable("ai_career_chat_conversations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  sessionId: text("session_id").notNull().unique(), // UUID for tracking sessions
+  title: text("title"), // Optional title for the conversation
+  conversationType: text("conversation_type").notNull().default("assessment"), // "assessment", "chat", "roadmap"
+  status: text("status").default("active").notNull(), // "active", "completed", "archived"
+  metadata: jsonb("metadata"), // Store assessment progress, selected career, etc.
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const aiCareerChatMessages = pgTable("ai_career_chat_messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").references(() => aiCareerChatConversations.id, { onDelete: "cascade" }).notNull(),
+  role: text("role").notNull(), // "user" or "ai"
+  content: text("content").notNull(),
+  messageType: text("message_type").default("text").notNull(), // "text", "assessment_question", "recommendation", "roadmap"
+  metadata: jsonb("metadata"), // Store additional message data like question index, etc.
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+// AI Career Chat schemas
+export const insertAiCareerChatConversationSchema = createInsertSchema(aiCareerChatConversations).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAiCareerChatMessageSchema = createInsertSchema(aiCareerChatMessages).omit({ id: true, createdAt: true });
+
 // Types
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -1225,3 +1252,10 @@ export type CareerResource = typeof careerResources.$inferSelect;
 
 export type InsertUserCareerProgress = z.infer<typeof insertUserCareerProgressSchema>;
 export type UserCareerProgress = typeof userCareerProgress.$inferSelect;
+
+// AI Career Chat types
+export type InsertAiCareerChatConversation = z.infer<typeof insertAiCareerChatConversationSchema>;
+export type AiCareerChatConversation = typeof aiCareerChatConversations.$inferSelect;
+
+export type InsertAiCareerChatMessage = z.infer<typeof insertAiCareerChatMessageSchema>;
+export type AiCareerChatMessage = typeof aiCareerChatMessages.$inferSelect;
