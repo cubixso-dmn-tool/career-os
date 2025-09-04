@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { 
   Card, 
@@ -13,6 +14,24 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   Crown,
   Users,
@@ -44,6 +63,23 @@ import {
 } from "lucide-react";
 
 export default function AdminDashboard() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // State for dialogs
+  const [editUserDialog, setEditUserDialog] = useState<{ isOpen: boolean; user: any }>({ isOpen: false, user: null });
+  const [deleteUserDialog, setDeleteUserDialog] = useState<{ isOpen: boolean; user: any }>({ isOpen: false, user: null });
+  const [createUserDialog, setCreateUserDialog] = useState(false);
+  const [viewProfileDialog, setViewProfileDialog] = useState<{ isOpen: boolean; user: any }>({ isOpen: false, user: null });
+  const [editProfileDialog, setEditProfileDialog] = useState<{ isOpen: boolean; user: any }>({ isOpen: false, user: null });
+  const [suspendUserDialog, setSuspendUserDialog] = useState<{ isOpen: boolean; user: any }>({ isOpen: false, user: null });
+  
+  // State for forms
+  const [selectedRole, setSelectedRole] = useState<string>("");
+  const [newUserForm, setNewUserForm] = useState({ name: "", email: "", username: "", role: "student" });
+  const [editUserForm, setEditUserForm] = useState({ name: "", email: "", username: "", bio: "" });
+  const [suspendForm, setSuspendForm] = useState({ reason: "", action: "suspend" });
+
   const { data: analyticsData, isLoading: analyticsLoading } = useQuery({
     queryKey: ["/api/admin/analytics"],
     queryFn: async () => {
@@ -58,10 +94,24 @@ export default function AdminDashboard() {
     retry: false,
   });
 
-  const { data: usersData, isLoading: usersLoading } = useQuery({
+  const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useQuery({
     queryKey: ["/api/admin/users"],
     queryFn: async () => {
       const response = await fetch('/api/admin/users', {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return response.json();
+    },
+    retry: false,
+  });
+
+  const { data: rolesData } = useQuery({
+    queryKey: ["/api/admin/roles"],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/roles', {
         credentials: "include",
       });
       if (!response.ok) {
@@ -86,6 +136,128 @@ export default function AdminDashboard() {
     retry: false,
   });
 
+  // Mutations
+  const updateUserRoleMutation = useMutation({
+    mutationFn: async ({ userId, roleName }: { userId: number; roleName: string }) => {
+      const response = await fetch(`/api/admin/users/${userId}/role`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ roleName }),
+      });
+      if (!response.ok) throw new Error('Failed to update user role');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "User role updated successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setEditUserDialog({ isOpen: false, user: null });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to delete user');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "User deleted successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setDeleteUserDialog({ isOpen: false, user: null });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const createUserMutation = useMutation({
+    mutationFn: async (userData: { name: string; email: string; username: string; roleName: string }) => {
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(userData),
+      });
+      if (!response.ok) throw new Error('Failed to create user');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "User created successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setCreateUserDialog(false);
+      setNewUserForm({ name: "", email: "", username: "", role: "student" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ userId, userData }: { userId: number; userData: { name: string; email: string; username: string; bio: string } }) => {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(userData),
+      });
+      if (!response.ok) throw new Error('Failed to update user');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "User updated successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setEditProfileDialog({ isOpen: false, user: null });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const suspendUserMutation = useMutation({
+    mutationFn: async ({ userId, status, reason }: { userId: number; status: string; reason: string }) => {
+      const response = await fetch(`/api/admin/users/${userId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status, reason }),
+      });
+      if (!response.ok) throw new Error('Failed to update user status');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({ 
+        title: "Success", 
+        description: `User ${data.data.status === 'suspended' ? 'suspended' : 'activated'} successfully` 
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setSuspendUserDialog({ isOpen: false, user: null });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Fetch individual user data for profile view
+  const { data: userProfileData } = useQuery({
+    queryKey: [`/api/admin/users/${viewProfileDialog.user?.id}`],
+    queryFn: async () => {
+      if (!viewProfileDialog.user?.id) return null;
+      const response = await fetch(`/api/admin/users/${viewProfileDialog.user.id}`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch user profile');
+      return response.json();
+    },
+    enabled: !!viewProfileDialog.user?.id && viewProfileDialog.isOpen,
+  });
+
   const isLoading = analyticsLoading || usersLoading || moderationLoading;
 
   if (isLoading) {
@@ -105,6 +277,98 @@ export default function AdminDashboard() {
   const analytics = analyticsData?.data || {};
   const users = usersData?.data || {};
   const moderation = moderationData?.data || {};
+  const roles = rolesData?.data || [];
+
+  // Helper functions for user management
+  const handleEditUser = (user: any) => {
+    setSelectedRole(user.role);
+    setEditUserDialog({ isOpen: true, user });
+  };
+
+  const handleDeleteUser = (user: any) => {
+    setDeleteUserDialog({ isOpen: true, user });
+  };
+
+  const handleCreateUser = () => {
+    setCreateUserDialog(true);
+  };
+
+  const handleViewProfile = (user: any) => {
+    console.log('View Profile clicked for user:', user);
+    setViewProfileDialog({ isOpen: true, user });
+  };
+
+  const handleEditProfile = (user: any) => {
+    console.log('Edit Profile clicked for user:', user);
+    setEditUserForm({
+      name: user.name || "",
+      email: user.email || "",
+      username: user.username || "",
+      bio: user.bio || ""
+    });
+    setEditProfileDialog({ isOpen: true, user });
+  };
+
+  const handleSuspendUser = (user: any) => {
+    setSuspendForm({ reason: "", action: user.status === 'suspended' ? 'activate' : 'suspend' });
+    setSuspendUserDialog({ isOpen: true, user });
+  };
+
+  const confirmRoleUpdate = () => {
+    if (editUserDialog.user && selectedRole) {
+      updateUserRoleMutation.mutate({
+        userId: editUserDialog.user.id,
+        roleName: selectedRole
+      });
+    }
+  };
+
+  const confirmDeleteUser = () => {
+    if (deleteUserDialog.user) {
+      deleteUserMutation.mutate(deleteUserDialog.user.id);
+    }
+  };
+
+  const confirmCreateUser = () => {
+    if (newUserForm.name && newUserForm.email && newUserForm.username) {
+      createUserMutation.mutate({
+        name: newUserForm.name,
+        email: newUserForm.email,
+        username: newUserForm.username,
+        roleName: newUserForm.role
+      });
+    }
+  };
+
+  const confirmUpdateUser = () => {
+    if (editProfileDialog.user) {
+      updateUserMutation.mutate({
+        userId: editProfileDialog.user.id,
+        userData: editUserForm
+      });
+    }
+  };
+
+  const confirmSuspendUser = () => {
+    if (suspendUserDialog.user) {
+      const status = suspendForm.action === 'suspend' ? 'suspended' : 'active';
+      suspendUserMutation.mutate({
+        userId: suspendUserDialog.user.id,
+        status,
+        reason: suspendForm.reason
+      });
+    }
+  };
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role?.toLowerCase()) {
+      case 'admin': return 'bg-red-100 text-red-800 border-red-200';
+      case 'moderator': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'mentor': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'expert': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
 
   const data = {
     stats: {
@@ -325,7 +589,7 @@ export default function AdminDashboard() {
               transition={{ delay: 0.3 }}
             >
               <Tabs defaultValue="users" className="space-y-6">
-                <TabsList className="flex items-center justify-between">
+                {/* <TabsList className="flex items-center justify-between">
                   <TabsTrigger value="users">Users</TabsTrigger>
                   <TabsTrigger value="experts">Experts</TabsTrigger>
                   <TabsTrigger value="sessions">Sessions</TabsTrigger>
@@ -333,7 +597,7 @@ export default function AdminDashboard() {
                   <TabsTrigger value="community">Community</TabsTrigger>
                   <TabsTrigger value="content">Content</TabsTrigger>
                   <TabsTrigger value="analytics">Analytics</TabsTrigger>
-                </TabsList>
+                </TabsList> */}
 
                 {/* User Management Tab */}
                 <TabsContent value="users">
@@ -356,39 +620,77 @@ export default function AdminDashboard() {
                             <Download className="h-4 w-4 mr-2" />
                             Export
                           </Button>
+                          <Button onClick={handleCreateUser} size="sm">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add User
+                          </Button>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent className="p-6">
+                      {/* User Stats Row */}
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-blue-600">{users.stats?.totalUsers || 0}</div>
+                          <div className="text-xs text-gray-500">Total Users</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-green-600">{users.stats?.students || 0}</div>
+                          <div className="text-xs text-gray-500">Students</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-purple-600">{users.stats?.mentors || 0}</div>
+                          <div className="text-xs text-gray-500">Mentors</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-orange-600">{users.stats?.experts || 0}</div>
+                          <div className="text-xs text-gray-500">Experts</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-red-600">{users.stats?.admins || 0}</div>
+                          <div className="text-xs text-gray-500">Admins</div>
+                        </div>
+                      </div>
+
                       <div className="space-y-4">
-                        {users.data?.data?.length === 0 ? (
+                        {!users.data || users.data?.length === 0 ? (
                           <div className="text-center py-8 text-gray-500">
                             <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                             <p className="text-lg font-medium">No users found</p>
                             <p className="text-sm">Users will appear here as they register</p>
                           </div>
-                        ) : users.data?.data?.map((user: any) => (
+                        ) : users.data?.map((user: any) => (
                           <div key={user.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                             <div className="flex items-center justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
-                                  <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                                    {(user.name || user.username).split(' ').map((n: string) => n[0]).join('').toUpperCase()}
-                                  </div>
+                                  {user.avatar ? (
+                                    <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full" />
+                                  ) : (
+                                    <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                      {(user.name || user.username).split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                                    </div>
+                                  )}
                                   <div>
                                     <h4 className="font-semibold text-gray-900">{user.name || user.username}</h4>
                                     <p className="text-sm text-gray-600">{user.email}</p>
+                                    {user.username && <p className="text-xs text-gray-500">@{user.username}</p>}
                                   </div>
+                                  <Badge 
+                                    className={getRoleBadgeColor(user.role)}
+                                  >
+                                    {user.role || 'student'}
+                                  </Badge>
                                   <Badge 
                                     variant={user.status === 'active' ? 'default' : 'secondary'}
                                     className={user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}
                                   >
-                                    {user.status}
+                                    {user.status || 'active'}
                                   </Badge>
                                 </div>
                                 <div className="grid grid-cols-3 gap-4 text-xs text-gray-600">
                                   <div>
-                                    <span className="font-medium">Role:</span> {user.role}
+                                    <span className="font-medium">User ID:</span> {user.id}
                                   </div>
                                   <div>
                                     <span className="font-medium">Last Active:</span> {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : 'Never'}
@@ -399,22 +701,49 @@ export default function AdminDashboard() {
                                 </div>
                               </div>
                               <div className="flex gap-2 ml-4">
-                                <Button size="sm" variant="outline">
+                                <Button size="sm" variant="outline" onClick={() => handleViewProfile(user)}>
                                   <Eye className="h-4 w-4 mr-1" />
-                                  View
+                                  View Profile
                                 </Button>
-                                <Button size="sm" variant="outline">
+                                <Button size="sm" variant="outline" onClick={() => handleEditProfile(user)}>
                                   <Edit className="h-4 w-4 mr-1" />
-                                  Edit Roles
+                                  Edit User
                                 </Button>
-                                <Button size="sm" variant="outline" className="text-red-600">
-                                  <UserX className="h-4 w-4 mr-1" />
-                                  Suspend
+                                {/* <Button size="sm" variant="outline" onClick={() => handleEditUser(user)}>
+                                  <UserCheck className="h-4 w-4 mr-1" />
+                                  Role
+                                </Button> */}
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className={user.status === 'suspended' ? 'text-green-600 hover:text-green-700' : 'text-orange-600 hover:text-orange-700'}
+                                  onClick={() => handleSuspendUser(user)}
+                                >
+                                  {user.status === 'suspended' ? (
+                                    <>
+                                      <UserCheck className="h-4 w-4 mr-1" />
+                                      Activate
+                                    </>
+                                  ) : (
+                                    <>
+                                      <UserX className="h-4 w-4 mr-1" />
+                                      Suspend
+                                    </>
+                                  )}
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="text-red-600 hover:text-red-700"
+                                  onClick={() => handleDeleteUser(user)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Delete
                                 </Button>
                               </div>
                             </div>
                           </div>
-                        )) || []}
+                        ))}
                       </div>
                     </CardContent>
                   </Card>
@@ -847,6 +1176,343 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Edit User Role Dialog */}
+      <Dialog open={editUserDialog.isOpen} onOpenChange={(open) => setEditUserDialog({ isOpen: open, user: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User Role</DialogTitle>
+            <DialogDescription>
+              Change the role for {editUserDialog.user?.name || editUserDialog.user?.username}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="role">Select Role</Label>
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <SelectTrigger className="mt-2">
+                <SelectValue placeholder="Select a role" />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map((role: any) => (
+                  <SelectItem key={role.id} value={role.name}>
+                    {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditUserDialog({ isOpen: false, user: null })}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmRoleUpdate} 
+              disabled={updateUserRoleMutation.isPending || !selectedRole}
+            >
+              {updateUserRoleMutation.isPending ? "Updating..." : "Update Role"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Dialog */}
+      <Dialog open={deleteUserDialog.isOpen} onOpenChange={(open) => setDeleteUserDialog({ isOpen: open, user: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {deleteUserDialog.user?.name || deleteUserDialog.user?.username}? 
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteUserDialog({ isOpen: false, user: null })}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDeleteUser}
+              disabled={deleteUserMutation.isPending}
+            >
+              {deleteUserMutation.isPending ? "Deleting..." : "Delete User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create User Dialog */}
+      <Dialog open={createUserDialog} onOpenChange={setCreateUserDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New User</DialogTitle>
+            <DialogDescription>
+              Add a new user to the system
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                value={newUserForm.name}
+                onChange={(e) => setNewUserForm(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter full name"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={newUserForm.email}
+                onChange={(e) => setNewUserForm(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="Enter email address"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                value={newUserForm.username}
+                onChange={(e) => setNewUserForm(prev => ({ ...prev, username: e.target.value }))}
+                placeholder="Enter username"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="role">Role</Label>
+              <Select value={newUserForm.role} onValueChange={(value) => setNewUserForm(prev => ({ ...prev, role: value }))}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role: any) => (
+                    <SelectItem key={role.id} value={role.name}>
+                      {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateUserDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmCreateUser}
+              disabled={createUserMutation.isPending || !newUserForm.name || !newUserForm.email || !newUserForm.username}
+            >
+              {createUserMutation.isPending ? "Creating..." : "Create User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View User Profile Dialog */}
+      <Dialog open={viewProfileDialog.isOpen} onOpenChange={(open) => setViewProfileDialog({ isOpen: open, user: null })}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              {viewProfileDialog.user?.avatar ? (
+                <img src={viewProfileDialog.user.avatar} alt={viewProfileDialog.user.name} className="w-12 h-12 rounded-full" />
+              ) : (
+                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
+                  {(viewProfileDialog.user?.name || viewProfileDialog.user?.username)?.charAt(0)?.toUpperCase()}
+                </div>
+              )}
+              <div>
+                <div className="text-xl font-semibold">{viewProfileDialog.user?.name || viewProfileDialog.user?.username}</div>
+                <div className="text-sm text-gray-500">@{viewProfileDialog.user?.username}</div>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {userProfileData?.data && (
+            <div className="py-4 space-y-6">
+              {/* Basic Info */}
+              <div>
+                <h3 className="text-lg font-medium mb-3">Basic Information</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-600">Email:</span>
+                    <div>{userProfileData.data.email}</div>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Role:</span>
+                    <Badge className={getRoleBadgeColor(userProfileData.data.role)}>
+                      {userProfileData.data.role}
+                    </Badge>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">User ID:</span>
+                    <div>{userProfileData.data.id}</div>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Status:</span>
+                    <Badge variant={userProfileData.data.stats?.accountStatus === 'active' ? 'default' : 'secondary'}>
+                      {userProfileData.data.stats?.accountStatus || 'active'}
+                    </Badge>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Joined:</span>
+                    <div>{new Date(userProfileData.data.createdAt).toLocaleDateString()}</div>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Last Login:</span>
+                    <div>{userProfileData.data.stats?.lastLoginDate ? new Date(userProfileData.data.stats.lastLoginDate).toLocaleDateString() : 'Never'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bio */}
+              {userProfileData.data.bio && (
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Bio</h3>
+                  <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">{userProfileData.data.bio}</p>
+                </div>
+              )}
+
+              {/* Activity Stats */}
+              <div>
+                <h3 className="text-lg font-medium mb-3">Activity Statistics</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-3 bg-blue-50 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">{userProfileData.data.stats?.coursesEnrolled || 0}</div>
+                    <div className="text-sm text-gray-600">Courses Enrolled</div>
+                  </div>
+                  <div className="text-center p-3 bg-green-50 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">{userProfileData.data.stats?.projectsCompleted || 0}</div>
+                    <div className="text-sm text-gray-600">Projects Completed</div>
+                  </div>
+                  <div className="text-center p-3 bg-purple-50 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">{userProfileData.data.stats?.communityPosts || 0}</div>
+                    <div className="text-sm text-gray-600">Community Posts</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewProfileDialog({ isOpen: false, user: null })}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Profile Dialog */}
+      <Dialog open={editProfileDialog.isOpen} onOpenChange={(open) => setEditProfileDialog({ isOpen: open, user: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User Profile</DialogTitle>
+            <DialogDescription>
+              Update user information for {editProfileDialog.user?.name || editProfileDialog.user?.username}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="edit-name">Full Name</Label>
+              <Input
+                id="edit-name"
+                value={editUserForm.name}
+                onChange={(e) => setEditUserForm(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter full name"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editUserForm.email}
+                onChange={(e) => setEditUserForm(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="Enter email address"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-username">Username</Label>
+              <Input
+                id="edit-username"
+                value={editUserForm.username}
+                onChange={(e) => setEditUserForm(prev => ({ ...prev, username: e.target.value }))}
+                placeholder="Enter username"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-bio">Bio</Label>
+              <Input
+                id="edit-bio"
+                value={editUserForm.bio}
+                onChange={(e) => setEditUserForm(prev => ({ ...prev, bio: e.target.value }))}
+                placeholder="Enter user bio (optional)"
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditProfileDialog({ isOpen: false, user: null })}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmUpdateUser}
+              disabled={updateUserMutation.isPending || !editUserForm.name || !editUserForm.email || !editUserForm.username}
+            >
+              {updateUserMutation.isPending ? "Updating..." : "Update User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Suspend User Dialog */}
+      <Dialog open={suspendUserDialog.isOpen} onOpenChange={(open) => setSuspendUserDialog({ isOpen: open, user: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {suspendForm.action === 'suspend' ? 'Suspend User' : 'Activate User'}
+            </DialogTitle>
+            <DialogDescription>
+              {suspendForm.action === 'suspend' 
+                ? `Are you sure you want to suspend ${suspendUserDialog.user?.name || suspendUserDialog.user?.username}?`
+                : `Are you sure you want to activate ${suspendUserDialog.user?.name || suspendUserDialog.user?.username}?`
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="suspend-reason">
+              {suspendForm.action === 'suspend' ? 'Suspension Reason' : 'Activation Reason'} (Optional)
+            </Label>
+            <Input
+              id="suspend-reason"
+              value={suspendForm.reason}
+              onChange={(e) => setSuspendForm(prev => ({ ...prev, reason: e.target.value }))}
+              placeholder={suspendForm.action === 'suspend' ? 'Enter reason for suspension' : 'Enter reason for activation'}
+              className="mt-2"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSuspendUserDialog({ isOpen: false, user: null })}>
+              Cancel
+            </Button>
+            <Button 
+              variant={suspendForm.action === 'suspend' ? 'destructive' : 'default'}
+              onClick={confirmSuspendUser}
+              disabled={suspendUserMutation.isPending}
+            >
+              {suspendUserMutation.isPending 
+                ? (suspendForm.action === 'suspend' ? "Suspending..." : "Activating...")
+                : (suspendForm.action === 'suspend' ? "Suspend User" : "Activate User")
+              }
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
