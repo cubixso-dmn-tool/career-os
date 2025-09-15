@@ -768,48 +768,6 @@ router.post("/roadmap", async (req, res) => {
   }
 });
 
-/**
- * General Career Chat
- * POST /api/ai-career-coach/chat
- */
-router.post("/chat", async (req, res) => {
-  try {
-    const { message, context, conversation_history } = req.body;
-    
-    if (!message) {
-      return res.status(400).json({
-        success: false,
-        message: "Message is required"
-      });
-    }
-
-    // Convert conversation history to the expected format
-    const formattedHistory = conversation_history?.map((msg: any) => ({
-      role: msg.role === 'user' ? 'user' : 'assistant',
-      content: msg.content
-    })) || [];
-
-    const response = await getCareerCoachResponse({
-      message,
-      conversationHistory: formattedHistory,
-      coachingType: 'general',
-      userProfile: {},
-      contextData: { context, task: 'general_chat' }
-    });
-
-    res.json({
-      success: true,
-      message: response
-    });
-  } catch (error: any) {
-    console.error("Career chat error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to get chat response",
-      error: error.message
-    });
-  }
-});
 
 /**
  * Get or Create Chat Conversation

@@ -355,8 +355,20 @@ export default function CareerGuide() {
         saveMessage(aiMessage);
       }, 1000);
     } else {
-      // Assessment complete, analyze responses
+      // Assessment complete, analyze responses and transition to chat
       await analyzeAssessment();
+      // After analysis, switch to chat mode
+      setTimeout(() => {
+        setCurrentStep('chat');
+        const chatTransitionMessage: Message = {
+          id: (Date.now() + 2).toString(),
+          role: 'ai',
+          content: "Great! Now that I understand your preferences, feel free to ask me any questions about careers, skills, job market trends, or anything else related to your career journey. I'm here to help!",
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, chatTransitionMessage]);
+        saveMessage(chatTransitionMessage);
+      }, 2000);
     }
   };
 
@@ -397,12 +409,12 @@ Return only valid JSON.`;
 
       if (response.recommendations) {
         setRecommendations(response.recommendations);
-        setCurrentStep('recommendations');
+        // Don't immediately set to recommendations step - let it transition to chat first
         
         const recommendationMessage = {
           id: Date.now().toString(),
           role: 'ai' as const,
-          content: `Great! Based on your responses, I've analyzed your preferences and generated personalized career recommendations. Here are the top 3 career paths that match your profile:`,
+          content: `Perfect! I've analyzed your responses and generated personalized career recommendations for you. You can view these recommendations anytime by clicking "View Recommendations" below, or continue chatting with me about your career questions.`,
           timestamp: new Date()
         };
         
@@ -544,15 +556,20 @@ Return only valid JSON.`;
         method: 'POST',
         body: { 
           message: inputMessage,
-          context: 'career_guidance',
-          conversation_history: messages.slice(-5) // Last 5 messages for context
+          conversationHistory: messages.slice(-5).map(msg => ({
+            role: msg.role === 'ai' ? 'assistant' : 'user',
+            content: msg.content
+          })),
+          coachingType: 'general',
+          userProfile: {},
+          contextData: { context: 'career_guidance' }
         }
       });
 
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'ai',
-        content: response.message || "I'm here to help with your career questions!",
+        content: response.response || "I'm here to help with your career questions!",
         timestamp: new Date()
       };
 
@@ -759,6 +776,19 @@ Return only valid JSON.`;
               </CardContent>
 
               <div className="border-t p-4">
+                {/* Show recommendations button when available and in chat mode */}
+                {currentStep === 'chat' && recommendations.length > 0 && (
+                  <div className="mb-4">
+                    <Button
+                      onClick={() => setCurrentStep('recommendations')}
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                      <Lightbulb className="w-4 h-4 mr-2" />
+                      View My Career Recommendations
+                    </Button>
+                  </div>
+                )}
+                
                 <div className="flex space-x-2">
                   <Input
                     value={inputMessage}
@@ -906,7 +936,7 @@ Return only valid JSON.`;
                 className="mr-4"
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
-                Ask More Questions
+                Continue Chatting
               </Button>
               <Button 
                 variant="outline" 
